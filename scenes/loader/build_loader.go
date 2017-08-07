@@ -2,11 +2,11 @@ package loader
 
 import (
 	"github.com/ymohl-cl/game-builder/audio"
-	"github.com/ymohl-cl/game-builder/conf"
 	"github.com/ymohl-cl/game-builder/objects"
 	"github.com/ymohl-cl/game-builder/objects/block"
 	"github.com/ymohl-cl/game-builder/objects/image"
 	"github.com/ymohl-cl/game-builder/objects/text"
+	"github.com/ymohl-cl/gomoku/conf"
 )
 
 func (L *Load) addMusic() error {

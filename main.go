@@ -5,6 +5,7 @@ import (
 
 	"github.com/ymohl-cl/game-builder/builder"
 	"github.com/ymohl-cl/game-builder/drivers"
+	"github.com/ymohl-cl/game-builder/scripter"
 	"github.com/ymohl-cl/gomoku/conf"
 )
 
@@ -15,5 +16,6 @@ func main() {
 		fmt.Println(err)
 	}
 
-	builder.Builder(d)
+	s := scripter.New(nil)
+	builder.Run(d, s)
 }

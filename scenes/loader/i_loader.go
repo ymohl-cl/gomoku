@@ -6,7 +6,7 @@ import (
 
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/ymohl-cl/game-builder/objects"
-	"github.com/ymohl-cl/game-builder/scenes"
+	"github.com/ymohl-cl/game-builder/scene"
 )
 
 /*
@@ -48,11 +48,11 @@ func (L *Load) Init() error {
 	}
 
 	if L.layers == nil {
-		return errors.New(scenes.ErrorLayers)
+		return errors.New(scene.ErrorLayers)
 	}
 
 	if L.music == nil {
-		return errors.New(scenes.ErrorMissing)
+		return errors.New(scene.ErrorMissing)
 	}
 
 	L.initialized = true

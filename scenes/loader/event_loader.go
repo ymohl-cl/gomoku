@@ -3,9 +3,9 @@ package loader
 import (
 	"time"
 
-	"github.com/ymohl-cl/game-builder/conf"
 	"github.com/ymohl-cl/game-builder/objects"
 	"github.com/ymohl-cl/game-builder/objects/block"
+	"github.com/ymohl-cl/gomoku/conf"
 )
 
 /*
