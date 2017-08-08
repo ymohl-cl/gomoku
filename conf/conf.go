@@ -89,9 +89,11 @@ const (
 
 // Load
 const (
-	LoadMusic       = ressources + "ambiant.wav"
-	LoadBlockWidth  = 20
-	LoadBlockHeight = 20
+	LoadFooterHeight = 102
+	LoadMusic        = ressources + "ambiant.wav"
+	LoadBlockWidth   = 20
+	LoadBlockHeight  = 20
+	LoadBlockOpacity = 255
 )
 
 /*

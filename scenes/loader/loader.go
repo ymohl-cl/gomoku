@@ -2,9 +2,9 @@ package loader
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/veandco/go-sdl2/sdl"
-	"github.com/ymohl-cl/game-builder/audio"
 	"github.com/ymohl-cl/game-builder/objects"
 	"github.com/ymohl-cl/game-builder/objects/block"
 	"github.com/ymohl-cl/gomoku/database"
@@ -12,10 +12,11 @@ import (
 
 const (
 	// order layers of scene
-	layerBackground = 0
-	layerStructure  = 1
-	layerText       = 2
-	layerLoadingBar = 3
+	layerBackground = iota
+	layerStructure
+	layerText
+	layerLoadingBar
+	nbrLayers = 4
 )
 
 // Load is a scene which used when build other scene
@@ -26,8 +27,8 @@ type Load struct {
 	refresh     bool
 
 	/* objects by layers */
+	m             *sync.Mutex
 	layers        map[uint8][]objects.Object
-	music         *audio.Audio
 	lastLoadBlock *block.Block
 
 	/* specific objects */
@@ -49,5 +50,6 @@ func New(d *database.Data, r *sdl.Renderer) (*Load, error) {
 	l := Load{renderer: r}
 	l.layers = make(map[uint8][]objects.Object)
 	l.closer = make(chan (bool))
+	l.m = new(sync.Mutex)
 	return &l, nil
 }

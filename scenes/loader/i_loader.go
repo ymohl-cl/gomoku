@@ -6,7 +6,7 @@ import (
 
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/ymohl-cl/game-builder/objects"
-	"github.com/ymohl-cl/game-builder/scene"
+	"github.com/ymohl-cl/gomoku/scenes"
 )
 
 /*
@@ -14,83 +14,64 @@ import (
  */
 
 // Build describe the scene with objects needest
-func (L *Load) Build() error {
+func (l *Load) Build() error {
 	var err error
 
-	if err = L.addMusic(); err != nil {
+	if err = l.addBackground(); err != nil {
 		return err
 	}
-	if err = L.addBackground(); err != nil {
+	if err = l.addStructure(); err != nil {
 		return err
 	}
-	if err = L.addStructure(); err != nil {
+	if err = l.addTxt(); err != nil {
 		return err
 	}
-	if err = L.addTxt(); err != nil {
-		return err
-	}
-	if err = L.addBlockLoading(); err != nil {
+	if err = l.addBlockLoading(); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Init the scene
-func (L *Load) Init() error {
-	var err error
-
-	if L.renderer == nil {
-		return errors.New(objects.ErrorRenderer)
+func (l *Load) Init() error {
+	if l.renderer == nil {
+		return errors.New(scenes.ErrorRenderer)
 	}
 
-	if err = L.Build(); err != nil {
-		return err
+	if len(l.layers) != nbrLayers {
+		return errors.New(scenes.ErrorLayers)
+	}
+	if l.lastLoadBlock == nil {
+		return errors.New(scenes.ErrorLayers)
 	}
 
-	if L.layers == nil {
-		return errors.New(scene.ErrorLayers)
-	}
-
-	if L.music == nil {
-		return errors.New(scene.ErrorMissing)
-	}
-
-	L.initialized = true
+	l.initialized = true
 	return nil
 }
 
 // IsInit return status initialize
-func (L Load) IsInit() bool {
-	return L.initialized
+func (l Load) IsInit() bool {
+	return l.initialized
 }
 
 // Run the scene
-func (L *Load) Run() error {
-	//	var err error
-	var wg sync.WaitGroup
-
-	if ok := L.music.IsInit(); ok {
-		wg.Add(1)
-		go L.music.Play(&wg, L.renderer)
-		wg.Wait()
-	}
-	go L.addLoadingBar()
+func (l *Load) Run() error {
+	go l.addLoadingBar()
 	return nil
 }
 
+// Stop scene
+func (l *Load) Stop() {
+	l.closer <- true
+}
+
 // Close the scene
-func (L *Load) Close() error {
+func (l *Load) Close() error {
 	var err error
 
-	L.initialized = false
-	L.closer <- true
-	if ok := L.music.IsInit(); ok {
-		if err = L.music.Close(); err != nil {
-			return err
-		}
-	}
-	L.resetLoadingBlock()
-	if err = L.lastLoadBlock.Close(); err != nil {
+	l.initialized = false
+	l.closer <- true
+	if err = l.lastLoadBlock.Close(); err != nil {
 		return err
 	}
 
@@ -98,15 +79,16 @@ func (L *Load) Close() error {
 }
 
 // GetLayers provide all scene's objects to draw them
-func (L *Load) GetLayers() map[uint8][]objects.Object {
-	if L.refresh == true {
-		L.resetLoadingBlock()
-		L.refresh = false
-	}
-	return L.layers
+func (l Load) GetLayers() (map[uint8][]objects.Object, *sync.Mutex) {
+	return l.layers, l.m
 }
 
 // KeyDownEvent provide key down to the scene
-func (L *Load) KeyDownEvent(keyDown *sdl.KeyDownEvent) {
+func (l *Load) KeyDownEvent(keyDown *sdl.KeyDownEvent) {
+	return
+}
+
+// SetSwitcher can be call to change scene with index scene and flag closer
+func (l *Load) SetSwitcher(f func(uint8, bool) error) {
 	return
 }

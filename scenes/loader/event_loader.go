@@ -12,7 +12,7 @@ import (
 ** Endpoint action from objects click
  */
 
-func (L *Load) addLoadingBar() {
+func (l *Load) addLoadingBar() {
 	var b *block.Block
 	var err error
 	var loop bool
@@ -20,29 +20,34 @@ func (L *Load) addLoadingBar() {
 	loop = true
 	for loop {
 		select {
-		case <-L.closer:
+		case <-l.closer:
 			loop = false
 		default:
-			if b, err = L.lastLoadBlock.Clone(L.renderer); err != nil {
+			if b, err = l.lastLoadBlock.Clone(l.renderer); err != nil {
 				panic(err)
 			}
-			x, y := L.lastLoadBlock.GetPosition()
-			if x+conf.LoadBlockWidth > conf.WindowWidth {
-				L.refresh = true
+			x, y := l.lastLoadBlock.GetPosition()
+			if x+conf.LoadBlockWidth*2 > conf.WindowWidth-conf.LoadBlockWidth {
+				l.resetLoadingBlock()
 			} else {
 				b.UpdatePosition(x+conf.LoadBlockWidth, y)
-				L.layers[layerLoadingBar] = append(L.layers[layerLoadingBar], b)
-				L.lastLoadBlock = b
+				l.m.Lock()
+				l.layers[layerLoadingBar] = append(l.layers[layerLoadingBar], b)
+				l.m.Unlock()
+				l.lastLoadBlock = b
 			}
 		}
-		time.Sleep(30 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
+	l.resetLoadingBlock()
 }
 
-func (L *Load) resetLoadingBlock() {
-	L.lastLoadBlock = L.layers[layerLoadingBar][0].(*block.Block)
-	del := L.layers[layerLoadingBar][1:]
-	L.layers[layerLoadingBar] = L.layers[layerLoadingBar][:1]
+func (l *Load) resetLoadingBlock() {
+	l.m.Lock()
+	l.lastLoadBlock = l.layers[layerLoadingBar][0].(*block.Block)
+	del := l.layers[layerLoadingBar][1:]
+	l.layers[layerLoadingBar] = l.layers[layerLoadingBar][:1]
+	l.m.Unlock()
 	go clearLoadingBar(del)
 }
 
