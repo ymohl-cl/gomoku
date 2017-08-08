@@ -10,10 +10,9 @@ var Current uint8
 
 // Scenes list
 const (
-	SMenu = 0
-	SStat = 1
-	SGame = 2
-	Sload = 3
+	SMenu = 1 << iota
+	SStat
+	SGame
 )
 
 // Global
