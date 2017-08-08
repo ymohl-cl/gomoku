@@ -70,7 +70,6 @@ func (l *Load) Close() error {
 	var err error
 
 	l.initialized = false
-	l.closer <- true
 	if err = l.lastLoadBlock.Close(); err != nil {
 		return err
 	}

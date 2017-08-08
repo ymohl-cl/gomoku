@@ -4,42 +4,42 @@ import (
 	"errors"
 
 	"github.com/ymohl-cl/game-builder/audio"
-	"github.com/ymohl-cl/game-builder/conf"
 	"github.com/ymohl-cl/game-builder/objects"
 	"github.com/ymohl-cl/game-builder/objects/block"
 	"github.com/ymohl-cl/game-builder/objects/button"
 	"github.com/ymohl-cl/game-builder/objects/image"
 	"github.com/ymohl-cl/game-builder/objects/input"
 	"github.com/ymohl-cl/game-builder/objects/text"
+	"github.com/ymohl-cl/gomoku/conf"
 )
 
-func (M *Menu) addMusic() error {
+func (m *Menu) addMusic() error {
 	var err error
 
-	M.music, err = audio.New(conf.MenuMusic, 1)
+	m.music, err = audio.New(conf.MenuMusic, 1)
 	if err != nil {
 		return err
 	}
 
-	if err = M.music.Init(M.renderer); err != nil {
+	if err = m.music.Init(m.renderer); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (M *Menu) addBackground() error {
+func (m *Menu) addBackground() error {
 	var i *image.Image
 	var err error
 
 	i = image.New(conf.MenuBackground, conf.OriginX, conf.OriginY, conf.WindowWidth, conf.WindowHeight)
-	if err = i.Init(M.renderer); err != nil {
+	if err = i.Init(m.renderer); err != nil {
 		return err
 	}
-	M.layers[layerBackground] = append(M.layers[layerBackground], i)
+	m.layers[layerBackground] = append(m.layers[layerBackground], i)
 	return nil
 }
 
-func (M *Menu) addStructuresPage() error {
+func (m *Menu) addStructuresPage() error {
 	var b *block.Block
 	var err error
 	var x, y int32
@@ -51,10 +51,10 @@ func (M *Menu) addStructuresPage() error {
 	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
 	b.UpdatePosition(conf.OriginX, conf.MarginTop)
 	b.UpdateSize(conf.WindowWidth, conf.MenuHeaderHeight)
-	if err = b.Init(M.renderer); err != nil {
+	if err = b.Init(m.renderer); err != nil {
 		return nil
 	}
-	M.layers[layerStructure] = append(M.layers[layerStructure], b)
+	m.layers[layerStructure] = append(m.layers[layerStructure], b)
 
 	// Create blockLeft
 	y = conf.MarginTop + conf.MenuHeaderHeight + conf.PaddingBlock
@@ -64,10 +64,10 @@ func (M *Menu) addStructuresPage() error {
 	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
 	b.UpdatePosition(conf.MarginLeft, y)
 	b.UpdateSize(conf.MenuContentBlockWidth, conf.MenuContentLargeBlockHeight)
-	if err = b.Init(M.renderer); err != nil {
+	if err = b.Init(m.renderer); err != nil {
 		return nil
 	}
-	M.layers[layerStructure] = append(M.layers[layerStructure], b)
+	m.layers[layerStructure] = append(m.layers[layerStructure], b)
 
 	// Create blockTopRight
 	x = conf.WindowWidth - conf.MarginRight - conf.MenuContentBlockWidth
@@ -77,10 +77,10 @@ func (M *Menu) addStructuresPage() error {
 	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
 	b.UpdatePosition(x, y)
 	b.UpdateSize(conf.MenuContentBlockWidth, conf.MenuContentMediumBlockHeight)
-	if err = b.Init(M.renderer); err != nil {
+	if err = b.Init(m.renderer); err != nil {
 		return nil
 	}
-	M.layers[layerStructure] = append(M.layers[layerStructure], b)
+	m.layers[layerStructure] = append(m.layers[layerStructure], b)
 
 	// Create blockBottomRight
 	y = conf.MarginTop + conf.MenuHeaderHeight + conf.PaddingBlock + conf.MenuContentMediumBlockHeight + conf.PaddingBlock
@@ -90,10 +90,10 @@ func (M *Menu) addStructuresPage() error {
 	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
 	b.UpdatePosition(x, y)
 	b.UpdateSize(conf.MenuContentBlockWidth, conf.MenuContentMediumBlockHeight)
-	if err = b.Init(M.renderer); err != nil {
+	if err = b.Init(m.renderer); err != nil {
 		return nil
 	}
-	M.layers[layerStructure] = append(M.layers[layerStructure], b)
+	m.layers[layerStructure] = append(m.layers[layerStructure], b)
 
 	// Create blockFooter
 	y = conf.WindowHeight - conf.MarginBot - conf.MenuFooterHeight
@@ -103,54 +103,54 @@ func (M *Menu) addStructuresPage() error {
 	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
 	b.UpdatePosition(conf.OriginX, y)
 	b.UpdateSize(conf.WindowWidth, conf.MenuHeaderHeight)
-	if err = b.Init(M.renderer); err != nil {
+	if err = b.Init(m.renderer); err != nil {
 		return nil
 	}
-	M.layers[layerStructure] = append(M.layers[layerStructure], b)
+	m.layers[layerStructure] = append(m.layers[layerStructure], b)
 
 	return nil
 }
 
-func (M *Menu) addButtons() error {
+func (m *Menu) addButtons() error {
 	var err error
 	var b *button.Button
 
-	if b, err = M.getButtonNewPlayer(); err != nil {
+	if b, err = m.getButtonNewPlayer(); err != nil {
 		return err
 	}
-	if err = b.Init(M.renderer); err != nil {
+	if err = b.Init(m.renderer); err != nil {
 		return err
 	}
-	M.layers[layerButton] = append(M.layers[layerButton], b)
+	m.layers[layerButton] = append(m.layers[layerButton], b)
 
-	if b, err = M.getButtonResetName(); err != nil {
+	if b, err = m.getButtonResetName(); err != nil {
 		return err
 	}
-	if err = b.Init(M.renderer); err != nil {
+	if err = b.Init(m.renderer); err != nil {
 		return err
 	}
-	M.layers[layerButton] = append(M.layers[layerButton], b)
+	m.layers[layerButton] = append(m.layers[layerButton], b)
 
-	if b, err = M.getButtonPlay(); err != nil {
+	if b, err = m.getButtonPlay(); err != nil {
 		return err
 	}
-	if err = b.Init(M.renderer); err != nil {
+	if err = b.Init(m.renderer); err != nil {
 		return err
 	}
-	M.layers[layerButton] = append(M.layers[layerButton], b)
+	m.layers[layerButton] = append(m.layers[layerButton], b)
 
-	if b, err = M.getButtonDefaultPlayers(); err != nil {
+	if b, err = m.getButtonDefaultPlayers(); err != nil {
 		return err
 	}
-	if err = b.Init(M.renderer); err != nil {
+	if err = b.Init(m.renderer); err != nil {
 		return err
 	}
-	M.layers[layerButton] = append(M.layers[layerButton], b)
+	m.layers[layerButton] = append(m.layers[layerButton], b)
 
 	return nil
 }
 
-func (M *Menu) addNotice() error {
+func (m *Menu) addNotice() error {
 	var t *text.Text
 	var err error
 	var x, y int32
@@ -163,12 +163,12 @@ func (M *Menu) addNotice() error {
 	t.SetVariantStyle(conf.ColorTxtRed, conf.ColorTxtGreen, conf.ColorTxtBlue, conf.ColorTxtOpacity, objects.SFix)
 	t.SetVariantUnderStyle(conf.ColorUnderTxtRed, conf.ColorUnderTxtGreen, conf.ColorUnderTxtBlue, conf.ColorUnderTxtOpacity, objects.SFix)
 	t.SetUnderPosition(x-conf.TxtUnderPadding, y-conf.TxtUnderPadding)
-	M.notice = t
-	M.layers[layerNotice] = append(M.layers[layerNotice], M.notice)
+	m.notice = t
+	m.layers[layerNotice] = append(m.layers[layerNotice], m.notice)
 	return nil
 }
 
-func (M *Menu) addText() error {
+func (m *Menu) addText() error {
 	var t *text.Text
 	var err error
 	var x, y int32
@@ -182,10 +182,10 @@ func (M *Menu) addText() error {
 	t.SetVariantStyle(conf.ColorTxtRed, conf.ColorTxtGreen, conf.ColorTxtBlue, conf.ColorTxtOpacity, objects.SFix)
 	t.SetVariantUnderStyle(conf.ColorUnderTxtRed, conf.ColorUnderTxtGreen, conf.ColorUnderTxtBlue, conf.ColorUnderTxtOpacity, objects.SFix)
 	t.SetUnderPosition(x-conf.TxtUnderPadding, y-conf.TxtUnderPadding)
-	if err = t.Init(M.renderer); err != nil {
+	if err = t.Init(m.renderer); err != nil {
 		return err
 	}
-	M.layers[layerText] = append(M.layers[layerText], t)
+	m.layers[layerText] = append(m.layers[layerText], t)
 
 	// add signature
 	y = conf.WindowHeight - (conf.MarginBot / 2)
@@ -196,22 +196,22 @@ func (M *Menu) addText() error {
 	t.SetVariantStyle(conf.ColorTxtRed, conf.ColorTxtGreen, conf.ColorTxtBlue, conf.ColorTxtOpacity, objects.SFix)
 	t.SetVariantUnderStyle(conf.ColorUnderTxtRed, conf.ColorUnderTxtGreen, conf.ColorUnderTxtBlue, conf.ColorUnderTxtOpacity, objects.SFix)
 	t.SetUnderPosition(x-conf.TxtUnderPadding, y-conf.TxtUnderPadding)
-	if err = t.Init(M.renderer); err != nil {
+	if err = t.Init(m.renderer); err != nil {
 		return err
 	}
-	M.layers[layerText] = append(M.layers[layerText], t)
+	m.layers[layerText] = append(m.layers[layerText], t)
 
 	return nil
 }
 
-func (M *Menu) addVS() error {
+func (m *Menu) addVS() error {
 	var t *text.Text
 	var err error
 	var y, x int32
 
 	// add title
-	p1 := M.data.Current.P1
-	p2 := M.data.Current.P2
+	p1 := m.data.Current.P1
+	p2 := m.data.Current.P2
 	y = conf.MarginTop + conf.MenuHeaderHeight + conf.PaddingBlock + conf.MenuContentMediumBlockHeight + conf.MenuContentMediumBlockHeight/2 - (conf.PaddingBlock / 2)
 	x = conf.WindowWidth - conf.MarginRight - (conf.MenuContentBlockWidth / 2)
 	if t, err = text.New(p1.Name+" VS "+p2.Name, conf.TxtMedium, conf.Font, x, y); err != nil {
@@ -220,74 +220,74 @@ func (M *Menu) addVS() error {
 	t.SetVariantStyle(conf.ColorTxtRed, conf.ColorTxtGreen, conf.ColorTxtBlue, conf.ColorTxtOpacity, objects.SFix)
 	t.SetVariantUnderStyle(conf.ColorUnderTxtRed, conf.ColorUnderTxtGreen, conf.ColorUnderTxtBlue, conf.ColorUnderTxtOpacity, objects.SFix)
 	t.SetUnderPosition(x-conf.TxtUnderPadding, y-conf.TxtUnderPadding)
-	if err = t.Init(M.renderer); err != nil {
+	if err = t.Init(m.renderer); err != nil {
 		return err
 	}
 
-	M.layers[layerVS] = append(M.layers[layerVS], t)
-	M.vs = t
+	m.layers[layerVS] = append(m.layers[layerVS], t)
+	m.vs = t
 	return nil
 }
 
-func (M *Menu) addInput() error {
+func (m *Menu) addInput() error {
 	var err error
 	var i *input.Input
 
-	if i, err = M.createInput(); err != nil {
+	if i, err = m.createInput(); err != nil {
 		return err
 	}
-	if err = i.Init(M.renderer); err != nil {
+	if err = i.Init(m.renderer); err != nil {
 		return err
 	}
-	M.layers[layerInput] = append(M.layers[layerInput], i)
+	m.layers[layerInput] = append(m.layers[layerInput], i)
 
-	M.input = i
+	m.input = i
 	return nil
 }
 
-func (M *Menu) addPlayers() error {
+func (m *Menu) addPlayers() error {
 	var err error
 	var x, y int32
 	var b1, b2, b3, b4 *button.Button
 
-	if M.data == nil {
+	if m.data == nil {
 		return errors.New(errorData)
 	}
 
 	x = conf.MarginLeft
 	y = conf.MarginTop + conf.MenuHeaderHeight + conf.PaddingBlock
-	for _, p := range M.data.Players {
-		if b1, err = M.addButtonPlayer(x, y, p); err != nil {
+	for _, p := range m.data.Players {
+		if b1, err = m.addButtonPlayer(x, y, p); err != nil {
 			return err
 		}
-		if err = b1.Init(M.renderer); err != nil {
+		if err = b1.Init(m.renderer); err != nil {
 			return err
 		}
-		M.layers[layerPlayers] = append(M.layers[layerPlayers], b1)
+		m.layers[layerPlayers] = append(m.layers[layerPlayers], b1)
 
-		if b2, err = M.addButtonDeletePlayer(x, y, p); err != nil {
+		if b2, err = m.addButtonDeletePlayer(x, y, p); err != nil {
 			return err
 		}
-		if err = b2.Init(M.renderer); err != nil {
+		if err = b2.Init(m.renderer); err != nil {
 			return err
 		}
-		M.layers[layerPlayers] = append(M.layers[layerPlayers], b2)
+		m.layers[layerPlayers] = append(m.layers[layerPlayers], b2)
 
-		if b3, err = M.addButtonStat(x, y, p); err != nil {
+		if b3, err = m.addButtonStat(x, y, p); err != nil {
 			return err
 		}
-		if err = b3.Init(M.renderer); err != nil {
+		if err = b3.Init(m.renderer); err != nil {
 			return err
 		}
-		M.layers[layerPlayers] = append(M.layers[layerPlayers], b3)
+		m.layers[layerPlayers] = append(m.layers[layerPlayers], b3)
 
-		if b4, err = M.addLoadGame(x, y, p); err != nil {
+		if b4, err = m.addLoadGame(x, y, p); err != nil {
 			return err
 		}
-		if err = b4.Init(M.renderer); err != nil {
+		if err = b4.Init(m.renderer); err != nil {
 			return err
 		}
-		M.layers[layerPlayers] = append(M.layers[layerPlayers], b4)
+		m.layers[layerPlayers] = append(m.layers[layerPlayers], b4)
 
 		y += conf.MenuElementPlayerHeight + conf.MenuElementPadding
 	}

@@ -4,18 +4,26 @@ import (
 	"github.com/ymohl-cl/game-builder/drivers"
 	"github.com/ymohl-cl/game-builder/scripter"
 	"github.com/ymohl-cl/gomoku/conf"
+	"github.com/ymohl-cl/gomoku/database"
 	"github.com/ymohl-cl/gomoku/scenes/loader"
+	"github.com/ymohl-cl/gomoku/scenes/menu"
 )
 
 func main() {
 	var err error
 	var d drivers.VSDL
+	var data *database.Data
 
 	// init drivers sdl from game-builder
 	if d, err = drivers.Init(conf.WindowWidth, conf.WindowHeight, conf.Title); err != nil {
 		panic(err)
 	}
 	defer d.Destroy()
+
+	// get data game
+	if data, err = database.Get(); err != nil {
+		panic(err)
+	}
 
 	// get new scripter application
 	s := scripter.New()
@@ -30,6 +38,13 @@ func main() {
 	}
 
 	// get and add menu scene
+	var menuScene *menu.Menu
+	if menuScene, err = menu.New(data, d.GetRenderer()); err != nil {
+		panic(err)
+	}
+	if err = s.AddScene(menuScene, conf.SMenu, true); err != nil {
+		panic(err)
+	}
 
 	// get and add stat scene
 

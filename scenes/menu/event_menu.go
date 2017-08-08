@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ymohl-cl/game-builder/conf"
-	"github.com/ymohl-cl/game-builder/database"
 	"github.com/ymohl-cl/game-builder/objects"
+	"github.com/ymohl-cl/gomoku/conf"
+	"github.com/ymohl-cl/gomoku/database"
 )
 
 /*
@@ -15,12 +15,12 @@ import (
  */
 
 // LoadGame : start a new party
-func (M *Menu) LoadGame(values ...interface{}) {
+func (m *Menu) LoadGame(values ...interface{}) {
 	fmt.Println("Load Game")
 }
 
 // DeletePlayer : _
-func (M *Menu) DeletePlayer(values ...interface{}) {
+func (m *Menu) DeletePlayer(values ...interface{}) {
 	var p *database.Player
 	var err error
 	var ok bool
@@ -35,23 +35,25 @@ func (M *Menu) DeletePlayer(values ...interface{}) {
 		panic(errorValuesEmpty)
 	}
 
-	if id, err = M.data.DeletePlayer(p); err != nil {
-		go M.setNotice(err.Error())
+	if id, err = m.data.DeletePlayer(p); err != nil {
+		go m.setNotice(err.Error())
 		return
 	}
-	if err = M.removeUIPlayer(id); err != nil {
-		panic(err)
-	}
-	M.updateVS()
+	go func() {
+		if err = m.removeUIPlayer(id); err != nil {
+			panic(err)
+		}
+		m.updateVS()
+	}()
 }
 
 // DrawStat : on user selected
-func (M *Menu) DrawStat(values ...interface{}) {
+func (m *Menu) DrawStat(values ...interface{}) {
 	fmt.Println("Draw stat")
 }
 
 // SelectPlayer : to the futur game
-func (M *Menu) SelectPlayer(values ...interface{}) {
+func (m *Menu) SelectPlayer(values ...interface{}) {
 	var p *database.Player
 	var err error
 	var ok bool
@@ -64,84 +66,93 @@ func (M *Menu) SelectPlayer(values ...interface{}) {
 	} else {
 		panic(errorValuesEmpty)
 	}
-	if err = M.data.UpdateCurrent(p); err != nil {
-		go M.setNotice(err.Error())
+	if err = m.data.UpdateCurrent(p); err != nil {
+		go m.setNotice(err.Error())
 		return
 	}
-	M.updateVS()
+	m.updateVS()
 }
 
 // NewPlayer : on the database
-func (M *Menu) NewPlayer(values ...interface{}) {
+func (m *Menu) NewPlayer(values ...interface{}) {
 	var name string
 	var nbPlayer int
 	var err error
 
-	nbPlayer = len(M.data.Players)
+	// check number players
+	nbPlayer = len(m.data.Players)
 	if nbPlayer >= playerMax {
-		go M.setNotice(noticeMaxPlayer)
+		go m.setNotice(noticeMaxPlayer)
 		return
 	}
-	name = M.input.GetTxt()
+	// get name player
+	name = m.input.GetTxt()
 	if len(name) == 0 {
-		go M.setNotice(noticeNameEmpty)
+		go m.setNotice(noticeNameEmpty)
 		return
 	}
-
-	for _, p := range M.data.Players {
+	// check if player already exist
+	for _, p := range m.data.Players {
 		if p.Name == name {
-			go M.setNotice(noticeNameExist)
+			go m.setNotice(noticeNameExist)
 			return
 		}
 	}
+	// create player on protocol data
 	p := database.CreatePlayer(name)
-	M.data.AddPlayer(p)
-	M.input.Reset(M.renderer)
+	// add player on protocol data
+	m.data.AddPlayer(p)
 
-	if err = M.addUIPlayer(nbPlayer, p); err != nil {
-		panic(err)
-	}
+	// Reset input
+	m.input.Reset(m.renderer)
+
+	// add player on layers players
+	go func() {
+		if err = m.addUIPlayer(nbPlayer, p); err != nil {
+			panic(err)
+		}
+	}()
 }
 
 // Play start the game
-func (M *Menu) Play(values ...interface{}) {
+func (m *Menu) Play(values ...interface{}) {
 	var err error
 
 	conf.Current = conf.SGame
-	if err = M.Close(); err != nil {
+	if err = m.Close(); err != nil {
 		panic(err)
 	}
 }
 
 // ResetName : reset the input value
-func (M *Menu) ResetName(values ...interface{}) {
-	M.input.Reset(M.renderer)
+func (m *Menu) ResetName(values ...interface{}) {
+	m.input.Reset(m.renderer)
 }
 
 // DefaultPlayer : init the defaults player to the game
-func (M *Menu) DefaultPlayer(values ...interface{}) {
+func (m *Menu) DefaultPlayer(values ...interface{}) {
 	var err error
 
-	if err = M.data.DefaultPlayers(); err != nil {
+	if err = m.data.DefaultPlayers(); err != nil {
 		panic(err.Error)
 	}
-	M.updateVS()
+	m.updateVS()
 }
 
 /*
 ** Change object from Endpoint management
  */
-func (M *Menu) setNotice(str string) {
-	idSDL := M.notice.NewIDSDL()
-	if M.notice.IsInit() == true {
-		M.notice.Close()
+func (m *Menu) setNotice(str string) {
+	idSDL := m.notice.NewIDSDL()
+	if m.notice.IsInit() == true {
+		m.notice.Close()
 	}
-	M.notice.UpdateText(str, M.renderer)
-	if err := M.notice.Init(M.renderer); err != nil {
+	m.notice.UpdateText(str, m.renderer)
+	if err := m.notice.Init(m.renderer); err != nil {
 		panic(errors.New(objects.ErrorRenderer))
 	}
 	time.Sleep(3 * time.Second)
-	if M.notice.GetIDSDL() == idSDL {
-		M.notice.Close()
+	if m.notice.GetIDSDL() == idSDL {
+		m.notice.Close()
 	}
 }

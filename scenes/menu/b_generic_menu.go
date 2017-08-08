@@ -1,17 +1,17 @@
 package menu
 
 import (
-	"github.com/ymohl-cl/game-builder/conf"
-	"github.com/ymohl-cl/game-builder/database"
 	"github.com/ymohl-cl/game-builder/objects"
 	"github.com/ymohl-cl/game-builder/objects/block"
 	"github.com/ymohl-cl/game-builder/objects/button"
 	"github.com/ymohl-cl/game-builder/objects/image"
 	"github.com/ymohl-cl/game-builder/objects/input"
 	"github.com/ymohl-cl/game-builder/objects/text"
+	"github.com/ymohl-cl/gomoku/conf"
+	"github.com/ymohl-cl/gomoku/database"
 )
 
-func (M *Menu) createBlockToDefaultButton(x, y, w, h int32) (*block.Block, error) {
+func (m *Menu) createBlockToDefaultButton(x, y, w, h int32) (*block.Block, error) {
 	var b *block.Block
 	var err error
 
@@ -37,7 +37,7 @@ func (M *Menu) createBlockToDefaultButton(x, y, w, h int32) (*block.Block, error
 	return b, nil
 }
 
-func (M *Menu) createTxtToButton(x, y int32, txt string) (*text.Text, error) {
+func (m *Menu) createTxtToButton(x, y int32, txt string) (*text.Text, error) {
 	var t *text.Text
 	var err error
 
@@ -50,27 +50,27 @@ func (M *Menu) createTxtToButton(x, y int32, txt string) (*text.Text, error) {
 	return t, nil
 }
 
-func (M *Menu) addButtonPlayer(x, y int32, p *database.Player) (*button.Button, error) {
+func (m *Menu) addButtonPlayer(x, y int32, p *database.Player) (*button.Button, error) {
 	var t *text.Text
 	var bl *block.Block
 	var b *button.Button
 	var err error
 
-	if bl, err = M.createBlockToDefaultButton(x, y, conf.MenuElementPlayerWidth, conf.MenuElementPlayerHeight); err != nil {
+	if bl, err = m.createBlockToDefaultButton(x, y, conf.MenuElementPlayerWidth, conf.MenuElementPlayerHeight); err != nil {
 		return nil, err
 	}
 	w, h := bl.GetSize()
-	if t, err = M.createTxtToButton(x+(w/2), y+(h/2), p.Name); err != nil {
+	if t, err = m.createTxtToButton(x+(w/2), y+(h/2), p.Name); err != nil {
 		return nil, err
 	}
 	b = button.New(bl, nil, t)
 	// SetAction
-	b.SetAction(M.SelectPlayer, p)
+	b.SetAction(m.SelectPlayer, p)
 
 	return b, nil
 }
 
-func (M *Menu) addButtonDeletePlayer(x, y int32, p *database.Player) (*button.Button, error) {
+func (m *Menu) addButtonDeletePlayer(x, y int32, p *database.Player) (*button.Button, error) {
 	var i *image.Image
 	var b *button.Button
 
@@ -79,12 +79,12 @@ func (M *Menu) addButtonDeletePlayer(x, y int32, p *database.Player) (*button.Bu
 	i = image.New(conf.MenuIconDelete, x, y, conf.MenuIconWidth, conf.MenuElementPlayerHeight)
 	i.SetVariantStyle(conf.MenuIconDelete, conf.MenuIconOverDelete, conf.MenuIconOverDelete)
 	b = button.New(nil, i, nil)
-	b.SetAction(M.DeletePlayer, p)
+	b.SetAction(m.DeletePlayer, p)
 
 	return b, nil
 }
 
-func (M *Menu) addLoadGame(x, y int32, p *database.Player) (*button.Button, error) {
+func (m *Menu) addLoadGame(x, y int32, p *database.Player) (*button.Button, error) {
 	var i *image.Image
 	var b *button.Button
 
@@ -93,12 +93,12 @@ func (M *Menu) addLoadGame(x, y int32, p *database.Player) (*button.Button, erro
 	i = image.New(conf.MenuIconLoad, x, y, conf.MenuIconWidth, conf.MenuElementPlayerHeight)
 	i.SetVariantStyle(conf.MenuIconLoad, conf.MenuIconOverLoad, conf.MenuIconOverLoad)
 	b = button.New(nil, i, nil)
-	b.SetAction(M.LoadGame, p)
+	b.SetAction(m.LoadGame, p)
 
 	return b, nil
 }
 
-func (M *Menu) addButtonStat(x, y int32, p *database.Player) (*button.Button, error) {
+func (m *Menu) addButtonStat(x, y int32, p *database.Player) (*button.Button, error) {
 	var i *image.Image
 	var b *button.Button
 
@@ -107,12 +107,12 @@ func (M *Menu) addButtonStat(x, y int32, p *database.Player) (*button.Button, er
 	i = image.New(conf.MenuIconTrophy, x, y, conf.MenuIconWidth, conf.MenuElementPlayerHeight)
 	i.SetVariantStyle(conf.MenuIconTrophy, conf.MenuIconOverTrophy, conf.MenuIconOverTrophy)
 	b = button.New(nil, i, nil)
-	b.SetAction(M.DrawStat, p)
+	b.SetAction(m.DrawStat, p)
 
 	return b, nil
 }
 
-func (M *Menu) createBlockToInput(x, y int32) (*block.Block, error) {
+func (m *Menu) createBlockToInput(x, y int32) (*block.Block, error) {
 	var b *block.Block
 	var err error
 
@@ -138,7 +138,7 @@ func (M *Menu) createBlockToInput(x, y int32) (*block.Block, error) {
 	return b, nil
 }
 
-func (M *Menu) createInput() (*input.Input, error) {
+func (m *Menu) createInput() (*input.Input, error) {
 	var x, y int32
 	var w, h int32
 	var b *block.Block
@@ -149,7 +149,7 @@ func (M *Menu) createInput() (*input.Input, error) {
 	interval := int32((conf.MenuContentBlockWidth - (conf.ButtonWidth*2 + conf.PaddingBlock)) / 2)
 	x = conf.WindowWidth - conf.MarginRight - conf.MenuContentBlockWidth + interval
 
-	if b, err = M.createBlockToInput(x, y); err != nil {
+	if b, err = m.createBlockToInput(x, y); err != nil {
 		return nil, err
 	}
 
@@ -164,7 +164,7 @@ func (M *Menu) createInput() (*input.Input, error) {
 	return i, nil
 }
 
-func (M *Menu) getButtonDefaultPlayers() (*button.Button, error) {
+func (m *Menu) getButtonDefaultPlayers() (*button.Button, error) {
 	var x, y int32
 	var t *text.Text
 	var bl *block.Block
@@ -176,25 +176,25 @@ func (M *Menu) getButtonDefaultPlayers() (*button.Button, error) {
 	x = conf.WindowWidth - conf.MarginRight - interval - conf.ButtonWidth
 
 	// create block
-	if bl, err = M.createBlockToDefaultButton(x, y, conf.ButtonWidth, conf.ButtonHeight); err != nil {
+	if bl, err = m.createBlockToDefaultButton(x, y, conf.ButtonWidth, conf.ButtonHeight); err != nil {
 		return nil, err
 	}
 
 	// create txt
 	x += conf.ButtonWidth / 2
 	y += conf.ButtonHeight / 2
-	if t, err = M.createTxtToButton(x, y, "DEFAULT PLAYERS"); err != nil {
+	if t, err = m.createTxtToButton(x, y, "DEFAULT PLAYERS"); err != nil {
 		return nil, err
 	}
 
 	// create button
 	b = button.New(bl, nil, t)
-	b.SetAction(M.DefaultPlayer)
+	b.SetAction(m.DefaultPlayer)
 
 	return b, nil
 }
 
-func (M *Menu) getButtonPlay() (*button.Button, error) {
+func (m *Menu) getButtonPlay() (*button.Button, error) {
 	var x, y int32
 	var t *text.Text
 	var bl *block.Block
@@ -206,22 +206,22 @@ func (M *Menu) getButtonPlay() (*button.Button, error) {
 	x = conf.WindowWidth - conf.MarginRight - conf.MenuContentBlockWidth + interval
 
 	// create block
-	if bl, err = M.createBlockToDefaultButton(x, y, conf.ButtonWidth, conf.ButtonHeight); err != nil {
+	if bl, err = m.createBlockToDefaultButton(x, y, conf.ButtonWidth, conf.ButtonHeight); err != nil {
 		return nil, err
 	}
 
 	// create txt
-	if t, err = M.createTxtToButton(x+conf.ButtonWidth/2, y+conf.ButtonHeight/2, "PLAY !"); err != nil {
+	if t, err = m.createTxtToButton(x+conf.ButtonWidth/2, y+conf.ButtonHeight/2, "PLAY !"); err != nil {
 		return nil, err
 	}
 
 	b = button.New(bl, nil, t)
-	b.SetAction(M.Play)
+	b.SetAction(m.Play)
 
 	return b, nil
 }
 
-func (M *Menu) getButtonResetName() (*button.Button, error) {
+func (m *Menu) getButtonResetName() (*button.Button, error) {
 	var x, y int32
 	var t *text.Text
 	var bl *block.Block
@@ -233,21 +233,21 @@ func (M *Menu) getButtonResetName() (*button.Button, error) {
 	x = conf.WindowWidth - conf.MarginRight - interval - conf.ButtonWidth
 
 	// create block
-	if bl, err = M.createBlockToDefaultButton(x, y, conf.ButtonWidth, conf.ButtonHeight); err != nil {
+	if bl, err = m.createBlockToDefaultButton(x, y, conf.ButtonWidth, conf.ButtonHeight); err != nil {
 		return nil, err
 	}
 
 	// create txt
-	if t, err = M.createTxtToButton(x+conf.ButtonWidth/2, y+conf.ButtonHeight/2, "RESET NAME"); err != nil {
+	if t, err = m.createTxtToButton(x+conf.ButtonWidth/2, y+conf.ButtonHeight/2, "RESET NAME"); err != nil {
 		return nil, err
 	}
 
 	b = button.New(bl, nil, t)
-	b.SetAction(M.ResetName)
+	b.SetAction(m.ResetName)
 	return b, nil
 }
 
-func (M *Menu) getButtonNewPlayer() (*button.Button, error) {
+func (m *Menu) getButtonNewPlayer() (*button.Button, error) {
 	var x, y int32
 	var t *text.Text
 	var bl *block.Block
@@ -259,17 +259,17 @@ func (M *Menu) getButtonNewPlayer() (*button.Button, error) {
 	x = conf.WindowWidth - conf.MarginRight - conf.MenuContentBlockWidth + interval
 
 	// create block
-	if bl, err = M.createBlockToDefaultButton(x, y, conf.ButtonWidth, conf.ButtonHeight); err != nil {
+	if bl, err = m.createBlockToDefaultButton(x, y, conf.ButtonWidth, conf.ButtonHeight); err != nil {
 		return nil, err
 	}
 
 	// create txt
-	if t, err = M.createTxtToButton(x+conf.ButtonWidth/2, y+conf.ButtonHeight/2, "NEW PLAYER"); err != nil {
+	if t, err = m.createTxtToButton(x+conf.ButtonWidth/2, y+conf.ButtonHeight/2, "NEW PLAYER"); err != nil {
 		return nil, err
 	}
 
 	b = button.New(bl, nil, t)
-	b.SetAction(M.NewPlayer)
+	b.SetAction(m.NewPlayer)
 
 	return b, nil
 }

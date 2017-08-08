@@ -3,12 +3,12 @@ package menu
 import (
 	"errors"
 
-	"github.com/ymohl-cl/game-builder/conf"
-	"github.com/ymohl-cl/game-builder/database"
 	"github.com/ymohl-cl/game-builder/objects/button"
+	"github.com/ymohl-cl/gomoku/conf"
+	"github.com/ymohl-cl/gomoku/database"
 )
 
-func (M *Menu) addUIPlayer(nb int, p *database.Player) error {
+func (m *Menu) addUIPlayer(nb int, p *database.Player) error {
 	var err error
 	var x, y int32
 	var b1, b2, b3, b4 *button.Button
@@ -17,99 +17,99 @@ func (M *Menu) addUIPlayer(nb int, p *database.Player) error {
 	y = conf.MarginTop + conf.MenuHeaderHeight + conf.PaddingBlock
 	y += (conf.MenuElementPlayerHeight + conf.MenuElementPadding) * int32(nb)
 
-	if b1, err = M.addButtonPlayer(x, y, p); err != nil {
+	if b1, err = m.addButtonPlayer(x, y, p); err != nil {
 		return err
 	}
-	if err = b1.Init(M.renderer); err != nil {
+	if err = b1.Init(m.renderer); err != nil {
 		return err
 	}
-	M.layers[layerPlayers] = append(M.layers[layerPlayers], b1)
+	m.layers[layerPlayers] = append(m.layers[layerPlayers], b1)
 
-	if b2, err = M.addButtonDeletePlayer(x, y, p); err != nil {
+	if b2, err = m.addButtonDeletePlayer(x, y, p); err != nil {
 		return err
 	}
-	if err = b2.Init(M.renderer); err != nil {
+	if err = b2.Init(m.renderer); err != nil {
 		return err
 	}
-	M.layers[layerPlayers] = append(M.layers[layerPlayers], b2)
+	m.layers[layerPlayers] = append(m.layers[layerPlayers], b2)
 
-	if b3, err = M.addButtonStat(x, y, p); err != nil {
+	if b3, err = m.addButtonStat(x, y, p); err != nil {
 		return err
 	}
-	if err = b3.Init(M.renderer); err != nil {
+	if err = b3.Init(m.renderer); err != nil {
 		return err
 	}
-	M.layers[layerPlayers] = append(M.layers[layerPlayers], b3)
+	m.layers[layerPlayers] = append(m.layers[layerPlayers], b3)
 
-	if b4, err = M.addLoadGame(x, y, p); err != nil {
+	if b4, err = m.addLoadGame(x, y, p); err != nil {
 		return err
 	}
-	if err = b4.Init(M.renderer); err != nil {
+	if err = b4.Init(m.renderer); err != nil {
 		return err
 	}
-	M.layers[layerPlayers] = append(M.layers[layerPlayers], b4)
+	m.layers[layerPlayers] = append(m.layers[layerPlayers], b4)
 
 	return nil
 }
 
-func (M Menu) closeUIPlayer(idx int) error {
+func (m Menu) closeUIPlayer(idx int) error {
 	var err error
 	var size int
 
-	size = len(M.layers[layerPlayers])
+	size = len(m.layers[layerPlayers])
 	if size <= idx {
 		return errors.New("id object not found")
 	}
-	button := M.layers[layerPlayers][idx]
+	button := m.layers[layerPlayers][idx]
 	if err = button.Close(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (M *Menu) removeUIPlayer(idData int) error {
+func (m *Menu) removeUIPlayer(idData int) error {
 	var err error
 	var id int
 
 	id = idData * buttonByPlayer
-	if err = M.closeUIPlayer(id); err != nil {
+	if err = m.closeUIPlayer(id); err != nil {
 		return err
 	}
-	if err = M.closeUIPlayer(id + 1); err != nil {
+	if err = m.closeUIPlayer(id + 1); err != nil {
 		return err
 	}
-	if err = M.closeUIPlayer(id + 2); err != nil {
+	if err = m.closeUIPlayer(id + 2); err != nil {
 		return err
 	}
-	if err = M.closeUIPlayer(id + 3); err != nil {
+	if err = m.closeUIPlayer(id + 3); err != nil {
 		return err
 	}
 
 	// Update position next elements
-	for _, b := range M.layers[layerPlayers][id+4:] {
+	for _, b := range m.layers[layerPlayers][id+4:] {
 		x, y := b.GetPosition()
 		y -= (conf.MenuElementPlayerHeight + conf.MenuElementPadding)
 		b.UpdatePosition(x, y)
 	}
 
-	M.layers[layerPlayers] = append(M.layers[layerPlayers][:id], M.layers[layerPlayers][id+4:]...)
+	m.layers[layerPlayers] = append(m.layers[layerPlayers][:id], m.layers[layerPlayers][id+4:]...)
 	return nil
 }
 
-func (M *Menu) updateVS() {
+func (m *Menu) updateVS() {
 	var err error
-	p1 := M.data.Current.P1
-	p2 := M.data.Current.P2
+	p1 := m.data.Current.P1
+	p2 := m.data.Current.P2
 
 	if p1 == nil || p2 == nil {
 		panic(errors.New("Players is nil"))
 	}
-	if M.vs.IsInit() {
-		if err = M.vs.Close(); err != nil {
+	if m.vs.IsInit() {
+		if err = m.vs.Close(); err != nil {
 			panic(err)
 		}
 	}
-	if err = M.vs.UpdateText(p1.Name+" VS "+p2.Name, M.renderer); err != nil {
+	if err = m.vs.UpdateText(p1.Name+" VS "+p2.Name, m.renderer); err != nil {
 		panic(err)
 	}
 }

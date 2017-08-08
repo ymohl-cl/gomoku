@@ -2,25 +2,43 @@ package menu
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/ymohl-cl/game-builder/audio"
-	"github.com/ymohl-cl/game-builder/database"
 	"github.com/ymohl-cl/game-builder/objects"
 	"github.com/ymohl-cl/game-builder/objects/input"
 	"github.com/ymohl-cl/game-builder/objects/text"
+	"github.com/ymohl-cl/gomoku/database"
 )
 
 const (
 	// order layers of scene
-	layerBackground = 0
-	layerStructure  = 1
-	layerButton     = 2
-	layerNotice     = 3
-	layerText       = 4
-	layerVS         = 5
-	layerInput      = 6
-	layerPlayers    = 7
+	layerBackground = iota
+	layerStructure
+	layerButton
+	layerNotice
+	layerText
+	layerVS
+	layerInput
+	layerPlayers
+
+	nbrLayers = 8
+
+	// Configuration menu
+	playerMax      = 10
+	buttonByPlayer = 4
+
+	// notice message
+	noticeMaxPlayer = "You can't save more players"
+	noticeNameEmpty = "New player's name is empty"
+	noticeNameExist = "New player's name already exist"
+
+	// erreur message
+	errorValuesEmpty = "Function polymorphic call without valid argument"
+	errorInterface   = "Error interface type insertion"
+	errorPlayer      = "Player not found"
+	errorData        = "Data not corrupted"
 )
 
 // Menu is a scene
@@ -28,8 +46,10 @@ type Menu struct {
 	/* infos scene */
 	initialized bool
 	closer      chan (uint8)
+	switcher    func(uint8, bool) error
 
 	/* objects by layers */
+	m      *sync.Mutex
 	layers map[uint8][]objects.Object
 
 	/* specific objects */
@@ -59,5 +79,6 @@ func New(d *database.Data, r *sdl.Renderer) (*Menu, error) {
 
 	m := Menu{renderer: r, data: d}
 	m.layers = make(map[uint8][]objects.Object)
+	m.m = new(sync.Mutex)
 	return &m, nil
 }

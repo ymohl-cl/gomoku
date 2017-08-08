@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -88,7 +87,6 @@ func (D *Data) DefaultPlayers() error {
 
 func (D *Data) AddPlayer(p *Player) {
 	D.Players = append(D.Players, p)
-	fmt.Println("il y a ", len(D.Players), "players dans la base into database")
 }
 
 func (D *Data) DeletePlayer(p *Player) (int, error) {

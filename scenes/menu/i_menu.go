@@ -6,7 +6,7 @@ import (
 
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/ymohl-cl/game-builder/objects"
-	"github.com/ymohl-cl/game-builder/scenes"
+	"github.com/ymohl-cl/gomoku/scenes"
 )
 
 /*
@@ -14,115 +14,118 @@ import (
  */
 
 // Build describe the scene with objects needest
-func (M *Menu) Build() error {
+func (m *Menu) Build() error {
 	var err error
 
-	if err = M.addMusic(); err != nil {
+	if err = m.addMusic(); err != nil {
 		return err
 	}
-	if err = M.addBackground(); err != nil {
+	if err = m.addBackground(); err != nil {
 		return err
 	}
-	if err = M.addStructuresPage(); err != nil {
+	if err = m.addStructuresPage(); err != nil {
 		return err
 	}
-	if err = M.addButtons(); err != nil {
+	if err = m.addButtons(); err != nil {
 		return err
 	}
-	if err = M.addNotice(); err != nil {
+	if err = m.addNotice(); err != nil {
 		return err
 	}
-	if err = M.addText(); err != nil {
+	if err = m.addText(); err != nil {
 		return err
 	}
-	if err = M.addVS(); err != nil {
+	if err = m.addVS(); err != nil {
 		return err
 	}
-	if err = M.addInput(); err != nil {
+	if err = m.addInput(); err != nil {
 		return err
 	}
-	if err = M.addPlayers(); err != nil {
+	if err = m.addPlayers(); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Init the scene
-func (M *Menu) Init() error {
-	var err error
-
-	if M.renderer == nil {
+func (m *Menu) Init() error {
+	if m.renderer == nil {
 		return errors.New(objects.ErrorRenderer)
 	}
-	if M.data == nil {
+	if m.data == nil {
 		return errors.New(objects.ErrorData)
 	}
-
-	if err = M.Build(); err != nil {
-		return err
-	}
-
-	if M.layers == nil {
+	if len(m.layers) != 8 {
 		return errors.New(scenes.ErrorLayers)
 	}
-	if M.input == nil {
+	if m.input == nil {
 		return errors.New(scenes.ErrorMissing)
 	}
-	if M.notice == nil {
+	if m.notice == nil {
 		return errors.New(scenes.ErrorMissing)
 	}
-	if M.music == nil {
+	if m.music == nil {
 		return errors.New(scenes.ErrorMissing)
 	}
-	if M.vs == nil {
+	if m.vs == nil {
 		return errors.New(scenes.ErrorMissing)
 	}
 
-	M.initialized = true
+	m.initialized = true
 	return nil
 }
 
 // IsInit return status initialize
-func (M Menu) IsInit() bool {
-	return M.initialized
+func (m Menu) IsInit() bool {
+	return m.initialized
 }
 
 // Run the scene
-func (M Menu) Run() error {
+func (m Menu) Run() error {
 	var wg sync.WaitGroup
 
-	if ok := M.music.IsInit(); ok {
-		wg.Add(1)
-		go M.music.Play(&wg, M.renderer)
-		wg.Wait()
-	}
-	return nil
-}
-
-// Close the scene
-func (M *Menu) Close() error {
-	var err error
-
-	M.initialized = false
-	if ok := M.music.IsInit(); ok {
-		if err = M.music.Close(); err != nil {
+	if ok := m.music.IsInit(); !ok {
+		if err := m.music.Init(m.renderer); err != nil {
 			return err
 		}
 	}
+	wg.Add(1)
+	go m.music.Play(&wg, m.renderer)
+	wg.Wait()
+	return nil
+}
 
+// Stop the scene
+func (m *Menu) Stop() {
+	if ok := m.music.IsInit(); ok {
+		if err := m.music.Close(); err != nil {
+			panic(err)
+		}
+	}
+}
+
+// Close the scene
+func (m *Menu) Close() error {
+	m.initialized = false
+	//m.data.Close()
 	return nil
 }
 
 // GetLayers provide all scene's objects to draw them
-func (M Menu) GetLayers() map[uint8][]objects.Object {
-	return M.layers
+func (m Menu) GetLayers() (map[uint8][]objects.Object, *sync.Mutex) {
+	return m.layers, m.m
 }
 
 // KeyDownEvent provide key down to the scene
-func (M *Menu) KeyDownEvent(keyDown *sdl.KeyDownEvent) {
+func (m *Menu) KeyDownEvent(keyDown *sdl.KeyDownEvent) {
 	var err error
 
-	if err = M.input.SetNewRune(keyDown.Keysym, M.renderer); err != nil {
-		go M.setNotice(err.Error())
+	if err = m.input.SetNewRune(keyDown.Keysym, m.renderer); err != nil {
+		go m.setNotice(err.Error())
 	}
+}
+
+// SetSwitcher can be call to change scene with index scene and flag closer
+func (m *Menu) SetSwitcher(f func(uint8, bool) error) {
+	m.switcher = f
 }
