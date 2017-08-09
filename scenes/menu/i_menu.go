@@ -106,8 +106,15 @@ func (m *Menu) Stop() {
 
 // Close the scene
 func (m *Menu) Close() error {
+	var err error
+
 	m.initialized = false
-	//m.data.Close()
+
+	m.m.Lock()
+	defer m.m.Unlock()
+	if err = objects.Closer(m.layers); err != nil {
+		return err
+	}
 	return nil
 }
 

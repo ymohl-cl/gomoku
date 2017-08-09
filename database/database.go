@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -63,11 +64,12 @@ func (D *Data) UpdateCurrent(p *Player) error {
 	}
 
 	if D.Current.P1.Name == defaultPlayer1 {
+		fmt.Println("P1 == ", p.Name)
 		D.Current.P1 = p
-		return nil
+	} else {
+		D.Current.P2 = p
 	}
 
-	D.Current.P2 = p
 	return nil
 }
 

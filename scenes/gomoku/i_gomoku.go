@@ -6,7 +6,7 @@ import (
 
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/ymohl-cl/game-builder/objects"
-	"github.com/ymohl-cl/game-builder/scenes"
+	"github.com/ymohl-cl/gomoku/scenes"
 )
 
 /*
@@ -14,81 +14,103 @@ import (
  */
 
 // Build describe the scene with objects needest
-func (G *Gomoku) Build() error {
+func (g *Gomoku) Build() error {
 	var err error
 
-	if err = G.addMusic(); err != nil {
+	if err = g.addMusic(); err != nil {
 		return err
 	}
-	if err = G.addBackground(); err != nil {
+	if err = g.addBackground(); err != nil {
 		return err
 	}
-
+	if err = g.addStructures(); err != nil {
+		return err
+	}
+	if err = g.addText(); err != nil {
+		return err
+	}
+	if err = g.addTokens(); err != nil {
+		return err
+	}
+	/*
+		if err = g.addButton(); err != nil {
+			return err
+		}
+		if err = g.addModal(); err != nil {
+			return err
+		}
+	*/
 	return nil
 }
 
 // Init the scene
-func (G *Gomoku) Init() error {
-	var err error
-
-	if G.renderer == nil {
+func (g *Gomoku) Init() error {
+	if g.renderer == nil {
 		return errors.New(objects.ErrorRenderer)
 	}
-
-	if err = G.Build(); err != nil {
-		return err
-	}
-
-	if G.layers == nil {
+	if g.layers == nil {
 		return errors.New(scenes.ErrorLayers)
 	}
-
-	if G.music == nil {
+	if g.music == nil {
 		return errors.New(scenes.ErrorMissing)
 	}
 
-	G.initialized = true
+	g.initialized = true
 	return nil
 }
 
 // IsInit return status initialize
-func (G *Gomoku) IsInit() bool {
-	return G.initialized
+func (g *Gomoku) IsInit() bool {
+	return g.initialized
 }
 
 // Run the scene
-func (G *Gomoku) Run() error {
+func (g *Gomoku) Run() error {
 	//	var err error
 	var wg sync.WaitGroup
 
-	if ok := G.music.IsInit(); ok {
+	if ok := g.music.IsInit(); ok {
 		wg.Add(1)
-		go G.music.Play(&wg, G.renderer)
+		go g.music.Play(&wg, g.renderer)
 		wg.Wait()
 	}
 	return nil
 }
 
+// Stop the scene
+func (g *Gomoku) Stop() {
+	if g.music.IsInit() {
+		if err := g.music.Close(); err != nil {
+			panic(err)
+		}
+	}
+}
+
 // Close the scene
-func (G *Gomoku) Close() error {
+func (g *Gomoku) Close() error {
 	var err error
 
-	G.initialized = false
-	if ok := G.music.IsInit(); ok {
-		if err = G.music.Close(); err != nil {
-			return err
-		}
+	g.initialized = false
+	g.m.Lock()
+	defer g.m.Unlock()
+	if err = objects.Closer(g.layers); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // GetLayers provide all scene's objects to draw them
-func (G *Gomoku) GetLayers() map[uint8][]objects.Object {
-	return G.layers
+func (g *Gomoku) GetLayers() (map[uint8][]objects.Object, *sync.Mutex) {
+	return g.layers, g.m
 }
 
 // KeyDownEvent provide key down to the scene
-func (G *Gomoku) KeyDownEvent(keyDown *sdl.KeyDownEvent) {
+func (g *Gomoku) KeyDownEvent(keyDown *sdl.KeyDownEvent) {
 	return
+}
+
+// SetSwitcher can be call to change scene with index scene and flag closer
+func (g *Gomoku) SetSwitcher(f func(uint8, bool) error) {
+	g.switcher = f
 }

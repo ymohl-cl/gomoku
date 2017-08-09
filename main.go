@@ -5,6 +5,7 @@ import (
 	"github.com/ymohl-cl/game-builder/scripter"
 	"github.com/ymohl-cl/gomoku/conf"
 	"github.com/ymohl-cl/gomoku/database"
+	"github.com/ymohl-cl/gomoku/scenes/gomoku"
 	"github.com/ymohl-cl/gomoku/scenes/loader"
 	"github.com/ymohl-cl/gomoku/scenes/menu"
 )
@@ -49,6 +50,13 @@ func main() {
 	// get and add stat scene
 
 	// get and add gomoku scene
+	var gameScene *gomoku.Gomoku
+	if gameScene, err = gomoku.New(data, d.GetRenderer()); err != nil {
+		panic(err)
+	}
+	if err = s.AddScene(gameScene, conf.SGame, false); err != nil {
+		panic(err)
+	}
 
 	// run application
 	s.Run(d)

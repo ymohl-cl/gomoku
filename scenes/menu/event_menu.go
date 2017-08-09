@@ -118,10 +118,11 @@ func (m *Menu) NewPlayer(values ...interface{}) {
 func (m *Menu) Play(values ...interface{}) {
 	var err error
 
-	conf.Current = conf.SGame
-	if err = m.Close(); err != nil {
-		panic(err)
-	}
+	go func() {
+		if err = m.switcher(conf.SGame, true); err != nil {
+			panic(err)
+		}
+	}()
 }
 
 // ResetName : reset the input value

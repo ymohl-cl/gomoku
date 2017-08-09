@@ -70,7 +70,10 @@ func (l *Load) Close() error {
 	var err error
 
 	l.initialized = false
-	if err = l.lastLoadBlock.Close(); err != nil {
+
+	l.m.Lock()
+	defer l.m.Unlock()
+	if err = objects.Closer(l.layers); err != nil {
 		return err
 	}
 

@@ -84,7 +84,15 @@ const ()
 
 // Game
 const (
-	GameMusic = ressources + "game_ambiant.wav"
+	GameMusic             = ressources + "game_ambiant.wav"
+	GameBoard             = ressources + "board.png"
+	GameMarkTokenBlack    = ressources + "token_mark_black.png"
+	GameMarkTokenWhite    = ressources + "token_mark_white.png"
+	GameTokenBlack        = ressources + "token_black.png"
+	GameTokenGold         = ressources + "token_gold.png"
+	GameTokenPurple       = ressources + "token_purple.png"
+	GameTokenWhite        = ressources + "token_white.png"
+	GameContentBlockWidth = 250
 )
 
 // Load

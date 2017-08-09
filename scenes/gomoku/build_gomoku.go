@@ -2,32 +2,167 @@ package gomoku
 
 import (
 	"github.com/ymohl-cl/game-builder/audio"
-	"github.com/ymohl-cl/game-builder/conf"
+	"github.com/ymohl-cl/game-builder/objects"
+	"github.com/ymohl-cl/game-builder/objects/block"
 	"github.com/ymohl-cl/game-builder/objects/image"
+	"github.com/ymohl-cl/game-builder/objects/text"
+	"github.com/ymohl-cl/gomoku/conf"
 )
 
-func (G *Gomoku) addMusic() error {
+func (g *Gomoku) addMusic() error {
 	var err error
 
-	G.music, err = audio.New(conf.GameMusic, 3)
+	g.music, err = audio.New(conf.GameMusic, 3)
 	if err != nil {
 		return err
 	}
 
-	if err = G.music.Init(G.renderer); err != nil {
+	if err = g.music.Init(g.renderer); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (G *Gomoku) addBackground() error {
+func (g *Gomoku) addBackground() error {
 	var i *image.Image
 	var err error
 
 	i = image.New(conf.MenuBackground, conf.OriginX, conf.OriginY, conf.WindowWidth, conf.WindowHeight)
-	if err = i.Init(G.renderer); err != nil {
+	if err = i.Init(g.renderer); err != nil {
 		return err
 	}
-	G.layers[layerBackground] = append(G.layers[layerBackground], i)
+	g.layers[layerBackground] = append(g.layers[layerBackground], i)
+	return nil
+}
+
+func (g *Gomoku) addStructures() error {
+	var b *block.Block
+	var err error
+	var x, y int32
+
+	// create blockheader
+	if b, err = block.New(block.Filled); err != nil {
+		return err
+	}
+	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
+	b.UpdatePosition(conf.OriginX, conf.MarginTop)
+	b.UpdateSize(conf.WindowWidth, conf.MenuHeaderHeight)
+	if err = b.Init(g.renderer); err != nil {
+		return err
+	}
+	g.layers[layerStructure] = append(g.layers[layerStructure], b)
+
+	// create block top left
+	y = conf.MarginTop + conf.MenuHeaderHeight + conf.PaddingBlock
+	if b, err = block.New(block.Filled); err != nil {
+		return err
+	}
+	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
+	b.UpdatePosition(conf.MarginLeft, y)
+	b.UpdateSize(conf.GameContentBlockWidth, conf.MenuContentMediumBlockHeight)
+	if err = b.Init(g.renderer); err != nil {
+		return err
+	}
+	g.layers[layerStructure] = append(g.layers[layerStructure], b)
+
+	// create block top right
+	x = conf.WindowWidth - conf.MarginRight - conf.GameContentBlockWidth
+	if b, err = block.New(block.Filled); err != nil {
+		return err
+	}
+	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
+	b.UpdatePosition(x, y)
+	b.UpdateSize(conf.GameContentBlockWidth, conf.MenuContentMediumBlockHeight)
+	if err = b.Init(g.renderer); err != nil {
+		return err
+	}
+	g.layers[layerStructure] = append(g.layers[layerStructure], b)
+
+	// create block botton right
+	y = conf.MarginTop + conf.MenuHeaderHeight + conf.PaddingBlock + conf.MenuContentMediumBlockHeight + conf.PaddingBlock
+	if b, err = block.New(block.Filled); err != nil {
+		return err
+	}
+	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
+	b.UpdatePosition(x, y)
+	b.UpdateSize(conf.GameContentBlockWidth, conf.MenuContentMediumBlockHeight)
+	if err = b.Init(g.renderer); err != nil {
+		return err
+	}
+	g.layers[layerStructure] = append(g.layers[layerStructure], b)
+
+	// create block bottom left
+	if b, err = block.New(block.Filled); err != nil {
+		return err
+	}
+	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
+	b.UpdatePosition(conf.MarginLeft, y)
+	b.UpdateSize(conf.GameContentBlockWidth, conf.MenuContentMediumBlockHeight)
+	if err = b.Init(g.renderer); err != nil {
+		return err
+	}
+	g.layers[layerStructure] = append(g.layers[layerStructure], b)
+
+	// create block footer
+	y = conf.WindowHeight - conf.MarginBot - conf.MenuFooterHeight
+	if b, err = block.New(block.Filled); err != nil {
+		return err
+	}
+	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
+	b.UpdatePosition(conf.OriginX, y)
+	b.UpdateSize(conf.WindowWidth, conf.MenuHeaderHeight)
+	if err = b.Init(g.renderer); err != nil {
+		return err
+	}
+	g.layers[layerStructure] = append(g.layers[layerStructure], b)
+
+	return nil
+}
+
+func (g *Gomoku) addText() error {
+	var t *text.Text
+	var err error
+	var y, x int32
+
+	p1 := g.data.Current.P1
+	p2 := g.data.Current.P2
+	x = conf.WindowWidth / 2
+	y = conf.MarginTop + (conf.MenuHeaderHeight / 2)
+	if t, err = text.New(p1.Name+" VS "+p2.Name, conf.TxtLarge, conf.Font, x, y); err != nil {
+		return err
+	}
+	t.SetVariantStyle(conf.ColorTxtRed, conf.ColorTxtGreen, conf.ColorTxtBlue, conf.ColorTxtOpacity, objects.SFix)
+	t.SetVariantUnderStyle(conf.ColorUnderTxtRed, conf.ColorUnderTxtGreen, conf.ColorUnderTxtBlue, conf.ColorUnderTxtOpacity, objects.SFix)
+	t.SetUnderPosition(x-conf.TxtUnderPadding, y-conf.TxtUnderPadding)
+	if err = t.Init(g.renderer); err != nil {
+		return err
+	}
+	g.layers[layerText] = append(g.layers[layerText], t)
+
+	return nil
+}
+
+func (g *Gomoku) addTokens() error {
+	var img *image.Image
+	var err error
+	var x, y int32
+
+	x = (conf.WindowWidth / 2) - (250 + 5)
+	y = (conf.WindowHeight / 2) - (250 + 5)
+
+	for yi := 0; yi < 19; yi++ {
+		for i := 0; i < 19; i++ {
+			img = image.New(conf.GameMarkTokenBlack, x, y, 22, 22)
+			img.SetVariantStyle(conf.GameMarkTokenBlack, conf.GameTokenBlack, conf.GameMarkTokenBlack)
+			img.SetAction(g.selectToken, yi, i)
+			if err = img.Init(g.renderer); err != nil {
+				panic(err)
+			}
+			g.layers[layerToken] = append(g.layers[layerToken], img)
+			x += 22 + 5
+		}
+		x = (conf.WindowWidth / 2) - (250 + 5)
+		y += 22 + 5
+	}
 	return nil
 }

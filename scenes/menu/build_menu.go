@@ -52,7 +52,7 @@ func (m *Menu) addStructuresPage() error {
 	b.UpdatePosition(conf.OriginX, conf.MarginTop)
 	b.UpdateSize(conf.WindowWidth, conf.MenuHeaderHeight)
 	if err = b.Init(m.renderer); err != nil {
-		return nil
+		return err
 	}
 	m.layers[layerStructure] = append(m.layers[layerStructure], b)
 
@@ -65,7 +65,7 @@ func (m *Menu) addStructuresPage() error {
 	b.UpdatePosition(conf.MarginLeft, y)
 	b.UpdateSize(conf.MenuContentBlockWidth, conf.MenuContentLargeBlockHeight)
 	if err = b.Init(m.renderer); err != nil {
-		return nil
+		return err
 	}
 	m.layers[layerStructure] = append(m.layers[layerStructure], b)
 
@@ -78,7 +78,7 @@ func (m *Menu) addStructuresPage() error {
 	b.UpdatePosition(x, y)
 	b.UpdateSize(conf.MenuContentBlockWidth, conf.MenuContentMediumBlockHeight)
 	if err = b.Init(m.renderer); err != nil {
-		return nil
+		return err
 	}
 	m.layers[layerStructure] = append(m.layers[layerStructure], b)
 
@@ -91,7 +91,7 @@ func (m *Menu) addStructuresPage() error {
 	b.UpdatePosition(x, y)
 	b.UpdateSize(conf.MenuContentBlockWidth, conf.MenuContentMediumBlockHeight)
 	if err = b.Init(m.renderer); err != nil {
-		return nil
+		return err
 	}
 	m.layers[layerStructure] = append(m.layers[layerStructure], b)
 
@@ -104,7 +104,7 @@ func (m *Menu) addStructuresPage() error {
 	b.UpdatePosition(conf.OriginX, y)
 	b.UpdateSize(conf.WindowWidth, conf.MenuHeaderHeight)
 	if err = b.Init(m.renderer); err != nil {
-		return nil
+		return err
 	}
 	m.layers[layerStructure] = append(m.layers[layerStructure], b)
 
