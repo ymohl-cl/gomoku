@@ -6,6 +6,7 @@ import (
 
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/ymohl-cl/game-builder/objects"
+	"github.com/ymohl-cl/gomoku/game"
 	"github.com/ymohl-cl/gomoku/scenes"
 )
 
@@ -45,6 +46,11 @@ func (g *Gomoku) Build() error {
 
 // Init the scene
 func (g *Gomoku) Init() error {
+	var err error
+
+	if g.game, err = game.New(g.data); err != nil {
+		return err
+	}
 	if g.renderer == nil {
 		return errors.New(objects.ErrorRenderer)
 	}
@@ -74,6 +80,7 @@ func (g *Gomoku) Run() error {
 		go g.music.Play(&wg, g.renderer)
 		wg.Wait()
 	}
+	g.game.Playing()
 	return nil
 }
 

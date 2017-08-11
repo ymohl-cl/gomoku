@@ -1,12 +1,20 @@
 package gomoku
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/ymohl-cl/game-builder/audio"
 	"github.com/ymohl-cl/game-builder/objects"
 	"github.com/ymohl-cl/game-builder/objects/block"
 	"github.com/ymohl-cl/game-builder/objects/image"
 	"github.com/ymohl-cl/game-builder/objects/text"
 	"github.com/ymohl-cl/gomoku/conf"
+	"github.com/ymohl-cl/gomoku/database"
+)
+
+const (
+	errorNotInit = "you can't do this action because gomoku scene is not initialized"
 )
 
 func (g *Gomoku) addMusic() error {
@@ -151,10 +159,10 @@ func (g *Gomoku) addTokens() error {
 	y = (conf.WindowHeight / 2) - (250 + 5)
 
 	for yi := 0; yi < 19; yi++ {
-		for i := 0; i < 19; i++ {
+		for xi := 0; xi < 19; xi++ {
 			img = image.New(conf.GameMarkTokenBlack, x, y, 22, 22)
 			img.SetVariantStyle(conf.GameMarkTokenBlack, conf.GameTokenBlack, conf.GameMarkTokenBlack)
-			img.SetAction(g.selectToken, yi, i)
+			img.SetAction(g.selectToken, uint8(yi), uint8(xi))
 			if err = img.Init(g.renderer); err != nil {
 				panic(err)
 			}
@@ -164,5 +172,38 @@ func (g *Gomoku) addTokens() error {
 		x = (conf.WindowWidth / 2) - (250 + 5)
 		y += 22 + 5
 	}
+	fmt.Println("Len graphic board: ", len(g.layers[layerToken]))
+	return nil
+}
+
+func (g *Gomoku) ChangeToken(x, y uint8, p *database.Player) error {
+	var posX, posY int32
+	var img *image.Image
+	var err error
+	var iX, iY int32
+
+	iX = int32(x)
+	iY = int32(y)
+	if !g.IsInit() {
+		return errors.New(errorNotInit)
+	}
+	posX, posY = g.layers[layerToken][iY*19+iX].GetPosition()
+	if p == g.data.Current.P1 {
+		img = image.New(conf.GameTokenWhite, posX, posY, 22, 22)
+	} else {
+		img = image.New(conf.GameTokenGold, posX, posY, 22, 22)
+	}
+
+	tmp := g.layers[layerToken][iY*19+iX]
+	if err = img.Init(g.renderer); err != nil {
+		return err
+	}
+	g.m.Lock()
+	g.layers[layerToken][iY*19+iX] = img
+	g.m.Unlock()
+	if err = tmp.Close(); err != nil {
+		return err
+	}
+
 	return nil
 }

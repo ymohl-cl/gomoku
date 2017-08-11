@@ -8,6 +8,7 @@ import (
 	"github.com/ymohl-cl/game-builder/audio"
 	"github.com/ymohl-cl/game-builder/objects"
 	"github.com/ymohl-cl/gomoku/database"
+	"github.com/ymohl-cl/gomoku/game"
 )
 
 const (
@@ -25,6 +26,7 @@ type Gomoku struct {
 	/* infos scene */
 	initialized bool
 	switcher    func(uint8, bool) error
+	game        *game.Game
 
 	/* objects by layers */
 	m      *sync.Mutex
