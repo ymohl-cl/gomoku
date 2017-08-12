@@ -2,10 +2,12 @@ package gomoku
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/ymohl-cl/game-builder/objects"
+	"github.com/ymohl-cl/gomoku/controller"
 	"github.com/ymohl-cl/gomoku/game"
 	"github.com/ymohl-cl/gomoku/scenes"
 )
@@ -27,16 +29,19 @@ func (g *Gomoku) Build() error {
 	if err = g.addStructures(); err != nil {
 		return err
 	}
+	if err = g.addBlockTime(); err != nil {
+		return err
+	}
 	if err = g.addText(); err != nil {
 		return err
 	}
 	if err = g.addTokens(); err != nil {
 		return err
 	}
+	if err = g.addButtons(); err != nil {
+		return err
+	}
 	/*
-		if err = g.addButton(); err != nil {
-			return err
-		}
 		if err = g.addModal(); err != nil {
 			return err
 		}
@@ -80,7 +85,7 @@ func (g *Gomoku) Run() error {
 		go g.music.Play(&wg, g.renderer)
 		wg.Wait()
 	}
-	g.game.Playing()
+	g.game.Run()
 	return nil
 }
 
@@ -120,4 +125,21 @@ func (g *Gomoku) KeyDownEvent(keyDown *sdl.KeyDownEvent) {
 // SetSwitcher can be call to change scene with index scene and flag closer
 func (g *Gomoku) SetSwitcher(f func(uint8, bool) error) {
 	g.switcher = f
+}
+
+// Update : called on each frame
+func (g *Gomoku) Update() {
+	var err error
+
+	duration := g.game.GetTimeGame()
+	str := controller.TimeToString(duration)
+	// check if need to change
+	if g.timer.GetTxt() == str {
+		fmt.Println("Yooo")
+		return
+	}
+
+	if err = g.timer.UpdateText(str, g.renderer); err != nil {
+		panic(err)
+	}
 }

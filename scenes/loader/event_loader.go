@@ -1,62 +1,23 @@
 package loader
 
-import (
-	"time"
-
-	"github.com/ymohl-cl/game-builder/objects"
-	"github.com/ymohl-cl/game-builder/objects/block"
-	"github.com/ymohl-cl/gomoku/conf"
-)
+import "github.com/ymohl-cl/gomoku/conf"
 
 /*
 ** Endpoint action from objects click
  */
 
 func (l *Load) addLoadingBar() {
-	var b *block.Block
-	var err error
-	var loop bool
-
-	loop = true
-	for loop {
-		select {
-		case <-l.closer:
-			loop = false
-		default:
-			if b, err = l.lastLoadBlock.Clone(l.renderer); err != nil {
-				panic(err)
-			}
-			x, y := l.lastLoadBlock.GetPosition()
-			if x+conf.LoadBlockWidth*2 > conf.WindowWidth-conf.LoadBlockWidth {
-				l.resetLoadingBlock()
-			} else {
-				b.UpdatePosition(x+conf.LoadBlockWidth, y)
-				l.m.Lock()
-				l.layers[layerLoadingBar] = append(l.layers[layerLoadingBar], b)
-				l.m.Unlock()
-				l.lastLoadBlock = b
-			}
-		}
-		time.Sleep(100 * time.Millisecond)
+	x, _ := l.loadBlock.GetPosition()
+	w, h := l.loadBlock.GetSize()
+	// check next width [padding x + blockWidt] + [width current] + [width next block]
+	if x+conf.LoadBlockWidth+w+conf.LoadBlockWidth > conf.WindowWidth-conf.LoadBlockWidth {
+		l.resetLoadingBlock()
+	} else {
+		l.loadBlock.UpdateSize(w+conf.LoadBlockWidth, h)
 	}
-	l.resetLoadingBlock()
 }
 
 func (l *Load) resetLoadingBlock() {
-	l.m.Lock()
-	l.lastLoadBlock = l.layers[layerLoadingBar][0].(*block.Block)
-	del := l.layers[layerLoadingBar][1:]
-	l.layers[layerLoadingBar] = l.layers[layerLoadingBar][:1]
-	l.m.Unlock()
-	go clearLoadingBar(del)
-}
-
-func clearLoadingBar(sl []objects.Object) {
-	var err error
-
-	for _, v := range sl {
-		if err = v.Close(); err != nil {
-			panic(err)
-		}
-	}
+	_, h := l.loadBlock.GetSize()
+	l.loadBlock.UpdateSize(conf.LoadBlockWidth, h)
 }

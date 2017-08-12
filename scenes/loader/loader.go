@@ -23,13 +23,12 @@ const (
 type Load struct {
 	/* infos scene */
 	initialized bool
-	closer      chan (bool)
 	refresh     bool
 
 	/* objects by layers */
-	m             *sync.Mutex
-	layers        map[uint8][]objects.Object
-	lastLoadBlock *block.Block
+	m         *sync.Mutex
+	layers    map[uint8][]objects.Object
+	loadBlock *block.Block
 
 	/* specific objects */
 
@@ -49,7 +48,6 @@ func New(d *database.Data, r *sdl.Renderer) (*Load, error) {
 
 	l := Load{renderer: r}
 	l.layers = make(map[uint8][]objects.Object)
-	l.closer = make(chan (bool))
 	l.m = new(sync.Mutex)
 	return &l, nil
 }

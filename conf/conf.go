@@ -117,7 +117,7 @@ const (
 	ColorButtonRed     = 95
 	ColorButtonGreen   = 74
 	ColorButtonBlue    = 29
-	ColorButtonOpacity = 200
+	ColorButtonOpacity = 255
 
 	ColorOverButtonRed     = 116
 	ColorOverButtonGreen   = 108

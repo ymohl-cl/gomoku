@@ -23,9 +23,10 @@ const (
 )
 
 type Game struct {
-	players playersInfo
-	board   [][]uint8
-	timer   time.Time
+	players   playersInfo
+	board     [][]uint8
+	timerPlay time.Time
+	timerGame time.Time
 }
 
 type playersInfo struct {
@@ -87,7 +88,7 @@ func (g *Game) Move(x, y uint8) error {
 	}
 
 	// create stat move
-	s := stats.New(x, y, time.Since(g.timer), false)
+	s := stats.New(x, y, time.Since(g.timerPlay), false)
 
 	// applies move and change current player
 	if g.players.currentPlayer == g.players.p1 {
@@ -104,5 +105,18 @@ func (g *Game) Move(x, y uint8) error {
 }
 
 func (g *Game) Playing() {
-	g.timer = time.Now()
+	g.timerPlay = time.Now()
+}
+
+func (g *Game) Run() {
+	g.Playing()
+	g.timerGame = time.Now()
+}
+
+func (g *Game) GetTimeToPlay() time.Duration {
+	return time.Since(g.timerPlay)
+}
+
+func (g *Game) GetTimeGame() time.Duration {
+	return time.Since(g.timerGame)
 }

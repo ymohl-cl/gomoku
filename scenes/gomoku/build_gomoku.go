@@ -7,10 +7,12 @@ import (
 	"github.com/ymohl-cl/game-builder/audio"
 	"github.com/ymohl-cl/game-builder/objects"
 	"github.com/ymohl-cl/game-builder/objects/block"
+	"github.com/ymohl-cl/game-builder/objects/button"
 	"github.com/ymohl-cl/game-builder/objects/image"
 	"github.com/ymohl-cl/game-builder/objects/text"
 	"github.com/ymohl-cl/gomoku/conf"
 	"github.com/ymohl-cl/gomoku/database"
+	"github.com/ymohl-cl/gomoku/scenes/builder"
 )
 
 const (
@@ -205,5 +207,86 @@ func (g *Gomoku) ChangeToken(x, y uint8, p *database.Player) error {
 		return err
 	}
 
+	return nil
+}
+
+func (g *Gomoku) addButtons() error {
+	var err error
+	var b *button.Button
+
+	if b, err = g.getButtonQuit(); err != nil {
+		return err
+	}
+	if err = b.Init(g.renderer); err != nil {
+		return err
+	}
+	g.layers[layerButton] = append(g.layers[layerButton], b)
+	return nil
+}
+
+func (g *Gomoku) getButtonQuit() (*button.Button, error) {
+	var x, y int32
+	var t *text.Text
+	var bl *block.Block
+	var b *button.Button
+	var err error
+
+	y = conf.WindowHeight - conf.MarginBot - (conf.MenuFooterHeight / 2) - (conf.ButtonHeight / 2)
+	x = conf.WindowWidth - conf.MarginRight - conf.ButtonWidth
+
+	// create block
+	if bl, err = builder.CreateBlockToDefaultButton(x, y, conf.ButtonWidth, conf.ButtonHeight); err != nil {
+		return nil, err
+	}
+
+	// create txt
+	if t, err = builder.CreateTxtToButton(x+conf.ButtonWidth/2, y+conf.ButtonHeight/2, "QUIT !"); err != nil {
+		return nil, err
+	}
+
+	b = button.New(bl, nil, t)
+	b.SetAction(g.quit)
+
+	return b, nil
+}
+
+func (g *Gomoku) addBlockTime() error {
+	var b *block.Block
+	var t *text.Text
+	var x, y int32
+	var err error
+
+	y = conf.WindowHeight - conf.MarginBot - (conf.MenuFooterHeight / 2) - (conf.ButtonHeight / 2)
+	x = conf.MarginLeft
+
+	if b, err = block.New(block.Filled); err != nil {
+		return err
+	}
+	// Set style fix and basic
+	if err = b.SetVariantStyle(conf.ColorOverButtonRed, conf.ColorOverButtonGreen, conf.ColorOverButtonBlue, conf.ColorOverButtonOpacity, objects.SFix); err != nil {
+		return err
+	}
+	// Set position
+	b.UpdatePosition(x, y)
+	// Set size
+	b.UpdateSize(conf.ButtonWidth, conf.ButtonHeight)
+
+	if err = b.Init(g.renderer); err != nil {
+		return err
+	}
+	g.layers[layerBlockTime] = append(g.layers[layerBlockTime], b)
+
+	y += conf.ButtonHeight / 2
+	x += conf.ButtonWidth / 2
+	if t, err = text.New("00:00:00", conf.TxtMedium, conf.Font, x, y); err != nil {
+		return err
+	}
+	t.SetVariantStyle(conf.ColorTxtRed, conf.ColorTxtGreen, conf.ColorTxtBlue, conf.ColorTxtOpacity, objects.SFix)
+	if err = t.Init(g.renderer); err != nil {
+		return err
+	}
+
+	g.layers[layerText] = append(g.layers[layerText], t)
+	g.timer = t
 	return nil
 }

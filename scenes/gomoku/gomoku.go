@@ -7,6 +7,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/ymohl-cl/game-builder/audio"
 	"github.com/ymohl-cl/game-builder/objects"
+	"github.com/ymohl-cl/game-builder/objects/text"
 	"github.com/ymohl-cl/gomoku/database"
 	"github.com/ymohl-cl/gomoku/game"
 )
@@ -15,9 +16,11 @@ const (
 	// order layers of scene
 	layerBackground = iota
 	layerStructure
-	layerText
+	layerBlockTime
 	layerToken
 	layerButton
+	layerText
+	layerNotice
 	layerModal
 )
 
@@ -32,6 +35,9 @@ type Gomoku struct {
 	m      *sync.Mutex
 	layers map[uint8][]objects.Object
 	music  *audio.Audio
+	notice *text.Text
+	timer  *text.Text
+	// input
 
 	/* specific objects */
 

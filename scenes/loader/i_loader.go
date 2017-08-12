@@ -41,7 +41,7 @@ func (l *Load) Init() error {
 	if len(l.layers) != nbrLayers {
 		return errors.New(scenes.ErrorLayers)
 	}
-	if l.lastLoadBlock == nil {
+	if l.loadBlock == nil {
 		return errors.New(scenes.ErrorLayers)
 	}
 
@@ -56,13 +56,14 @@ func (l Load) IsInit() bool {
 
 // Run the scene
 func (l *Load) Run() error {
-	go l.addLoadingBar()
+	//	go l.addLoadingBar()
 	return nil
 }
 
 // Stop scene
 func (l *Load) Stop() {
-	l.closer <- true
+	l.resetLoadingBlock()
+	//	l.closer <- true
 }
 
 // Close the scene
@@ -92,5 +93,11 @@ func (l *Load) KeyDownEvent(keyDown *sdl.KeyDownEvent) {
 
 // SetSwitcher can be call to change scene with index scene and flag closer
 func (l *Load) SetSwitcher(f func(uint8, bool) error) {
+	return
+}
+
+// Update : called on each frame
+func (l *Load) Update() {
+	l.addLoadingBar()
 	return
 }

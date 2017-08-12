@@ -136,3 +136,8 @@ func (m *Menu) KeyDownEvent(keyDown *sdl.KeyDownEvent) {
 func (m *Menu) SetSwitcher(f func(uint8, bool) error) {
 	m.switcher = f
 }
+
+// Update : called on each frame
+func (m *Menu) Update() {
+	return
+}

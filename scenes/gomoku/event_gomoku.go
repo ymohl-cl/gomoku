@@ -3,6 +3,8 @@ package gomoku
 import (
 	"errors"
 	"fmt"
+
+	"github.com/ymohl-cl/gomoku/conf"
 )
 
 func (g *Gomoku) selectToken(values ...interface{}) {
@@ -64,4 +66,8 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 			applie draw
 		}
 	*/
+}
+
+func (g *Gomoku) quit(values ...interface{}) {
+	g.switcher(conf.SMenu, true)
 }

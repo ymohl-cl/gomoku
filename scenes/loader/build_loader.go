@@ -35,7 +35,7 @@ func (l *Load) addBlockLoading() error {
 		return err
 	}
 	l.layers[layerLoadingBar] = append(l.layers[layerLoadingBar], b)
-	l.lastLoadBlock = b
+	l.loadBlock = b
 	return nil
 }
 
