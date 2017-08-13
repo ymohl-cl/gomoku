@@ -2,7 +2,6 @@ package gomoku
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -46,6 +45,8 @@ func (g *Gomoku) Build() error {
 			return err
 		}
 	*/
+	g.layers[layerHistoryBlock] = nil
+	g.layers[layerHistoryText] = nil
 	return nil
 }
 
@@ -135,7 +136,6 @@ func (g *Gomoku) Update() {
 	str := controller.TimeToString(duration)
 	// check if need to change
 	if g.timer.GetTxt() == str {
-		fmt.Println("Yooo")
 		return
 	}
 

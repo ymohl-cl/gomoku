@@ -2,7 +2,6 @@ package gomoku
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/ymohl-cl/gomoku/conf"
 )
@@ -27,18 +26,26 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 		}
 	}
 
-	fmt.Println("y: ", y)
-	fmt.Println("x: ", x)
+	player := g.game.GetCurrentPlayer()
 	if err = g.game.Move(x, y); err != nil {
 		// setNotice
 		panic(err)
 	}
+	durationToPlay := g.game.GetTimeToPlay()
 
 	go func() {
-		if err = g.ChangeToken(x, y, g.game.GetCurrentPlayer()); err != nil {
+		if err = g.ChangeToken(x, y, player); err != nil {
 			panic(err)
 		}
 	}()
+
+	go func() {
+		if err = g.addHistory(x, y, durationToPlay, player); err != nil {
+			panic(err)
+		}
+	}()
+
+	g.game.Playing()
 	/*
 		 if p must play and p == ia {
 		 	setNotice(it's not you which must play)

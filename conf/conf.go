@@ -93,6 +93,9 @@ const (
 	GameTokenPurple       = ressources + "token_purple.png"
 	GameTokenWhite        = ressources + "token_white.png"
 	GameContentBlockWidth = 250
+	GameHistoryWidth      = 250
+	GameHistoryHeight     = 25
+	GameHistoryPadding    = 2
 )
 
 // Load

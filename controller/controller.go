@@ -5,12 +5,12 @@ import (
 	"time"
 )
 
-type Control Gomoku;Menu {
+/*type Control Gomoku;Menu {
 	notice *text.Text
 	renderer *sdl.Renderer
-}
+}*/
 
-func (c *Control) SetNotice(str string) {
+/*func (c *Control) SetNotice(str string) {
 	idSDL := c.notice.NewIDSDL()
 	if c.notice.IsInit() == true {
 		c.notice.Close()
@@ -23,7 +23,7 @@ func (c *Control) SetNotice(str string) {
 	if c.notice.GetIDSDL() == idSDL {
 		c.notice.Close()
 	}
-}
+}*/
 
 // TimeToString transform duration to string with format 00:00:00
 func TimeToString(d time.Duration) string {

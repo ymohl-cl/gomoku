@@ -20,6 +20,8 @@ const (
 	layerToken
 	layerButton
 	layerText
+	layerHistoryBlock
+	layerHistoryText
 	layerNotice
 	layerModal
 )
@@ -35,8 +37,8 @@ type Gomoku struct {
 	m      *sync.Mutex
 	layers map[uint8][]objects.Object
 	music  *audio.Audio
-	notice *text.Text
-	timer  *text.Text
+	//	notice *text.Text
+	timer *text.Text
 	// input
 
 	/* specific objects */

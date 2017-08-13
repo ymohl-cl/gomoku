@@ -2,7 +2,6 @@ package gomoku
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/ymohl-cl/game-builder/audio"
 	"github.com/ymohl-cl/game-builder/objects"
@@ -62,52 +61,27 @@ func (g *Gomoku) addStructures() error {
 	}
 	g.layers[layerStructure] = append(g.layers[layerStructure], b)
 
-	// create block top left
+	// create block left
 	y = conf.MarginTop + conf.MenuHeaderHeight + conf.PaddingBlock
 	if b, err = block.New(block.Filled); err != nil {
 		return err
 	}
 	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
 	b.UpdatePosition(conf.MarginLeft, y)
-	b.UpdateSize(conf.GameContentBlockWidth, conf.MenuContentMediumBlockHeight)
+	b.UpdateSize(conf.GameContentBlockWidth, conf.MenuContentLargeBlockHeight)
 	if err = b.Init(g.renderer); err != nil {
 		return err
 	}
 	g.layers[layerStructure] = append(g.layers[layerStructure], b)
 
-	// create block top right
+	// create block right
 	x = conf.WindowWidth - conf.MarginRight - conf.GameContentBlockWidth
 	if b, err = block.New(block.Filled); err != nil {
 		return err
 	}
 	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
 	b.UpdatePosition(x, y)
-	b.UpdateSize(conf.GameContentBlockWidth, conf.MenuContentMediumBlockHeight)
-	if err = b.Init(g.renderer); err != nil {
-		return err
-	}
-	g.layers[layerStructure] = append(g.layers[layerStructure], b)
-
-	// create block botton right
-	y = conf.MarginTop + conf.MenuHeaderHeight + conf.PaddingBlock + conf.MenuContentMediumBlockHeight + conf.PaddingBlock
-	if b, err = block.New(block.Filled); err != nil {
-		return err
-	}
-	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
-	b.UpdatePosition(x, y)
-	b.UpdateSize(conf.GameContentBlockWidth, conf.MenuContentMediumBlockHeight)
-	if err = b.Init(g.renderer); err != nil {
-		return err
-	}
-	g.layers[layerStructure] = append(g.layers[layerStructure], b)
-
-	// create block bottom left
-	if b, err = block.New(block.Filled); err != nil {
-		return err
-	}
-	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SFix)
-	b.UpdatePosition(conf.MarginLeft, y)
-	b.UpdateSize(conf.GameContentBlockWidth, conf.MenuContentMediumBlockHeight)
+	b.UpdateSize(conf.GameContentBlockWidth, conf.MenuContentLargeBlockHeight)
 	if err = b.Init(g.renderer); err != nil {
 		return err
 	}
@@ -174,10 +148,10 @@ func (g *Gomoku) addTokens() error {
 		x = (conf.WindowWidth / 2) - (250 + 5)
 		y += 22 + 5
 	}
-	fmt.Println("Len graphic board: ", len(g.layers[layerToken]))
 	return nil
 }
 
+// ChangeToken update token status and color selected by player
 func (g *Gomoku) ChangeToken(x, y uint8, p *database.Player) error {
 	var posX, posY int32
 	var img *image.Image
