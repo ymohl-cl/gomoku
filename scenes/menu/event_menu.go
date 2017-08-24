@@ -49,7 +49,13 @@ func (m *Menu) DeletePlayer(values ...interface{}) {
 
 // DrawStat : on user selected
 func (m *Menu) DrawStat(values ...interface{}) {
-	fmt.Println("Draw stat")
+	var err error
+
+	go func() {
+		if err = m.switcher(conf.SStats, false); err != nil {
+			panic(err)
+		}
+	}()
 }
 
 // SelectPlayer : to the futur game

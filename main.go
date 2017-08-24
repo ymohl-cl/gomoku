@@ -8,6 +8,7 @@ import (
 	"github.com/ymohl-cl/gomoku/scenes/gomoku"
 	"github.com/ymohl-cl/gomoku/scenes/loader"
 	"github.com/ymohl-cl/gomoku/scenes/menu"
+	"github.com/ymohl-cl/gomoku/scenes/stats"
 )
 
 func main() {
@@ -47,7 +48,14 @@ func main() {
 		panic(err)
 	}
 
-	// get and add stat scene
+	// get and add stats scene
+	var statsScene *stats.Stats
+	if statsScene, err = stats.New(data, d.GetRenderer()); err != nil {
+		panic(err)
+	}
+	if err = s.AddScene(statsScene, conf.SStats, false); err != nil {
+		panic(err)
+	}
 
 	// get and add gomoku scene
 	var gameScene *gomoku.Gomoku

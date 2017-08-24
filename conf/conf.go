@@ -11,7 +11,7 @@ var Current uint8
 // Scenes list
 const (
 	SMenu = 1 << iota
-	SStat
+	SStats
 	SGame
 )
 
@@ -79,8 +79,21 @@ const (
 	MenuIconWidth                = 30
 )
 
-// Stat
-const ()
+// Stats
+const (
+	StatsMusic          = ressources + "menuambiant.wav"
+	StatsBackground     = ressources + "background.bmp"
+
+	/* size elements */
+	StatsHeaderHeight             = 102
+	StatsFooterHeight             = 102
+	StatsContentBlockWidth        = 500
+	StatsContentLargeBlockHeight  = 500
+	StatsContentMediumBlockHeight = (MenuContentLargeBlockHeight - PaddingBlock) / 2
+	StatsElementPlayerHeight      = 30
+	StatsElementPlayerWidth       = 395
+	StatsElementPadding           = 5
+)
 
 // Game
 const (
