@@ -2,7 +2,6 @@ package gomoku
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/ymohl-cl/gomoku/conf"
 )
@@ -62,7 +61,6 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 
 	caps := g.game.GetCaptures()
 	for i, _ := range caps {
-		fmt.Println("Delete one")
 		xt := caps[i].X
 		yt := caps[i].Y
 		go func() {
