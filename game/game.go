@@ -7,16 +7,11 @@ import (
 	"time"
 
 	"github.com/ymohl-cl/gomoku/database"
+	"github.com/ymohl-cl/gomoku/game/ruler"
 	"github.com/ymohl-cl/gomoku/game/stats"
 )
 
 const (
-	tokenEmpty = 0
-	tokenP1    = 1
-	tokenP2    = 2
-	sizeY      = 19
-	sizeX      = 19
-
 	errorData   = "data provided to game is empty"
 	errorPlayer = "missing player to run the game"
 	errorMove   = "this move is not possible"
@@ -27,6 +22,7 @@ type Game struct {
 	board     [][]uint8
 	timerPlay time.Time
 	timerGame time.Time
+	rules     *ruler.Rules
 }
 
 type playersInfo struct {
@@ -74,38 +70,59 @@ func (g Game) GetCurrentPlayer() *database.Player {
 	return g.players.currentPlayer
 }
 
-func (g Game) CheckMove(x, y uint8) bool {
-	if g.board[y][x] == tokenEmpty {
-		return true
-	}
-	return false
-}
-
-func (g *Game) Move(x, y uint8) error {
-	// veriff move
-	if !g.CheckMove(x, y) {
-		return errors.New(errorMove)
-	}
-
+func (g *Game) AppliesMove(x, y uint8) {
 	// create stat move
 	s := stats.New(x, y, time.Since(g.timerPlay), false)
 
-	// applies move and change current player
 	if g.players.currentPlayer == g.players.p1 {
-		g.board[y][x] = tokenP1
+		g.board[y][x] = ruler.TokenP1
 		g.players.statsP1 = append(g.players.statsP1, s)
+	} else {
+		g.board[y][x] = ruler.TokenP2
+		g.players.statsP2 = append(g.players.statsP2, s)
+	}
+}
+
+func (g *Game) SwitchPlayer() {
+	if g.players.currentPlayer == g.players.p1 {
 		g.players.currentPlayer = g.players.p2
 	} else {
-		g.board[y][x] = tokenP2
-		g.players.statsP2 = append(g.players.statsP2, s)
 		g.players.currentPlayer = g.players.p1
 	}
+}
 
+func (g *Game) Move(x, y uint8) error {
+	g.rules = ruler.New()
+
+	// veriff move
+	if b, str := g.rules.CheckMove(g.board, int8(x), int8(y)); b == false {
+		return errors.New(errorMove + str)
+	}
+
+	g.AppliesMove(x, y)
+	// check and save capture token
+	var valueToken uint8
+	if g.players.currentPlayer == g.players.p1 {
+		valueToken = ruler.TokenP1
+	} else {
+		valueToken = ruler.TokenP2
+	}
+	g.rules.CheckCapture(g.board, int8(x), int8(y), valueToken)
+	for _, cap := range g.rules.GetCaptures() {
+		g.board[cap.Y][cap.X] = ruler.TokenEmpty
+	}
+
+	g.SwitchPlayer()
 	return nil
+}
+
+func (g Game) GetCaptures() []ruler.Capture {
+	return g.rules.GetCaptures()
 }
 
 func (g *Game) Playing() {
 	g.timerPlay = time.Now()
+	g.rules = nil
 }
 
 func (g *Game) Run() {

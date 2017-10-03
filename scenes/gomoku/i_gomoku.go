@@ -87,6 +87,7 @@ func (g *Gomoku) Run() error {
 		wg.Wait()
 	}
 	g.game.Run()
+	g.initMove()
 	return nil
 }
 

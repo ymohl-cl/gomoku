@@ -2,9 +2,34 @@ package gomoku
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ymohl-cl/gomoku/conf"
 )
+
+func (g *Gomoku) initMove() {
+	var x, y uint8 = 9, 9
+	var err error
+
+	player := g.game.GetCurrentPlayer()
+	g.game.AppliesMove(x, y)
+	g.game.SwitchPlayer()
+	durationToPlay := g.game.GetTimeToPlay()
+
+	go func() {
+		if err = g.ChangeToken(x, y, player); err != nil {
+			panic(err)
+		}
+	}()
+
+	go func() {
+		if err = g.addHistory(x, y, durationToPlay, player); err != nil {
+			panic(err)
+		}
+	}()
+
+	g.game.Playing()
+}
 
 func (g *Gomoku) selectToken(values ...interface{}) {
 	var x, y uint8
@@ -29,9 +54,20 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 	player := g.game.GetCurrentPlayer()
 	if err = g.game.Move(x, y); err != nil {
 		// setNotice
-		panic(err)
+		println("crash", err.Error())
+		println("x: ", x, "y: ", y)
+		return
 	}
 	durationToPlay := g.game.GetTimeToPlay()
+
+	for _, cap := range g.game.GetCaptures() {
+		fmt.Println("Delete one")
+		go func() {
+			if err = g.RestoreToken(uint8(cap.X), uint8(cap.Y), player); err != nil {
+				panic(err)
+			}
+		}()
+	}
 
 	go func() {
 		if err = g.ChangeToken(x, y, player); err != nil {

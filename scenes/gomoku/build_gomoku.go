@@ -151,6 +151,38 @@ func (g *Gomoku) addTokens() error {
 	return nil
 }
 
+// RestoreToken restore the initial token
+func (g *Gomoku) RestoreToken(x, y uint8, p *database.Player) error {
+	var posX, posY int32
+	var img *image.Image
+	var err error
+	var iX, iY int32
+
+	iX = int32(x)
+	iY = int32(y)
+	if !g.IsInit() {
+		return errors.New(errorNotInit)
+	}
+	posX, posY = g.layers[layerToken][iY*19+iX].GetPosition()
+
+	img = image.New(conf.GameMarkTokenBlack, posX, posY, 22, 22)
+	img.SetVariantStyle(conf.GameMarkTokenBlack, conf.GameTokenBlack, conf.GameMarkTokenBlack)
+	img.SetAction(g.selectToken, y, x)
+	if err = img.Init(g.renderer); err != nil {
+		panic(err)
+	}
+
+	tmp := g.layers[layerToken][iY*19+iX]
+	g.m.Lock()
+	g.layers[layerToken][iY*19+iX] = img
+	g.m.Unlock()
+	if err = tmp.Close(); err != nil {
+		panic(err)
+	}
+
+	return nil
+}
+
 // ChangeToken update token status and color selected by player
 func (g *Gomoku) ChangeToken(x, y uint8, p *database.Player) error {
 	var posX, posY int32
