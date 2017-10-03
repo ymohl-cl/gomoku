@@ -1,7 +1,5 @@
 package ruler
 
-import "fmt"
-
 const (
 	TokenEmpty = 0
 	TokenP1    = 1
@@ -68,19 +66,14 @@ func (r Rules) CheckMove(board [][]uint8, posX, posY int8) (bool, string) {
 }
 
 func (r *Rules) SetCapture(board [][]uint8, posX, posY int8, xi, yi int8) {
-	fmt.Println("SetCapture")
 	if !checkOnTheBoard(posX+(2*xi), posY+(2*yi)) || checkPosition(board, posX+(2*xi), posY+(2*yi)) {
 		return
 	}
 	if !checkOnTheBoard(posX+(3*xi), posY+(3*yi)) || checkPosition(board, posX+(3*xi), posY+(3*yi)) {
 		return
 	}
-
-	fmt.Println("...")
 	if board[uint8(posY)][uint8(posX)] != board[uint8(posY+(2*yi))][uint8(posX+(2*xi))] {
-		fmt.Println("neigh... ok x: ", xi*2, "y: ", yi*2)
 		if board[uint8(posY)][uint8(posX)] == board[uint8(posY+(3*yi))][uint8(posX+(3*xi))] {
-			fmt.Println("capture ok")
 			r.caps = append(r.caps, NewCapture(posX+xi, posY+yi))
 			r.caps = append(r.caps, NewCapture(posX+(xi*2), posY+(yi*2)))
 			return
