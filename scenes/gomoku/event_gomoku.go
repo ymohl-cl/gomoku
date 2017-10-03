@@ -60,10 +60,13 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 	}
 	durationToPlay := g.game.GetTimeToPlay()
 
-	for _, cap := range g.game.GetCaptures() {
+	caps := g.game.GetCaptures()
+	for i, _ := range caps {
 		fmt.Println("Delete one")
+		xt := caps[i].X
+		yt := caps[i].Y
 		go func() {
-			if err = g.RestoreToken(uint8(cap.X), uint8(cap.Y), player); err != nil {
+			if err = g.RestoreToken(uint8(xt), uint8(yt), player); err != nil {
 				panic(err)
 			}
 		}()
