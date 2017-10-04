@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	errorData   = "data provided to game is empty"
-	errorPlayer = "missing player to run the game"
-	errorMove   = "this move is not possible"
+	errorData        = "data provided to game is empty"
+	errorPlayer      = "missing player to run the game"
+	errorMove        = "this move is not possible"
+	errorDoubleThree = "There are a double three"
 )
 
 type Game struct {
@@ -91,29 +92,41 @@ func (g *Game) SwitchPlayer() {
 	}
 }
 
-func (g *Game) Move(x, y uint8) error {
-	g.rules = ruler.New()
-
-	// veriff move
-	if b, str := g.rules.CheckMove(g.board, int8(x), int8(y)); b == false {
-		return errors.New(errorMove + str)
-	}
-
-	g.AppliesMove(x, y)
-	// check and save capture token
+func (g *Game) Move(x, y uint8) (error, bool) {
 	var valueToken uint8
+	g.rules = ruler.New()
+	var captured bool
+
+	// get current player with token value
 	if g.players.currentPlayer == g.players.p1 {
 		valueToken = ruler.TokenP1
 	} else {
 		valueToken = ruler.TokenP2
 	}
-	g.rules.CheckCapture(g.board, int8(x), int8(y), valueToken)
+
+	// veriff move
+	if b, str := g.rules.CheckMove(g.board, int8(x), int8(y)); b == false {
+		return errors.New(errorMove + str), false
+	}
+
+	// check and save capture token
+	captured = g.rules.CheckCapture(g.board, int8(x), int8(y), valueToken)
 	for _, cap := range g.rules.GetCaptures() {
 		g.board[cap.Y][cap.X] = ruler.TokenEmpty
 	}
 
+	// verriff doubleThree
+	if captured == false && g.rules.CheckDoubleThree(g.board, int8(x), int8(y), valueToken) {
+		return errors.New(errorDoubleThree), false
+	}
+
+	g.AppliesMove(x, y)
+
+	if g.rules.CheckWinner(g.board, int8(x), int8(y), valueToken) {
+		return nil, true
+	}
 	g.SwitchPlayer()
-	return nil
+	return nil, false
 }
 
 func (g Game) GetCaptures() []ruler.Capture {
