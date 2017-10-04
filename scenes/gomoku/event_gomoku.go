@@ -2,6 +2,7 @@ package gomoku
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ymohl-cl/gomoku/conf"
 )
@@ -33,6 +34,7 @@ func (g *Gomoku) initMove() {
 func (g *Gomoku) selectToken(values ...interface{}) {
 	var x, y uint8
 	var err error
+	var end bool
 
 	if len(values) != 2 {
 		panic(errors.New("More two values specified on select token"))
@@ -51,12 +53,20 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 	}
 
 	player := g.game.GetCurrentPlayer()
-	if err = g.game.Move(x, y); err != nil {
+
+	if err, end = g.game.Move(x, y); err != nil {
 		// setNotice
 		println("crash", err.Error())
 		println("x: ", x, "y: ", y)
 		return
 	}
+
+	if end == true {
+		fmt.Println("WINNER YEAH BRAVO ! VOILA")
+		g.switcher(conf.SMenu, true)
+		return
+	}
+
 	durationToPlay := g.game.GetTimeToPlay()
 
 	caps := g.game.GetCaptures()

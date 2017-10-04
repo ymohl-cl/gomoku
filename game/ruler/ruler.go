@@ -65,27 +65,30 @@ func (r Rules) CheckMove(board [][]uint8, posX, posY int8) (bool, string) {
 	return false, "Not neighborhood"
 }
 
-func (r *Rules) SetCapture(board [][]uint8, posX, posY int8, xi, yi int8) {
+func (r *Rules) SetCapture(board [][]uint8, posX, posY int8, xi, yi int8, currentPlayer uint8) bool {
 	if !checkOnTheBoard(posX+(2*xi), posY+(2*yi)) || checkPosition(board, posX+(2*xi), posY+(2*yi)) {
-		return
+		return false
 	}
 	if !checkOnTheBoard(posX+(3*xi), posY+(3*yi)) || checkPosition(board, posX+(3*xi), posY+(3*yi)) {
-		return
+		return false
 	}
-	if board[uint8(posY)][uint8(posX)] != board[uint8(posY+(2*yi))][uint8(posX+(2*xi))] {
-		if board[uint8(posY)][uint8(posX)] == board[uint8(posY+(3*yi))][uint8(posX+(3*xi))] {
+	if currentPlayer != board[uint8(posY+(2*yi))][uint8(posX+(2*xi))] {
+		if currentPlayer == board[uint8(posY+(3*yi))][uint8(posX+(3*xi))] {
 			r.caps = append(r.caps, NewCapture(posX+xi, posY+yi))
 			r.caps = append(r.caps, NewCapture(posX+(xi*2), posY+(yi*2)))
-			return
+			return true
 		}
 	}
+	return false
 }
 
 func (r *Rules) GetCaptures() []Capture {
 	return r.caps
 }
 
-func (r *Rules) CheckCapture(board [][]uint8, posX, posY int8, currentPlayer uint8) {
+func (r *Rules) CheckCapture(board [][]uint8, posX, posY int8, currentPlayer uint8) bool {
+	var captured bool
+
 	for yi := int8(-1); yi <= 1; yi++ {
 		for xi := int8(-1); xi <= 1; xi++ {
 			x := posX + xi
@@ -94,11 +97,109 @@ func (r *Rules) CheckCapture(board [][]uint8, posX, posY int8, currentPlayer uin
 				continue
 			}
 			if !checkPosition(board, x, y) && board[y][x] != currentPlayer {
-				r.SetCapture(board, posX, posY, xi, yi)
+				if r.SetCapture(board, posX, posY, xi, yi, currentPlayer) {
+					captured = true
+				}
 			}
 		}
 	}
-	return
+	return captured
+}
+
+func (r Rules) IsThree(board [][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) bool {
+	var nbMe uint8
+
+	for i := int8(-1); i <= 2; i++ {
+		x := posX + (xi * i)
+		y := posY + (yi * i)
+		if !checkOnTheBoard(x, y) {
+			return false
+		}
+		if board[y][x] == currentPlayer {
+			nbMe++
+			if nbMe > 2 {
+				return false
+			}
+		} else if !checkPosition(board, x, y) {
+			return false
+		}
+	}
+
+	if nbMe == 2 {
+		// check extremites
+		if !checkOnTheBoard(posX+(-2*xi), posY+(-2*yi)) {
+			if checkPosition(board, posX+(-1*xi), posY+(-1*yi)) {
+				return false
+			}
+		} else if !checkPosition(board, posX+(-2*xi), posY+(-2*yi)) {
+			return false
+		}
+		if !checkOnTheBoard(posX+(3*xi), posY+(3*yi)) {
+			if checkPosition(board, posX+(2*xi), posY+(2*yi)) {
+				return false
+			}
+		} else if !checkPosition(board, posX+(3*xi), posY+(3*yi)) {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
+func (r Rules) CheckDoubleThree(board [][]uint8, posX, posY int8, currentPlayer uint8) bool {
+	nbThree := 0
+
+	for yi := int8(-1); yi <= 1; yi++ {
+		for xi := int8(-1); xi <= 1; xi++ {
+			if xi == 0 && yi == 0 {
+				continue
+			}
+			if r.IsThree(board, posX, posY, xi, yi, currentPlayer) {
+				nbThree++
+			} else if r.IsThree(board, posX+xi, posY+yi, xi, yi, currentPlayer) {
+				nbThree++
+			}
+			if nbThree >= 2 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (r Rules) isWin(board [][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) bool {
+	var nbMe uint8
+
+	for i := int8(-4); i <= 4; i++ {
+		x := posX + (xi * i)
+		y := posY + (yi * i)
+		if !checkOnTheBoard(x, y) {
+			return false
+		}
+		if board[y][x] == currentPlayer {
+			nbMe++
+			if nbMe == 5 {
+				return true
+			}
+		} else {
+			nbMe = 0
+		}
+	}
+	return false
+}
+
+func (r Rules) CheckWinner(board [][]uint8, posX, posY int8, currentPlayer uint8) bool {
+
+	if r.isWin(board, posX, posY, 1, -1, currentPlayer) {
+		return true
+	} else if r.isWin(board, posX, posY, 1, 0, currentPlayer) {
+		return true
+	} else if r.isWin(board, posX, posY, 1, 1, currentPlayer) {
+		return true
+	} else if r.isWin(board, posX, posY, 0, 1, currentPlayer) {
+		return true
+	}
+	return false
 }
 
 /*
