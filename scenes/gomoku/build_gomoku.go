@@ -296,3 +296,21 @@ func (g *Gomoku) addBlockTime() error {
 	g.timer = t
 	return nil
 }
+
+func (g *Gomoku) addNotice() error {
+	var t *text.Text
+	var err error
+	var x, y int32
+
+	x = conf.WindowWidth / 2
+	y = conf.WindowHeight - conf.MarginBot - (conf.MenuFooterHeight / 2)
+	if t, err = text.New("", conf.TxtLittle, conf.Font, x, y); err != nil {
+		return err
+	}
+	t.SetVariantStyle(conf.ColorTxtRed, conf.ColorTxtGreen, conf.ColorTxtBlue, conf.ColorTxtOpacity, objects.SFix)
+	t.SetVariantUnderStyle(conf.ColorUnderTxtRed, conf.ColorUnderTxtGreen, conf.ColorUnderTxtBlue, conf.ColorUnderTxtOpacity, objects.SFix)
+	t.SetUnderPosition(x-conf.TxtUnderPadding, y-conf.TxtUnderPadding)
+	g.notice = t
+	g.layers[layerNotice] = append(g.layers[layerNotice], g.notice)
+	return nil
+}
