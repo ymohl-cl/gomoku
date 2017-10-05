@@ -17,6 +17,8 @@ import (
 func (m *Menu) Build() error {
 	var err error
 
+	m.layers = make(map[uint8][]objects.Object)
+
 	if err = m.addMusic(); err != nil {
 		return err
 	}
@@ -115,6 +117,8 @@ func (m *Menu) Close() error {
 	if err = objects.Closer(m.layers); err != nil {
 		return err
 	}
+
+	m.layers = nil
 	return nil
 }
 

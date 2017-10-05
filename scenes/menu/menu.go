@@ -78,7 +78,6 @@ func New(d *database.Data, r *sdl.Renderer) (*Menu, error) {
 	}
 
 	m := Menu{renderer: r, data: d}
-	m.layers = make(map[uint8][]objects.Object)
 	m.m = new(sync.Mutex)
 	return &m, nil
 }

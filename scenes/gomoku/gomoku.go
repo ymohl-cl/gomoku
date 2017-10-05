@@ -63,7 +63,6 @@ func New(d *database.Data, r *sdl.Renderer) (*Gomoku, error) {
 	}
 
 	g := Gomoku{renderer: r, data: d}
-	g.layers = make(map[uint8][]objects.Object)
 	g.m = new(sync.Mutex)
 	return &g, nil
 }

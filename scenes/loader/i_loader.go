@@ -17,6 +17,8 @@ import (
 func (l *Load) Build() error {
 	var err error
 
+	l.layers = make(map[uint8][]objects.Object)
+
 	if err = l.addBackground(); err != nil {
 		return err
 	}
@@ -78,6 +80,7 @@ func (l *Load) Close() error {
 		return err
 	}
 
+	l.layers = nil
 	return nil
 }
 
