@@ -42,6 +42,9 @@ func (g *Gomoku) Build() error {
 	if err = g.addButtons(); err != nil {
 		return err
 	}
+	if err = g.addNotice(); err != nil {
+		return err
+	}
 	/*
 		if err = g.addModal(); err != nil {
 			return err
@@ -66,6 +69,9 @@ func (g *Gomoku) Init() error {
 		return errors.New(scenes.ErrorLayers)
 	}
 	if g.music == nil {
+		return errors.New(scenes.ErrorMissing)
+	}
+	if g.notice == nil {
 		return errors.New(scenes.ErrorMissing)
 	}
 

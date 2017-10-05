@@ -2,8 +2,9 @@ package gomoku
 
 import (
 	"errors"
-	"fmt"
+	"time"
 
+	"github.com/ymohl-cl/game-builder/objects"
 	"github.com/ymohl-cl/gomoku/conf"
 )
 
@@ -56,13 +57,15 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 
 	if err, end = g.game.Move(x, y); err != nil {
 		// setNotice
+		g.setNotice("You can make this move")
 		println("crash", err.Error())
 		println("x: ", x, "y: ", y)
 		return
 	}
 
 	if end == true {
-		fmt.Println("WINNER YEAH BRAVO ! VOILA")
+		g.setNotice("WINNER YEAH BRAVO ! VOILA")
+		time.Sleep(5 * time.Second)
 		g.switcher(conf.SMenu, true)
 		return
 	}
@@ -124,4 +127,20 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 
 func (g *Gomoku) quit(values ...interface{}) {
 	g.switcher(conf.SMenu, true)
+}
+
+// setNotice allow draw informations to the player
+func (g *Gomoku) setNotice(str string) {
+	idSDL := g.notice.NewIDSDL()
+	if g.notice.IsInit() == true {
+		g.notice.Close()
+	}
+	g.notice.UpdateText(str, g.renderer)
+	if err := g.notice.Init(g.renderer); err != nil {
+		panic(errors.New(objects.ErrorRenderer))
+	}
+	time.Sleep(3 * time.Second)
+	if g.notice.GetIDSDL() == idSDL {
+		g.notice.Close()
+	}
 }

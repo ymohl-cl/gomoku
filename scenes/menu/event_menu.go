@@ -140,9 +140,7 @@ func (m *Menu) DefaultPlayer(values ...interface{}) {
 	m.updateVS()
 }
 
-/*
-** Change object from Endpoint management
- */
+// setNotice allow draw information to the player
 func (m *Menu) setNotice(str string) {
 	idSDL := m.notice.NewIDSDL()
 	if m.notice.IsInit() == true {
