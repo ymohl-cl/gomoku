@@ -1,5 +1,6 @@
 package ruler
 
+//Token values and size of board
 const (
 	TokenEmpty = 0
 	TokenP1    = 1
@@ -8,28 +9,41 @@ const (
 	sizeX      = 19
 )
 
-// Rules is a implementation interface to the rule of gomoku
-type Rules struct {
-	caps []Capture
-}
-
+// Capture struct is a couple (X, Y) of a captured point
 type Capture struct {
 	X int8
 	Y int8
 }
 
-func NewCapture(posX, posY int8) Capture {
-	return Capture{X: posX, Y: posY}
+// NewCapture : Return a new instance and set (X, Y) values of a captured point
+func NewCapture(posX, posY int8) *Capture {
+	return &Capture{X: posX, Y: posY}
 }
 
-func (r Rules) GetNbrCaptures() int32 {
-	return int32(len(r.caps))
+// Rules struct contain all Rules checks informations
+type Rules struct {
+	//Move
+	IsMoved  bool
+	MovedStr string
+
+	//Capture
+	IsCaptured bool
+	caps       []*Capture
+
+	//Double-Three
+	NbThree uint8
+
+	//Win
+	IsWin bool
 }
 
+// New : Return a new instance and set default values of Rules struct
 func New() *Rules {
-	return &Rules{}
+	return &Rules{IsMoved: false, MovedStr: "", IsCaptured: false, NbThree: 0, IsWin: false}
 }
 
+// checkPosition : check if the (posX, posY) point are inside the board
+// posX and poxY are where player want to play position
 func checkOnTheBoard(posX, posY int8) bool {
 	if posX < 0 || posY < 0 || posX >= 19 || posY >= 19 {
 		return false
@@ -37,6 +51,9 @@ func checkOnTheBoard(posX, posY int8) bool {
 	return true
 }
 
+// checkPosition : check if the (posX, posY) point are empty
+// board is actual board
+// posX and poxY are where player want to play position
 func checkPosition(board [][]uint8, posX, posY int8) bool {
 	if board[uint8(posY)][uint8(posX)] == TokenEmpty {
 		return true
@@ -44,71 +61,58 @@ func checkPosition(board [][]uint8, posX, posY int8) bool {
 	return false
 }
 
-func (r Rules) CheckMove(board [][]uint8, posX, posY int8) (bool, string) {
-	if !checkOnTheBoard(posX, posY) {
-		return false, "Index not allowed"
-	}
-	if !checkPosition(board, posX, posY) {
-		return false, "Already used"
-	}
-
-	for y := posY - 1; y <= posY+1; y++ {
-		for x := posX - 1; x <= posX+1; x++ {
-			if (posX == x && posY == y) || !checkOnTheBoard(x, y) {
-				continue
-			}
-			if !checkPosition(board, x, y) {
-				return true, "Cool"
-			}
-		}
-	}
-	return false, "Not neighborhood"
-}
-
-func (r *Rules) SetCapture(board [][]uint8, posX, posY int8, xi, yi int8, currentPlayer uint8) bool {
-	if !checkOnTheBoard(posX+(2*xi), posY+(2*yi)) || checkPosition(board, posX+(2*xi), posY+(2*yi)) {
-		return false
-	}
-	if !checkOnTheBoard(posX+(3*xi), posY+(3*yi)) || checkPosition(board, posX+(3*xi), posY+(3*yi)) {
-		return false
-	}
-	if currentPlayer != board[uint8(posY+(2*yi))][uint8(posX+(2*xi))] {
-		if currentPlayer == board[uint8(posY+(3*yi))][uint8(posX+(3*xi))] {
-			r.caps = append(r.caps, NewCapture(posX+xi, posY+yi))
-			r.caps = append(r.caps, NewCapture(posX+(xi*2), posY+(yi*2)))
-			return true
-		}
-	}
-	return false
-}
-
-func (r *Rules) GetCaptures() []Capture {
+// GetCaptures : return the slice of captured points
+func (r *Rules) GetCaptures() []*Capture {
 	return r.caps
 }
 
-func (r *Rules) CheckCapture(board [][]uint8, posX, posY int8, currentPlayer uint8) bool {
-	var captured bool
-
-	for yi := int8(-1); yi <= 1; yi++ {
-		for xi := int8(-1); xi <= 1; xi++ {
-			x := posX + xi
-			y := posY + yi
-			if (xi == 0 && yi == 0) || !checkOnTheBoard(x, y) {
-				continue
-			}
-			if !checkPosition(board, x, y) && board[y][x] != currentPlayer {
-				if r.SetCapture(board, posX, posY, xi, yi, currentPlayer) {
-					captured = true
-				}
-			}
-		}
-	}
-	return captured
+// GetNbrCaptures : return the numbers of captured points (len of slice)
+func (r Rules) GetNbrCaptures() int32 {
+	return int32(len(r.caps))
 }
 
+// CheckCapture : Check a capture case in a line
+// board is actual board
+// posX and poxY are where player want to play position
+// xi and yi are steps of posX and posY respectively for the direction check
+// currentPlayer is the actual player token
+func (r *Rules) CheckCapture(board [][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) {
+
+	x := posX + xi
+	y := posY + yi
+
+	//No check if same player
+	if board[y][x] == currentPlayer {
+		return
+	}
+	//No check if part of a capture line is out of Board
+	if !checkOnTheBoard(posX+(2*xi), posY+(2*yi)) || checkPosition(board, posX+(2*xi), posY+(2*yi)) {
+		return
+	}
+	if !checkOnTheBoard(posX+(3*xi), posY+(3*yi)) || checkPosition(board, posX+(3*xi), posY+(3*yi)) {
+		return
+	}
+	//Capture check
+	if currentPlayer != board[uint8(posY+(2*yi))][uint8(posX+(2*xi))] {
+		if currentPlayer == board[uint8(posY+(3*yi))][uint8(posX+(3*xi))] {
+			r.IsCaptured = true
+			r.caps = append(r.caps, NewCapture(posX+xi, posY+yi))
+			r.caps = append(r.caps, NewCapture(posX+(xi*2), posY+(yi*2)))
+			return
+		}
+	}
+	return
+}
+
+// IsThree : Check a "three case" in a line and record it
+// board is actual board
+// posX and poxY are where player want to play position
+// xi and yi are steps of posX and posY respectively for the direction check
+// currentPlayer is the actual player token
 func (r Rules) IsThree(board [][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) bool {
 	var nbMe uint8
 
+	//Check line
 	for i := int8(-1); i <= 2; i++ {
 		x := posX + (xi * i)
 		y := posY + (yi * i)
@@ -125,8 +129,8 @@ func (r Rules) IsThree(board [][]uint8, posX, posY, xi, yi int8, currentPlayer u
 		}
 	}
 
+	//Check Extremites
 	if nbMe == 2 {
-		// check extremites
 		if !checkOnTheBoard(posX+(-2*xi), posY+(-2*yi)) {
 			if checkPosition(board, posX+(-1*xi), posY+(-1*yi)) {
 				return false
@@ -146,27 +150,25 @@ func (r Rules) IsThree(board [][]uint8, posX, posY, xi, yi int8, currentPlayer u
 	return false
 }
 
-func (r Rules) CheckDoubleThree(board [][]uint8, posX, posY int8, currentPlayer uint8) bool {
-	nbThree := 0
+// CheckDoubleThree : Call IsThree twice to record a "three" case
+// board is actual board
+// posX and poxY are where player want to play position
+// xi and yi are steps of posX and posY respectively for the direction check
+// currentPlayer is the actual player token
+func (r *Rules) CheckDoubleThree(board [][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) {
 
-	for yi := int8(-1); yi <= 1; yi++ {
-		for xi := int8(-1); xi <= 1; xi++ {
-			if xi == 0 && yi == 0 {
-				continue
-			}
-			if r.IsThree(board, posX, posY, xi, yi, currentPlayer) {
-				nbThree++
-			} else if r.IsThree(board, posX+xi, posY+yi, xi, yi, currentPlayer) {
-				nbThree++
-			}
-			if nbThree >= 2 {
-				return true
-			}
-		}
+	if r.IsThree(board, posX, posY, xi, yi, currentPlayer) {
+		r.NbThree++
+	} else if r.IsThree(board, posX+xi, posY+yi, xi, yi, currentPlayer) {
+		r.NbThree++
 	}
-	return false
 }
 
+// isWin : Check if there is 5 current player token on board = win
+// board is actual board
+// posX and poxY are where player want to play position
+// xi and yi are steps of posX and posY respectively for the direction check
+// currentPlayer is the actual player token
 func (r Rules) isWin(board [][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) bool {
 	var nbMe uint8
 
@@ -176,7 +178,7 @@ func (r Rules) isWin(board [][]uint8, posX, posY, xi, yi int8, currentPlayer uin
 		if !checkOnTheBoard(x, y) {
 			return false
 		}
-		if board[y][x] == currentPlayer {
+		if (x == posX && y == posY) || board[y][x] == currentPlayer {
 			nbMe++
 			if nbMe == 5 {
 				return true
@@ -188,31 +190,60 @@ func (r Rules) isWin(board [][]uint8, posX, posY, xi, yi int8, currentPlayer uin
 	return false
 }
 
-func (r Rules) CheckWinner(board [][]uint8, posX, posY int8, currentPlayer uint8) bool {
+// CheckWinner : Call isWin for vertical, horizontal and diagonals lines around point
+// board is actual board
+// posX and poxY are where player want to play position
+// currentPlayer is the actual player token
+func (r *Rules) CheckWinner(board [][]uint8, posX, posY int8, currentPlayer uint8) {
 
 	if r.isWin(board, posX, posY, 1, -1, currentPlayer) {
-		return true
+		r.IsWin = true
 	} else if r.isWin(board, posX, posY, 1, 0, currentPlayer) {
-		return true
+		r.IsWin = true
 	} else if r.isWin(board, posX, posY, 1, 1, currentPlayer) {
-		return true
+		r.IsWin = true
 	} else if r.isWin(board, posX, posY, 0, 1, currentPlayer) {
-		return true
+		r.IsWin = true
 	}
-	return false
 }
 
-/*
-func (r Rules) CheckIsFinish(board [][]uint8, posX, posY uint8) bool {
-	// ex: posY = 0 && posX = 0
+// CheckRules : Execute all Check (moves/captures/doubleThree/Win)
+// board is actual board
+// posX and poxY are where player want to play position
+// currentPlayer is the actual player token
+func (r *Rules) CheckRules(board [][]uint8, posX, posY int8, currentPlayer uint8) {
 
-}*/
-
-// Capture
-// Free-three forbidden
-// Double-three
-// Game-ending
-// Alignement
-
-// Fonctionnalites:
-//- Le joueur qui a choisi ou obtenu par un tirage au sort les pions noirs (et que l'on appelle Noir par convention) joue toujours le premier en plaçant son premier pion sur l'intersection centrale du damier
+	//Basic init posX/posY check
+	if !checkOnTheBoard(posX, posY) {
+		r.MovedStr = "Index not allowed"
+		return
+	}
+	if !checkPosition(board, posX, posY) {
+		r.MovedStr = "Already used"
+		return
+	}
+	//Check around posX/posY
+	for yi := int8(-1); yi <= 1; yi++ {
+		for xi := int8(-1); xi <= 1; xi++ {
+			x := posX + xi
+			y := posY + yi
+			if (xi == 0 && yi == 0) || !checkOnTheBoard(x, y) {
+				continue
+			}
+			//Can we put in this posX/posY
+			if !checkPosition(board, x, y) {
+				//We can put here
+				r.IsMoved = true
+				r.CheckCapture(board, posX, posY, xi, yi, currentPlayer)
+			}
+			r.CheckDoubleThree(board, posX, posY, xi, yi, currentPlayer)
+		}
+	}
+	// Check if this move is a winning
+	if r.IsMoved == false {
+		r.MovedStr = "Not neighborhood"
+	} else {
+		r.CheckWinner(board, posX, posY, currentPlayer)
+	}
+	return
+}
