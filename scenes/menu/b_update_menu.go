@@ -97,19 +97,22 @@ func (m *Menu) removeUIPlayer(idData int) error {
 }
 
 func (m *Menu) updateVS() {
-	var err error
-	p1 := m.data.Current.P1
-	p2 := m.data.Current.P2
+	//	var err error
+	//	p1 := m.data.Current.P1
+	//	p2 := m.data.Current.P2
 
-	if p1 == nil || p2 == nil {
-		panic(errors.New("Players is nil"))
-	}
+	/*	if p1 == nil || p2 == nil {
+			panic(errors.New("Players is nil"))
+		}
+	*/
 	/*	if m.vs.IsInit() {
 		if err = m.vs.Close(); err != nil {
 			panic(err)
 		}
 	}*/
-	if err = m.vs.UpdateText(p1.Name+" VS "+p2.Name, m.renderer); err != nil {
-		panic(err)
-	}
+	/*
+		if err = m.vs.UpdateText(p1.Name+" VS "+p2.Name, m.renderer); err != nil {
+			panic(err)
+		}
+	*/
 }

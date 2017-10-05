@@ -189,7 +189,7 @@ func (m *Menu) addText() error {
 
 	// add signature
 	y = conf.WindowHeight - (conf.MarginBot / 2)
-	signature := "Gomuku is present to you by Anis (agadhgad) and MrPiou (ymohl-cl), Enjoy !"
+	signature := "Gomuku is present to you by Val (vroche) and MrPiou (ymohl-cl), Enjoy !"
 	if t, err = text.New(signature, conf.TxtLittle, conf.Font, x, y); err != nil {
 		return err
 	}
@@ -204,28 +204,87 @@ func (m *Menu) addText() error {
 	return nil
 }
 
+func (m *Menu) addJS() error {
+	var bl *block.Block
+	var t *text.Text
+	var b *button.Button
+	var err error
+	var str string
+	var x, y int32
+
+	str = "J1"
+	y = conf.MarginTop + conf.MenuHeaderHeight + conf.PaddingBlock + conf.MenuContentMediumBlockHeight + conf.MenuContentMediumBlockHeight/4 - (conf.PaddingBlock / 2)
+	interval := int32((conf.MenuContentBlockWidth - (conf.ButtonWidth*2 + conf.PaddingBlock)) / 2)
+	x = conf.WindowWidth - conf.MarginRight - conf.MenuContentBlockWidth + interval
+
+	for i := 0; i < 2; i++ {
+		if i == 1 {
+			str = "J2"
+			y += conf.MenuElementPadding + conf.MenuIconWidth
+		}
+
+		if bl, err = block.New(block.Filled); err != nil {
+			return err
+		}
+		// Set style fix and basic
+		if err = bl.SetVariantStyle(conf.ColorButtonRed, conf.ColorButtonGreen, conf.ColorButtonBlue, conf.ColorButtonOpacity, objects.SFix); err != nil {
+			return err
+		}
+		// Set position
+		bl.UpdatePosition(x, y)
+		// Set size
+		bl.UpdateSize(conf.MenuIconWidth, conf.MenuIconWidth)
+
+		w, h := bl.GetSize()
+		if t, err = m.createTxtToButton(x+(w/2), y+(h/2), str); err != nil {
+			return err
+		}
+		b = button.New(bl, nil, t)
+
+		if err = b.Init(m.renderer); err != nil {
+			return err
+		}
+		m.layers[layerPlayers] = append(m.layers[layerPlayers], b)
+	}
+
+	return nil
+}
+
 func (m *Menu) addVS() error {
 	var t *text.Text
 	var err error
 	var y, x int32
+	var str string
 
-	// add title
-	p1 := m.data.Current.P1
-	p2 := m.data.Current.P2
-	y = conf.MarginTop + conf.MenuHeaderHeight + conf.PaddingBlock + conf.MenuContentMediumBlockHeight + conf.MenuContentMediumBlockHeight/2 - (conf.PaddingBlock / 2)
-	x = conf.WindowWidth - conf.MarginRight - (conf.MenuContentBlockWidth / 2)
-	if t, err = text.New(p1.Name+" VS "+p2.Name, conf.TxtMedium, conf.Font, x, y); err != nil {
-		return err
-	}
-	t.SetVariantStyle(conf.ColorTxtRed, conf.ColorTxtGreen, conf.ColorTxtBlue, conf.ColorTxtOpacity, objects.SFix)
-	t.SetVariantUnderStyle(conf.ColorUnderTxtRed, conf.ColorUnderTxtGreen, conf.ColorUnderTxtBlue, conf.ColorUnderTxtOpacity, objects.SFix)
-	t.SetUnderPosition(x-conf.TxtUnderPadding, y-conf.TxtUnderPadding)
-	if err = t.Init(m.renderer); err != nil {
-		return err
+	// add name player 1
+	str = m.data.Current.P1.Name
+
+	y = conf.MarginTop + conf.MenuHeaderHeight + conf.PaddingBlock + conf.MenuContentMediumBlockHeight + conf.MenuContentMediumBlockHeight/4 - (conf.PaddingBlock / 2)
+	x = conf.WindowWidth - conf.MarginRight - conf.MenuContentBlockWidth/2
+
+	for i := 0; i < 2; i++ {
+		if i == 1 {
+			str = m.data.Current.P2.Name
+			y += conf.MenuElementPadding + conf.MenuIconWidth
+		}
+		if t, err = text.New(str, conf.TxtMedium, conf.Font, x, y+(conf.MenuIconWidth/2)); err != nil {
+			return err
+		}
+		t.SetVariantStyle(conf.ColorTxtRed, conf.ColorTxtGreen, conf.ColorTxtBlue, conf.ColorTxtOpacity, objects.SFix)
+		t.SetVariantUnderStyle(conf.ColorUnderTxtRed, conf.ColorUnderTxtGreen, conf.ColorUnderTxtBlue, conf.ColorUnderTxtOpacity, objects.SFix)
+		t.SetUnderPosition(x-conf.TxtUnderPadding, y-conf.TxtUnderPadding)
+		if err = t.Init(m.renderer); err != nil {
+			return err
+		}
+
+		m.layers[layerVS] = append(m.layers[layerVS], t)
+		if i == 1 {
+			m.player2 = t
+		} else {
+			m.player1 = t
+		}
 	}
 
-	m.layers[layerVS] = append(m.layers[layerVS], t)
-	m.vs = t
 	return nil
 }
 
@@ -264,6 +323,10 @@ func (m *Menu) addPlayers() error {
 			return err
 		}
 		m.layers[layerPlayers] = append(m.layers[layerPlayers], b1)
+
+		if err = m.addButtonChoicePlayer(x, y, p); err != nil {
+			return err
+		}
 
 		if b2, err = m.addButtonDeletePlayer(x, y, p); err != nil {
 			return err

@@ -56,7 +56,9 @@ type Menu struct {
 	input  *input.Input
 	notice *text.Text
 	music  *audio.Audio
-	vs     *text.Text
+	//	vs      *text.Text
+	player1 *text.Text
+	player2 *text.Text
 
 	/* sdl ressources */
 	renderer *sdl.Renderer

@@ -74,7 +74,7 @@ const (
 	MenuContentLargeBlockHeight  = 500
 	MenuContentMediumBlockHeight = (MenuContentLargeBlockHeight - PaddingBlock) / 2
 	MenuElementPlayerHeight      = 30
-	MenuElementPlayerWidth       = 395
+	MenuElementPlayerWidth       = 325
 	MenuElementPadding           = 5
 	MenuIconWidth                = 30
 )

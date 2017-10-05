@@ -37,9 +37,15 @@ func (m *Menu) Build() error {
 	if err = m.addText(); err != nil {
 		return err
 	}
+
 	if err = m.addVS(); err != nil {
 		return err
 	}
+
+	if err = m.addJS(); err != nil {
+		return err
+	}
+
 	if err = m.addInput(); err != nil {
 		return err
 	}
@@ -69,9 +75,12 @@ func (m *Menu) Init() error {
 	if m.music == nil {
 		return errors.New(scenes.ErrorMissing)
 	}
-	if m.vs == nil {
+	if m.player1 == nil || m.player2 == nil {
 		return errors.New(scenes.ErrorMissing)
 	}
+	/*	if m.vs == nil {
+		return errors.New(scenes.ErrorMissing)
+	}*/
 
 	m.initialized = true
 	return nil

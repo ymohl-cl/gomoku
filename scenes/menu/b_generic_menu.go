@@ -70,12 +70,46 @@ func (m *Menu) addButtonPlayer(x, y int32, p *database.Player) (*button.Button, 
 	return b, nil
 }
 
+func (m *Menu) addButtonChoicePlayer(x, y int32, p *database.Player) error {
+	var t *text.Text
+	var b *button.Button
+	var bl *block.Block
+	var err error
+	var str string
+
+	str = "J1"
+	x += conf.MenuElementPlayerWidth + conf.MenuElementPadding
+
+	for i := 0; i < 2; i++ {
+		if i == 1 {
+			str = "J2"
+			x += conf.MenuElementPadding + conf.MenuIconWidth
+		}
+		if bl, err = m.createBlockToDefaultButton(x, y, conf.MenuIconWidth, conf.MenuIconWidth); err != nil {
+			return err
+		}
+
+		w, h := bl.GetSize()
+		if t, err = m.createTxtToButton(x+(w/2), y+(h/2), str); err != nil {
+			return err
+		}
+		b = button.New(bl, nil, t)
+		b.SetAction(m.SelectPlayer, p, i)
+
+		if err = b.Init(m.renderer); err != nil {
+			return err
+		}
+		m.layers[layerPlayers] = append(m.layers[layerPlayers], b)
+	}
+
+	return nil
+}
+
 func (m *Menu) addButtonDeletePlayer(x, y int32, p *database.Player) (*button.Button, error) {
 	var i *image.Image
 	var b *button.Button
 
-	x += conf.MenuElementPlayerWidth + conf.MenuElementPadding
-
+	x += conf.MenuElementPlayerWidth + (conf.MenuElementPadding * 3) + (conf.MenuIconWidth * 2)
 	i = image.New(conf.MenuIconDelete, x, y, conf.MenuIconWidth, conf.MenuElementPlayerHeight)
 	i.SetVariantStyle(conf.MenuIconDelete, conf.MenuIconOverDelete, conf.MenuIconOverDelete)
 	b = button.New(nil, i, nil)
@@ -88,8 +122,7 @@ func (m *Menu) addLoadGame(x, y int32, p *database.Player) (*button.Button, erro
 	var i *image.Image
 	var b *button.Button
 
-	x += conf.MenuElementPlayerWidth + (conf.MenuElementPadding * 2) + conf.MenuIconWidth
-
+	x += conf.MenuElementPlayerWidth + (conf.MenuElementPadding * 4) + (conf.MenuIconWidth * 3)
 	i = image.New(conf.MenuIconLoad, x, y, conf.MenuIconWidth, conf.MenuElementPlayerHeight)
 	i.SetVariantStyle(conf.MenuIconLoad, conf.MenuIconOverLoad, conf.MenuIconOverLoad)
 	b = button.New(nil, i, nil)
@@ -102,7 +135,7 @@ func (m *Menu) addButtonStat(x, y int32, p *database.Player) (*button.Button, er
 	var i *image.Image
 	var b *button.Button
 
-	x += conf.MenuElementPlayerWidth + (conf.MenuElementPadding * 3) + (conf.MenuIconWidth * 2)
+	x += conf.MenuElementPlayerWidth + (conf.MenuElementPadding * 5) + (conf.MenuIconWidth * 4)
 
 	i = image.New(conf.MenuIconTrophy, x, y, conf.MenuIconWidth, conf.MenuElementPlayerHeight)
 	i.SetVariantStyle(conf.MenuIconTrophy, conf.MenuIconOverTrophy, conf.MenuIconOverTrophy)
@@ -183,7 +216,7 @@ func (m *Menu) getButtonDefaultPlayers() (*button.Button, error) {
 	// create txt
 	x += conf.ButtonWidth / 2
 	y += conf.ButtonHeight / 2
-	if t, err = m.createTxtToButton(x, y, "DEFAULT PLAYERS"); err != nil {
+	if t, err = m.createTxtToButton(x, y, "J1 VS IA"); err != nil {
 		return nil, err
 	}
 
@@ -211,7 +244,7 @@ func (m *Menu) getButtonPlay() (*button.Button, error) {
 	}
 
 	// create txt
-	if t, err = m.createTxtToButton(x+conf.ButtonWidth/2, y+conf.ButtonHeight/2, "PLAY !"); err != nil {
+	if t, err = m.createTxtToButton(x+conf.ButtonWidth/2, y+conf.ButtonHeight/2, "J1 VS J2"); err != nil {
 		return nil, err
 	}
 
