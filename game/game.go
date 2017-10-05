@@ -18,6 +18,8 @@ const (
 	errorDoubleThree = "There are a double three"
 )
 
+// Game struct contain playerInfo struct, the actual board, timers
+// and a Rules instance
 type Game struct {
 	players   playersInfo
 	board     [][]uint8
@@ -26,6 +28,8 @@ type Game struct {
 	rules     *ruler.Rules
 }
 
+// playersInfo struct contain db and stats about the 2 players actual players
+// and a reference of the current player
 type playersInfo struct {
 	p1            *database.Player
 	p2            *database.Player
@@ -34,6 +38,7 @@ type playersInfo struct {
 	currentPlayer *database.Player
 }
 
+// New : Return a new instance and set default values of Game struct
 func New(d *database.Data) (*Game, error) {
 	g := Game{}
 
@@ -67,10 +72,12 @@ func New(d *database.Data) (*Game, error) {
 	return &g, nil
 }
 
+// GetCurrentPlayer : return the reference of the actual player
 func (g Game) GetCurrentPlayer() *database.Player {
 	return g.players.currentPlayer
 }
 
+// AppliesMove : save the move in stats struct and put it in the board
 func (g *Game) AppliesMove(x, y uint8) {
 	// create stat move
 	s := stats.New(x, y, time.Since(g.timerPlay), false)
@@ -84,6 +91,7 @@ func (g *Game) AppliesMove(x, y uint8) {
 	}
 }
 
+// SwitchPlayer : _
 func (g *Game) SwitchPlayer() {
 	if g.players.currentPlayer == g.players.p1 {
 		g.players.currentPlayer = g.players.p2
@@ -92,10 +100,12 @@ func (g *Game) SwitchPlayer() {
 	}
 }
 
-func (g *Game) Move(x, y uint8) (error, bool) {
+// Move : Call the rules checker
+// Do the move according to the circumstances
+// return if current player win
+func (g *Game) Move(x, y uint8) (bool, error) {
 	var valueToken uint8
 	g.rules = ruler.New()
-	var captured bool
 
 	// get current player with token value
 	if g.players.currentPlayer == g.players.p1 {
@@ -104,49 +114,52 @@ func (g *Game) Move(x, y uint8) (error, bool) {
 		valueToken = ruler.TokenP2
 	}
 
-	// veriff move
-	if b, str := g.rules.CheckMove(g.board, int8(x), int8(y)); b == false {
-		return errors.New(errorMove + str), false
+	//CheckAllRules
+	g.rules.CheckRules(g.board, int8(x), int8(y), valueToken)
+	//Verify Check
+	fmt.Println(g.rules)
+	if g.rules.IsMoved == false {
+		return false, errors.New(g.rules.MovedStr)
+	}
+	if g.rules.IsWin == false && g.rules.IsCaptured == false && g.rules.NbThree >= 2 {
+		return false, errors.New(errorDoubleThree)
 	}
 
-	// check and save capture token
-	captured = g.rules.CheckCapture(g.board, int8(x), int8(y), valueToken)
-	for _, cap := range g.rules.GetCaptures() {
-		g.board[cap.Y][cap.X] = ruler.TokenEmpty
-	}
-
-	// verriff doubleThree
-	if captured == false && g.rules.CheckDoubleThree(g.board, int8(x), int8(y), valueToken) {
-		return errors.New(errorDoubleThree), false
+	if g.rules.IsCaptured == true {
+		for _, cap := range g.rules.GetCaptures() {
+			g.board[cap.Y][cap.X] = ruler.TokenEmpty
+		}
 	}
 
 	g.AppliesMove(x, y)
-
-	if g.rules.CheckWinner(g.board, int8(x), int8(y), valueToken) {
-		return nil, true
-	}
 	g.SwitchPlayer()
-	return nil, false
+
+	return g.rules.IsWin, nil
 }
 
-func (g Game) GetCaptures() []ruler.Capture {
+// GetCaptures : return a reference of slice of actual player captures
+func (g Game) GetCaptures() []*ruler.Capture {
 	return g.rules.GetCaptures()
 }
 
+// Playing : reset timerPlayer and rules
 func (g *Game) Playing() {
 	g.timerPlay = time.Now()
 	g.rules = nil
 }
 
+// Run : reset all timer and rules
 func (g *Game) Run() {
 	g.Playing()
 	g.timerGame = time.Now()
 }
 
+// GetTimeToPlay : return time of player action duration
 func (g *Game) GetTimeToPlay() time.Duration {
 	return time.Since(g.timerPlay)
 }
 
+// GetTimeGame : return time of all the game
 func (g *Game) GetTimeGame() time.Duration {
 	return time.Since(g.timerGame)
 }

@@ -55,7 +55,7 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 
 	player := g.game.GetCurrentPlayer()
 
-	if err, end = g.game.Move(x, y); err != nil {
+	if end, err = g.game.Move(x, y); err != nil {
 		// setNotice
 		g.setNotice("You can make this move")
 		println("crash", err.Error())
@@ -63,19 +63,11 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 		return
 	}
 
-	if end == true {
-		g.setNotice("WINNER YEAH BRAVO ! VOILA")
-		time.Sleep(5 * time.Second)
-		g.switcher(conf.SMenu, true)
-		return
-	}
-
 	durationToPlay := g.game.GetTimeToPlay()
 
-	caps := g.game.GetCaptures()
-	for i, _ := range caps {
-		xt := caps[i].X
-		yt := caps[i].Y
+	for _, cap := range g.game.GetCaptures() {
+		xt := cap.X
+		yt := cap.Y
 		go func() {
 			if err = g.RestoreToken(uint8(xt), uint8(yt), player); err != nil {
 				panic(err)
@@ -94,6 +86,13 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 			panic(err)
 		}
 	}()
+
+	if end == true {
+		g.setNotice("WINNER YEAH BRAVO ! VOILA")
+		time.Sleep(5 * time.Second)
+		g.switcher(conf.SMenu, true)
+		return
+	}
 
 	g.game.Playing()
 	/*
