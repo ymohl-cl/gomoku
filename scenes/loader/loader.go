@@ -47,7 +47,6 @@ func New(d *database.Data, r *sdl.Renderer) (*Load, error) {
 	}
 
 	l := Load{renderer: r}
-	l.layers = make(map[uint8][]objects.Object)
 	l.m = new(sync.Mutex)
 	return &l, nil
 }

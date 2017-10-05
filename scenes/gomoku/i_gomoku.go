@@ -19,6 +19,8 @@ import (
 func (g *Gomoku) Build() error {
 	var err error
 
+	g.layers = make(map[uint8][]objects.Object)
+
 	if err = g.addMusic(); err != nil {
 		return err
 	}
@@ -111,6 +113,7 @@ func (g *Gomoku) Close() error {
 		return err
 	}
 
+	g.layers = nil
 	return nil
 }
 
