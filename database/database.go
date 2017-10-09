@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -11,8 +10,7 @@ import (
 )
 
 const (
-	defaultPlayer1 = "Unknow1"
-	defaultPlayer2 = "Unknow2"
+	Bot = "AI"
 )
 
 func Get() (*Data, error) {
@@ -42,64 +40,57 @@ func Get() (*Data, error) {
 }
 
 func (D *Data) initSave() error {
-	var err error
-
 	if len(D.Players) == 0 {
-		unknow1 := CreatePlayer(defaultPlayer1)
-		unknow2 := CreatePlayer(defaultPlayer2)
-		D.Players = append(D.Players, unknow1)
-		D.Players = append(D.Players, unknow2)
+		AI := CreatePlayer(Bot)
+		D.Players = append(D.Players, AI)
 	}
 
 	D.Current = new(Session)
-	if err = D.DefaultPlayers(); err != nil {
-		return errors.New("Save file is corrupted: " + err.Error())
-	}
 	return nil
 }
 
-func (D *Data) UpdateCurrent(p *Player) error {
-	if D.Current.P1.Name == p.Name || D.Current.P2.Name == p.Name {
-		return errors.New("This player is already selected")
-	}
-
-	if D.Current.P1.Name == defaultPlayer1 {
-		fmt.Println("P1 == ", p.Name)
+func (D *Data) UpdateCurrent(p *Player, position int) error {
+	if position == 0 {
 		D.Current.P1 = p
-	} else {
-		D.Current.P2 = p
-	}
-
-	return nil
-}
-
-func (D *Data) DefaultPlayers() error {
-	for _, p := range D.Players {
-		if p.Name == defaultPlayer1 {
-			D.Current.P1 = p
-		} else if p.Name == defaultPlayer2 {
-			D.Current.P2 = p
+		if D.Current.P2 != nil && D.Current.P2.Name == p.Name {
+			D.Current.P2 = nil
 		}
+	} else if position == 1 {
+		D.Current.P2 = p
+		if D.Current.P1 != nil && D.Current.P1.Name == p.Name {
+			D.Current.P2 = nil
+		}
+	} else {
+		return errors.New("Position to player is not allowed")
 	}
-	if D.Current.P1 == nil || D.Current.P2 == nil {
-		return errors.New("Default players not found")
-	}
+
 	return nil
 }
 
-func (D *Data) AddPlayer(p *Player) {
-	D.Players = append(D.Players, p)
+func (d *Data) AddPlayer(p *Player) {
+	d.Players = append(d.Players, p)
 }
 
-func (D *Data) DeletePlayer(p *Player) (int, error) {
-	if p.Name == defaultPlayer1 || p.Name == defaultPlayer2 {
-		return 0, errors.New("You can't remove defaultUser Unknow 1 and 2")
-	}
-	for id, pt := range D.Players {
+func (d *Data) DeletePlayer(p *Player) (int, error) {
+	for id, pt := range d.Players {
 		if pt.Name == p.Name {
-			D.Players = append(D.Players[:id], D.Players[id+1:]...)
-			return id, D.DefaultPlayers()
+			d.Players = append(d.Players[:id], d.Players[id+1:]...)
+			if d.Current.P1 == p {
+				d.Current.P1 = nil
+			} else if d.Current.P2 == p {
+				d.Current.P2 = nil
+			}
+			return id, nil
 		}
 	}
 	return 0, errors.New("Player name not found")
+}
+
+func (d *Data) GetPlayerByName(name string) (*Player, error) {
+	for _, p := range d.Players {
+		if p.Name == name {
+			return p, nil
+		}
+	}
+	return nil, errors.New("Player not found")
 }

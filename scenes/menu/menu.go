@@ -53,10 +53,9 @@ type Menu struct {
 	layers map[uint8][]objects.Object
 
 	/* specific objects */
-	input  *input.Input
-	notice *text.Text
-	music  *audio.Audio
-	//	vs      *text.Text
+	input   *input.Input
+	notice  *text.Text
+	music   *audio.Audio
 	player1 *text.Text
 	player2 *text.Text
 

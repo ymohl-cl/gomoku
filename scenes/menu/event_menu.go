@@ -57,18 +57,23 @@ func (m *Menu) SelectPlayer(values ...interface{}) {
 	var p *database.Player
 	var err error
 	var ok bool
+	var position int
 
-	if len(values) == 1 {
+	if len(values) == 2 {
 		p, ok = values[0].(*database.Player)
+		if !ok {
+			panic(errorInterface)
+		}
+		position, ok = values[1].(int)
 		if !ok {
 			panic(errorInterface)
 		}
 	} else {
 		panic(errorValuesEmpty)
 	}
-	if err = m.data.UpdateCurrent(p); err != nil {
-		go m.setNotice(err.Error())
-		return
+
+	if err = m.data.UpdateCurrent(p, position); err != nil {
+		panic(err)
 	}
 	m.updateVS()
 }
@@ -128,16 +133,6 @@ func (m *Menu) Play(values ...interface{}) {
 // ResetName : reset the input value
 func (m *Menu) ResetName(values ...interface{}) {
 	m.input.Reset(m.renderer)
-}
-
-// DefaultPlayer : init the defaults player to the game
-func (m *Menu) DefaultPlayer(values ...interface{}) {
-	var err error
-
-	if err = m.data.DefaultPlayers(); err != nil {
-		panic(err.Error)
-	}
-	m.updateVS()
 }
 
 // setNotice allow draw information to the player

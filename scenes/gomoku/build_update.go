@@ -135,3 +135,11 @@ func (g *Gomoku) moveHistory() {
 		g.layers[layerHistoryText] = append(g.layers[layerHistoryText][:idDelete], g.layers[layerHistoryText][idDelete+1:]...)
 	}
 }
+
+func (g *Gomoku) DrawFilter() {
+
+}
+
+func (g *Gomoku) HideFilter() {
+
+}

@@ -25,6 +25,10 @@ func (m *Menu) addUIPlayer(nb int, p *database.Player) error {
 	}
 	m.layers[layerPlayers] = append(m.layers[layerPlayers], b1)
 
+	if err = m.addButtonChoicePlayer(x, y, p); err != nil {
+		return err
+	}
+
 	if b2, err = m.addButtonDeletePlayer(x, y, p); err != nil {
 		return err
 	}
@@ -97,22 +101,34 @@ func (m *Menu) removeUIPlayer(idData int) error {
 }
 
 func (m *Menu) updateVS() {
-	//	var err error
-	//	p1 := m.data.Current.P1
-	//	p2 := m.data.Current.P2
+	var err error
+	nameP1 := "Unknow"
+	nameP2 := "Unknow"
 
-	/*	if p1 == nil || p2 == nil {
-			panic(errors.New("Players is nil"))
-		}
-	*/
-	/*	if m.vs.IsInit() {
-		if err = m.vs.Close(); err != nil {
+	p1 := m.data.Current.P1
+	p2 := m.data.Current.P2
+	if p1 != nil {
+		nameP1 = p1.Name
+	}
+	if p2 != nil {
+		nameP2 = p2.Name
+	}
+
+	if m.player1.IsInit() {
+		if err = m.player1.Close(); err != nil {
 			panic(err)
 		}
-	}*/
-	/*
-		if err = m.vs.UpdateText(p1.Name+" VS "+p2.Name, m.renderer); err != nil {
+	}
+	if err = m.player1.UpdateText(nameP1, m.renderer); err != nil {
+		panic(err)
+	}
+
+	if m.player2.IsInit() {
+		if err = m.player2.Close(); err != nil {
 			panic(err)
 		}
-	*/
+	}
+	if err = m.player2.UpdateText(nameP2, m.renderer); err != nil {
+		panic(err)
+	}
 }

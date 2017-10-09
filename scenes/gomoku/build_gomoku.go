@@ -108,11 +108,15 @@ func (g *Gomoku) addText() error {
 	var err error
 	var y, x int32
 
-	p1 := g.data.Current.P1
-	p2 := g.data.Current.P2
+	nameP2 := database.Bot
+	nameP1 := g.data.Current.P1.Name
+	if g.data.Current.P2 != nil {
+		nameP2 = g.data.Current.P2.Name
+	}
+
 	x = conf.WindowWidth / 2
 	y = conf.MarginTop + (conf.MenuHeaderHeight / 2)
-	if t, err = text.New(p1.Name+" VS "+p2.Name, conf.TxtLarge, conf.Font, x, y); err != nil {
+	if t, err = text.New(nameP1+" VS "+nameP2, conf.TxtLarge, conf.Font, x, y); err != nil {
 		return err
 	}
 	t.SetVariantStyle(conf.ColorTxtRed, conf.ColorTxtGreen, conf.ColorTxtBlue, conf.ColorTxtOpacity, objects.SFix)

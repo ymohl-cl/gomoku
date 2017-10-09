@@ -64,8 +64,6 @@ func (m *Menu) addButtonPlayer(x, y int32, p *database.Player) (*button.Button, 
 		return nil, err
 	}
 	b = button.New(bl, nil, t)
-	// SetAction
-	b.SetAction(m.SelectPlayer, p)
 
 	return b, nil
 }
@@ -222,7 +220,7 @@ func (m *Menu) getButtonDefaultPlayers() (*button.Button, error) {
 
 	// create button
 	b = button.New(bl, nil, t)
-	b.SetAction(m.DefaultPlayer)
+	b.SetAction(m.Play)
 
 	return b, nil
 }

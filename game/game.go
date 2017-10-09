@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ymohl-cl/gomoku/database"
+	"github.com/ymohl-cl/gomoku/game/ai"
 	"github.com/ymohl-cl/gomoku/game/ruler"
 	"github.com/ymohl-cl/gomoku/game/stats"
 )
@@ -26,6 +27,7 @@ type Game struct {
 	timerPlay time.Time
 	timerGame time.Time
 	rules     *ruler.Rules
+	bot       *ai.AI
 }
 
 // playersInfo struct contain db and stats about the 2 players actual players
@@ -40,15 +42,23 @@ type playersInfo struct {
 
 // New : Return a new instance and set default values of Game struct
 func New(d *database.Data) (*Game, error) {
+	var err error
 	g := Game{}
 
 	// set Player
 	if d == nil {
 		return nil, errors.New(errorData)
 	}
-	if d.Current.P1 == nil || d.Current.P2 == nil {
+	if d.Current.P1 == nil {
 		return nil, errors.New(errorPlayer)
 	}
+	if d.Current.P2 == nil {
+		if d.Current.P2, err = d.GetPlayerByName(database.Bot); err != nil {
+			return nil, err
+		}
+		g.bot = ai.New()
+	}
+
 	g.players = playersInfo{p1: d.Current.P1, p2: d.Current.P2}
 
 	// define first player randomly
@@ -68,7 +78,6 @@ func New(d *database.Data) (*Game, error) {
 		}
 		g.board = append(g.board, line)
 	}
-	fmt.Println("len de board: ", len(g.board))
 	return &g, nil
 }
 
@@ -155,11 +164,15 @@ func (g *Game) Run() {
 }
 
 // GetTimeToPlay : return time of player action duration
-func (g *Game) GetTimeToPlay() time.Duration {
+func (g Game) GetTimeToPlay() time.Duration {
 	return time.Since(g.timerPlay)
 }
 
 // GetTimeGame : return time of all the game
-func (g *Game) GetTimeGame() time.Duration {
+func (g Game) GetTimeGame() time.Duration {
 	return time.Since(g.timerGame)
+}
+
+func (g Game) AI() {
+	g.bot.Play(g.board)
 }

@@ -257,14 +257,15 @@ func (m *Menu) addVS() error {
 	var str string
 
 	// add name player 1
-	str = m.data.Current.P1.Name
+	//str = m.data.Current.P1.Name
+	str = "Unknow"
 
 	y = conf.MarginTop + conf.MenuHeaderHeight + conf.PaddingBlock + conf.MenuContentMediumBlockHeight + conf.MenuContentMediumBlockHeight/4 - (conf.PaddingBlock / 2)
 	x = conf.WindowWidth - conf.MarginRight - conf.MenuContentBlockWidth/2
 
 	for i := 0; i < 2; i++ {
 		if i == 1 {
-			str = m.data.Current.P2.Name
+			//str = m.data.Current.P2.Name
 			y += conf.MenuElementPadding + conf.MenuIconWidth
 		}
 		if t, err = text.New(str, conf.TxtMedium, conf.Font, x, y+(conf.MenuIconWidth/2)); err != nil {
