@@ -92,9 +92,14 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 		return
 	}
 
-	if g.game.GetCurrentPlayer().Name == "IA" {
-		go g.game.AI()
+	if g.game.GetCurrentPlayer().Name == "AI" {
 		go g.DrawFilter()
+		go func() {
+			c := make(chan uint8)
+			go g.game.Bot.Play(g.game.GetBoard(), c)
+			y, x := <-c, <-c
+			go g.selectToken(y, x)
+		}()
 	} else {
 		go g.HideFilter()
 	}

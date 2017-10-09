@@ -13,6 +13,8 @@ message Session {
 	Player p2 = 2;
 	repeated Move historicP1 = 3;
 	repeated Move historicP2 = 4;
+	int32 nbCaptureP1 = 5;
+	int32 nbCaptureP2 = 6;
 }
 
 message Stat {

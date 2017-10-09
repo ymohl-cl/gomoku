@@ -27,7 +27,8 @@ type Game struct {
 	timerPlay time.Time
 	timerGame time.Time
 	rules     *ruler.Rules
-	bot       *ai.AI
+	Bot       *ai.AI
+	data      *database.Data
 }
 
 // playersInfo struct contain db and stats about the 2 players actual players
@@ -56,7 +57,7 @@ func New(d *database.Data) (*Game, error) {
 		if d.Current.P2, err = d.GetPlayerByName(database.Bot); err != nil {
 			return nil, err
 		}
-		g.bot = ai.New()
+		g.Bot = ai.New()
 	}
 
 	g.players = playersInfo{p1: d.Current.P1, p2: d.Current.P2}
@@ -78,6 +79,7 @@ func New(d *database.Data) (*Game, error) {
 		}
 		g.board = append(g.board, line)
 	}
+	g.data = d
 	return &g, nil
 }
 
@@ -114,17 +116,21 @@ func (g *Game) SwitchPlayer() {
 // return if current player win
 func (g *Game) Move(x, y uint8) (bool, error) {
 	var valueToken uint8
+	var nbCaps *int32
+
 	g.rules = ruler.New()
 
 	// get current player with token value
 	if g.players.currentPlayer == g.players.p1 {
 		valueToken = ruler.TokenP1
+		nbCaps = &g.data.Current.NbCaptureP1
 	} else {
 		valueToken = ruler.TokenP2
+		nbCaps = &g.data.Current.NbCaptureP2
 	}
 
 	//CheckAllRules
-	g.rules.CheckRules(g.board, int8(x), int8(y), valueToken)
+	g.rules.CheckRules(g.board, int8(x), int8(y), valueToken, nbCaps)
 	//Verify Check
 	fmt.Println(g.rules)
 	if g.rules.IsMoved == false {
@@ -173,6 +179,6 @@ func (g Game) GetTimeGame() time.Duration {
 	return time.Since(g.timerGame)
 }
 
-func (g Game) AI() {
-	g.bot.Play(g.board)
+func (g Game) GetBoard() [][]uint8 {
+	return g.board
 }
