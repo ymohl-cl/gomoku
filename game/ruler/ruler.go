@@ -42,6 +42,26 @@ func New() *Rules {
 	return &Rules{IsMoved: false, MovedStr: "", IsCaptured: false, NbThree: 0, IsWin: false}
 }
 
+func (r Rules) Copy() *Rules {
+	return &Rules{
+		IsMoved:    r.IsMoved,
+		MovedStr:   r.MovedStr,
+		IsCaptured: r.IsCaptured,
+		caps:       r.caps,
+		NbThree:    r.NbThree,
+		IsWin:      r.IsWin,
+	}
+}
+
+func (r *Rules) Clean() {
+	r.IsMoved = false
+	r.MovedStr = ""
+	r.IsCaptured = false
+	r.caps = nil
+	r.NbThree = 0
+	r.IsWin = false
+}
+
 // checkPosition : check if the (posX, posY) point are inside the board
 // posX and poxY are where player want to play position
 func checkOnTheBoard(posX, posY int8) bool {
@@ -211,7 +231,7 @@ func (r *Rules) CheckWinner(board [][]uint8, posX, posY int8, currentPlayer uint
 // board is actual board
 // posX and poxY are where player want to play position
 // currentPlayer is the actual player token
-func (r *Rules) CheckRules(board [][]uint8, posX, posY int8, currentPlayer uint8) {
+func (r *Rules) CheckRules(board [][]uint8, posX, posY int8, currentPlayer uint8, nbCaps *int32) {
 
 	//Basic init posX/posY check
 	if !checkOnTheBoard(posX, posY) {
@@ -243,6 +263,11 @@ func (r *Rules) CheckRules(board [][]uint8, posX, posY int8, currentPlayer uint8
 	if r.IsMoved == false {
 		r.MovedStr = "Not neighborhood"
 	} else {
+		*nbCaps += int32(len(r.caps)) / 2
+		if *nbCaps >= 4 {
+			r.IsWin = true
+			return
+		}
 		r.CheckWinner(board, posX, posY, currentPlayer)
 	}
 	return
