@@ -116,17 +116,17 @@ func (g *Game) SwitchPlayer() {
 // return if current player win
 func (g *Game) Move(x, y uint8) (bool, error) {
 	var valueToken uint8
-	var nbCaps *int32
+	var nbCaps uint8
 
 	g.rules = ruler.New()
 
 	// get current player with token value
 	if g.players.currentPlayer == g.players.p1 {
 		valueToken = ruler.TokenP1
-		nbCaps = &g.data.Current.NbCaptureP1
+		nbCaps = uint8(g.data.Current.NbCaptureP1)
 	} else {
 		valueToken = ruler.TokenP2
-		nbCaps = &g.data.Current.NbCaptureP2
+		nbCaps = uint8(g.data.Current.NbCaptureP2)
 	}
 
 	//CheckAllRules
