@@ -29,6 +29,7 @@ type Rules struct {
 	//Capture
 	IsCaptured bool
 	caps       []*Capture
+	NbCaps     uint8
 
 	//Double-Three
 	NbThree uint8
@@ -118,6 +119,7 @@ func (r *Rules) CheckCapture(board [][]uint8, posX, posY, xi, yi int8, currentPl
 			r.IsCaptured = true
 			r.caps = append(r.caps, NewCapture(posX+xi, posY+yi))
 			r.caps = append(r.caps, NewCapture(posX+(xi*2), posY+(yi*2)))
+			r.NbCaps++
 			return
 		}
 	}
@@ -231,7 +233,7 @@ func (r *Rules) CheckWinner(board [][]uint8, posX, posY int8, currentPlayer uint
 // board is actual board
 // posX and poxY are where player want to play position
 // currentPlayer is the actual player token
-func (r *Rules) CheckRules(board [][]uint8, posX, posY int8, currentPlayer uint8, nbCaps *int32) {
+func (r *Rules) CheckRules(board [][]uint8, posX, posY int8, currentPlayer uint8, nbCaps uint8) {
 
 	//Basic init posX/posY check
 	if !checkOnTheBoard(posX, posY) {
@@ -263,8 +265,7 @@ func (r *Rules) CheckRules(board [][]uint8, posX, posY int8, currentPlayer uint8
 	if r.IsMoved == false {
 		r.MovedStr = "Not neighborhood"
 	} else {
-		*nbCaps += int32(len(r.caps)) / 2
-		if *nbCaps >= 4 {
+		if nbCaps+r.NbCaps >= 5 {
 			r.IsWin = true
 			return
 		}

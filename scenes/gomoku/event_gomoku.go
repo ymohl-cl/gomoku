@@ -2,6 +2,7 @@ package gomoku
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ymohl-cl/game-builder/objects"
@@ -94,19 +95,21 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 		return
 	}
 
+	g.game.Playing()
+
 	if g.game.GetCurrentPlayer().Name == "AI" {
 		go g.DrawFilter()
 		go func() {
 			c := make(chan uint8)
 			go g.game.Bot.Play(g.game.GetBoard(), c)
 			y, x := <-c, <-c
+			fmt.Println("AI play on x ", x, " - y: ", y)
 			go g.selectToken(y, x)
 		}()
 	} else {
 		go g.HideFilter()
 	}
 
-	g.game.Playing()
 }
 
 func (g *Gomoku) quit(values ...interface{}) {
