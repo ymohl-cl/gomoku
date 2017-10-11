@@ -104,3 +104,8 @@ func (l *Load) Update() {
 	l.addLoadingBar()
 	return
 }
+
+// SetCloser : allow quit the application
+func (l *Load) SetCloser(f func()) {
+	// nothing to do
+}

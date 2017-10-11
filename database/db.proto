@@ -1,23 +1,18 @@
 syntax = "proto3";
+
 package database;
 
 message Player {
 	string name = 1;
 	Stat stats = 2;
-	repeated Session saves = 3;
+	repeated int32 saves = 3;
 }
 
 message Session {
-	repeated Cell board = 1;
-	Player p1 = 2;
-	Player p2 = 3;
-	repeated Move historicP1 = 4;
-	repeated Move historicP2 = 5;
-}
-
-message Cell {
-	int32 value = 1;
-	int32 weight = 2;
+	Player p1 = 1;
+	Player p2 = 2;
+	repeated Move historicP1 = 3;
+	repeated Move historicP2 = 4;
 }
 
 message Stat {
@@ -33,5 +28,6 @@ message Move {
 
 message Data {
 	repeated Player players = 1;
-	Session current = 2;
+	repeated Session sessions = 2;
+	Session current = 3;
 }

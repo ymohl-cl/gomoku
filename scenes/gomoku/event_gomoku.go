@@ -57,9 +57,7 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 
 	if end, err = g.game.Move(x, y); err != nil {
 		// setNotice
-		g.setNotice("You can make this move")
-		println("crash", err.Error())
-		println("x: ", x, "y: ", y)
+		g.setNotice("You can't make this move")
 		return
 	}
 
@@ -105,7 +103,12 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 }
 
 func (g *Gomoku) quit(values ...interface{}) {
-	g.switcher(conf.SMenu, true)
+	g.data.SaveSession()
+	go func() {
+		if err := g.switcher(conf.SMenu, true); err != nil {
+			panic(err)
+		}
+	}()
 }
 
 // setNotice allow draw informations to the player

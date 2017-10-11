@@ -153,3 +153,8 @@ func (g *Gomoku) Update() {
 		panic(err)
 	}
 }
+
+// SetCloser : allow quit the application
+func (g *Gomoku) SetCloser(f func()) {
+	// nothing to do
+}

@@ -17,6 +17,6 @@ func (P *Player) DeleteSave() string {
 	if len(P.Saves) == 0 {
 		return "No session saved"
 	}
-	P.Saves = make([]*Session, 0)
+	P.Saves = make([]int32, 0)
 	return ""
 }

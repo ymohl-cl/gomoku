@@ -27,7 +27,7 @@ const (
 
 	// Configuration menu
 	playerMax      = 10
-	buttonByPlayer = 4
+	buttonByPlayer = 6
 
 	// notice message
 	noticeMaxPlayer = "You can't save more players"
@@ -47,6 +47,7 @@ type Menu struct {
 	initialized bool
 	closer      chan (uint8)
 	switcher    func(uint8, bool) error
+	quit        func()
 
 	/* objects by layers */
 	m      *sync.Mutex

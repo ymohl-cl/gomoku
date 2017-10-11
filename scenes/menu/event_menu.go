@@ -35,15 +35,18 @@ func (m *Menu) DeletePlayer(values ...interface{}) {
 		panic(errorValuesEmpty)
 	}
 
+	m.m.Lock()
+	defer m.m.Unlock()
 	if id, err = m.data.DeletePlayer(p); err != nil {
 		go m.setNotice(err.Error())
 		return
 	}
+
 	go func() {
 		if err = m.removeUIPlayer(id); err != nil {
 			panic(err)
 		}
-		m.updateVS()
+		//m.updateVS()
 	}()
 }
 
@@ -122,6 +125,25 @@ func (m *Menu) NewPlayer(values ...interface{}) {
 // Play start the game
 func (m *Menu) Play(values ...interface{}) {
 	var err error
+	var status int8
+	var ok bool
+
+	if len(values) == 1 {
+		status, ok = values[0].(int8)
+		if !ok {
+			panic(errorInterface)
+		}
+	} else {
+		panic(errorValuesEmpty)
+	}
+
+	if m.data.Current.P1 == nil {
+		go m.setNotice("You need choice player one")
+		return
+	} else if status == 0 && m.data.Current.P2 == nil {
+		go m.setNotice("You need choice player two")
+		return
+	}
 
 	go func() {
 		if err = m.switcher(conf.SGame, true); err != nil {
@@ -149,4 +171,9 @@ func (m *Menu) setNotice(str string) {
 	if m.notice.GetIDSDL() == idSDL {
 		m.notice.Close()
 	}
+}
+
+// Quit game
+func (m *Menu) QuitGame(values ...interface{}) {
+	m.quit()
 }

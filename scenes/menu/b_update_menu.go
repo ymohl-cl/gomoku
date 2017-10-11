@@ -2,6 +2,7 @@ package menu
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ymohl-cl/game-builder/objects/button"
 	"github.com/ymohl-cl/gomoku/conf"
@@ -75,7 +76,10 @@ func (m *Menu) removeUIPlayer(idData int) error {
 	var err error
 	var id int
 
+	fmt.Println("IdData: ", idData)
 	id = idData * buttonByPlayer
+	fmt.Println("id: ", id)
+	fmt.Println("len uiPlayer: ", len(m.layers[layerPlayers]))
 	if err = m.closeUIPlayer(id); err != nil {
 		return err
 	}
@@ -88,15 +92,21 @@ func (m *Menu) removeUIPlayer(idData int) error {
 	if err = m.closeUIPlayer(id + 3); err != nil {
 		return err
 	}
-
+	if err = m.closeUIPlayer(id + 4); err != nil {
+		return err
+	}
+	if err = m.closeUIPlayer(id + 5); err != nil {
+		return err
+	}
 	// Update position next elements
-	for _, b := range m.layers[layerPlayers][id+4:] {
+	fmt.Println("update psoition")
+	for _, b := range m.layers[layerPlayers][id+buttonByPlayer:] {
 		x, y := b.GetPosition()
 		y -= (conf.MenuElementPlayerHeight + conf.MenuElementPadding)
 		b.UpdatePosition(x, y)
 	}
 
-	m.layers[layerPlayers] = append(m.layers[layerPlayers][:id], m.layers[layerPlayers][id+4:]...)
+	m.layers[layerPlayers] = append(m.layers[layerPlayers][:id], m.layers[layerPlayers][id+buttonByPlayer:]...)
 	return nil
 }
 

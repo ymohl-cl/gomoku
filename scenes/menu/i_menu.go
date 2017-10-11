@@ -154,3 +154,8 @@ func (m *Menu) SetSwitcher(f func(uint8, bool) error) {
 func (m *Menu) Update() {
 	return
 }
+
+// SetCloser : allow quit the application
+func (m *Menu) SetCloser(f func()) {
+	m.quit = f
+}

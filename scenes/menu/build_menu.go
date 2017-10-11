@@ -11,6 +11,7 @@ import (
 	"github.com/ymohl-cl/game-builder/objects/input"
 	"github.com/ymohl-cl/game-builder/objects/text"
 	"github.com/ymohl-cl/gomoku/conf"
+	"github.com/ymohl-cl/gomoku/scenes/builder"
 )
 
 func (m *Menu) addMusic() error {
@@ -147,7 +148,41 @@ func (m *Menu) addButtons() error {
 	}
 	m.layers[layerButton] = append(m.layers[layerButton], b)
 
+	if b, err = m.getButtonQuit(); err != nil {
+		return err
+	}
+	if err = b.Init(m.renderer); err != nil {
+		return err
+	}
+	m.layers[layerButton] = append(m.layers[layerButton], b)
+
 	return nil
+}
+
+func (m *Menu) getButtonQuit() (*button.Button, error) {
+	var x, y int32
+	var t *text.Text
+	var bl *block.Block
+	var b *button.Button
+	var err error
+
+	y = conf.WindowHeight - conf.MarginBot - (conf.MenuFooterHeight / 2) - (conf.ButtonHeight / 2)
+	x = conf.WindowWidth - conf.MarginRight - conf.ButtonWidth
+
+	// create block
+	if bl, err = builder.CreateBlockToDefaultButton(x, y, conf.ButtonWidth, conf.ButtonHeight); err != nil {
+		return nil, err
+	}
+
+	// create txt
+	if t, err = builder.CreateTxtToButton(x+conf.ButtonWidth/2, y+conf.ButtonHeight/2, "QUIT !"); err != nil {
+		return nil, err
+	}
+
+	b = button.New(bl, nil, t)
+	b.SetAction(m.QuitGame)
+
+	return b, nil
 }
 
 func (m *Menu) addNotice() error {
@@ -244,7 +279,7 @@ func (m *Menu) addJS() error {
 		if err = b.Init(m.renderer); err != nil {
 			return err
 		}
-		m.layers[layerPlayers] = append(m.layers[layerPlayers], b)
+		m.layers[layerVS] = append(m.layers[layerVS], b)
 	}
 
 	return nil
