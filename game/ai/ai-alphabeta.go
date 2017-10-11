@@ -5,6 +5,7 @@ import (
 	"math"
 	"sync"
 
+	"github.com/ymohl-cl/gomoku/database"
 	"github.com/ymohl-cl/gomoku/game/ruler"
 )
 
@@ -99,18 +100,20 @@ func (s State) switchPlayer() uint8 {
 }
 
 func (a AI) eval(s *State, n *Node, stape int8) int8 {
+	var ret int8
+
+	fmt.Println("NbThree: ", n.r.NbThree)
+	if !n.r.IsWin {
+		ret = 30
+		ret += int8(s.nbCapsOther) - int8(s.nbCapsCurrent)
+	} else {
+		ret = math.MaxInt8 - stape
+	}
 
 	if s.player == ruler.TokenP1 {
-		if !n.r.IsWin {
-			return 30
-		}
-		return math.MaxInt8 - stape
+		return ret
 	}
-
-	if !n.r.IsWin {
-		return -30
-	}
-	return math.MinInt8 + stape
+	return -ret
 }
 
 func (a *AI) prevalphabeta(s *State, prevnode *Node, alpha, beta int8, stape int8) {
@@ -207,9 +210,9 @@ func (a *AI) getCoord(weight int8) (uint8, uint8) {
 	return x, y
 }
 
-func (a *AI) Play(b [][]uint8, c chan uint8) {
+func (a *AI) Play(b [][]uint8, s *database.Session, c chan uint8) {
 	if a.s == nil {
-		a.s = a.newState(b, 0, 0, 0, 0, ruler.TokenP2)
+		a.s = a.newState(b, uint8(s.NbCaptureP1), uint8(s.NbCaptureP2), 0, 0, ruler.TokenP2)
 	}
 	fmt.Println("LETS GO")
 	a.prevalphabeta(a.s, nil, math.MinInt8, math.MaxInt8, 4)

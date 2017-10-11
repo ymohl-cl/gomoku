@@ -1,5 +1,7 @@
 package ruler
 
+import "fmt"
+
 //Token values and size of board
 const (
 	TokenEmpty = 0
@@ -167,6 +169,10 @@ func (r Rules) IsThree(board [][]uint8, posX, posY, xi, yi int8, currentPlayer u
 		} else if !checkPosition(board, posX+(3*xi), posY+(3*yi)) {
 			return false
 		}
+		fmt.Print("(", posX+(xi*-1), ",", posY+(yi*-1), ")")
+		fmt.Print(" (", posX+(xi*0), ",", posY+(yi*0), ")")
+		fmt.Print(" (", posX+(xi*1), ",", posY+(yi*1), ")")
+		fmt.Println(" (", posX+(xi*2), ",", posY+(yi*2), ")")
 		return true
 	}
 	return false
@@ -177,7 +183,7 @@ func (r Rules) IsThree(board [][]uint8, posX, posY, xi, yi int8, currentPlayer u
 // posX and poxY are where player want to play position
 // xi and yi are steps of posX and posY respectively for the direction check
 // currentPlayer is the actual player token
-func (r *Rules) CheckDoubleThree(board [][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) {
+func (r *Rules) CheckDoubleThree(board [][]uint8, posX, posY, xi, yi int8, currentPlayer uint8, st *[][]uint8) {
 
 	if r.IsThree(board, posX, posY, xi, yi, currentPlayer) {
 		r.NbThree++
@@ -244,6 +250,16 @@ func (r *Rules) CheckRules(board [][]uint8, posX, posY int8, currentPlayer uint8
 		r.MovedStr = "Already used"
 		return
 	}
+
+	var sliceThree [][]uint8
+	for y := 0; y < 3; y++ {
+		lineThree := []uint8{}
+		for x := 0; x < 3; x++ {
+			lineThree = append(lineThree, uint8(0))
+		}
+		sliceThree = append(sliceThree, lineThree)
+	}
+
 	//Check around posX/posY
 	for yi := int8(-1); yi <= 1; yi++ {
 		for xi := int8(-1); xi <= 1; xi++ {
@@ -258,18 +274,24 @@ func (r *Rules) CheckRules(board [][]uint8, posX, posY int8, currentPlayer uint8
 				r.IsMoved = true
 				r.CheckCapture(board, posX, posY, xi, yi, currentPlayer)
 			}
-			r.CheckDoubleThree(board, posX, posY, xi, yi, currentPlayer)
+			r.CheckDoubleThree(board, posX, posY, xi, yi, currentPlayer, &sliceThree)
 		}
 	}
 	// Check if this move is a winning
 	if r.IsMoved == false {
 		r.MovedStr = "Not neighborhood"
-	} else {
-		if nbCaps+r.NbCaps >= 5 {
-			r.IsWin = true
-			return
-		}
-		r.CheckWinner(board, posX, posY, currentPlayer)
+		return
+	}
+
+	if nbCaps+r.NbCaps >= 5 {
+		r.IsWin = true
+		return
+	}
+	r.CheckWinner(board, posX, posY, currentPlayer)
+
+	if r.IsWin == false && r.IsCaptured == false && r.NbThree >= 2 {
+		r.IsMoved = false
+		r.MovedStr = "DoubleThree"
 	}
 	return
 }

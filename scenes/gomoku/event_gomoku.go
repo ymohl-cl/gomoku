@@ -99,7 +99,7 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 		go g.DrawFilter()
 		go func() {
 			c := make(chan uint8)
-			go g.game.Bot.Play(g.game.GetBoard(), c)
+			go g.game.Bot.Play(g.game.GetBoard(), g.data.Current, c)
 			y, x := <-c, <-c
 			fmt.Println("AI play on x ", x, " - y: ", y)
 			go g.selectToken(y, x)
