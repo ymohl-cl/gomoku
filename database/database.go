@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -32,7 +31,6 @@ func Get() (*Data, error) {
 
 	err = proto.Unmarshal(buf, D)
 	if err != nil {
-		fmt.Println("Unmarshal")
 		return nil, err
 	}
 
@@ -42,7 +40,6 @@ func Get() (*Data, error) {
 }
 
 func (D *Data) initSave() error {
-	fmt.Println("Init save protobuf")
 	if len(D.Players) == 0 {
 		AI := CreatePlayer(Bot)
 		D.Players = append(D.Players, AI)
@@ -76,7 +73,6 @@ func (d *Data) AddPlayer(p *Player) {
 }
 
 func (d *Data) DeletePlayer(p *Player) (int, error) {
-	fmt.Println("len player: ", len(d.Players))
 	for id, pt := range d.Players {
 		if pt.Name == p.Name {
 			d.Players = append(d.Players[:id], d.Players[id+1:]...)
@@ -93,7 +89,6 @@ func (d *Data) DeletePlayer(p *Player) (int, error) {
 
 			d.Write()
 			//			d.Current = new(Session)
-			fmt.Println("len player: ", len(d.Players))
 			return id, nil
 		}
 	}

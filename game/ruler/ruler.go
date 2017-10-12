@@ -1,14 +1,16 @@
 package ruler
 
-import "fmt"
-
 //Token values and size of board
 const (
-	TokenEmpty = 0
-	TokenP1    = 1
-	TokenP2    = 2
-	sizeY      = 19
-	sizeX      = 19
+	TokenEmpty         = 0
+	TokenP1            = 1
+	TokenP2            = 2
+	sizeY              = 19
+	sizeX              = 19
+	threeHorizontal    = 1 << 0
+	threeVertical      = 1 << 1
+	threeDiagonalLeft  = 1 << 2
+	threeDiagonalRight = 1 << 3
 )
 
 // Capture struct is a couple (X, Y) of a captured point
@@ -169,10 +171,6 @@ func (r Rules) IsThree(board [][]uint8, posX, posY, xi, yi int8, currentPlayer u
 		} else if !checkPosition(board, posX+(3*xi), posY+(3*yi)) {
 			return false
 		}
-		fmt.Print("(", posX+(xi*-1), ",", posY+(yi*-1), ")")
-		fmt.Print(" (", posX+(xi*0), ",", posY+(yi*0), ")")
-		fmt.Print(" (", posX+(xi*1), ",", posY+(yi*1), ")")
-		fmt.Println(" (", posX+(xi*2), ",", posY+(yi*2), ")")
 		return true
 	}
 	return false
@@ -183,12 +181,45 @@ func (r Rules) IsThree(board [][]uint8, posX, posY, xi, yi int8, currentPlayer u
 // posX and poxY are where player want to play position
 // xi and yi are steps of posX and posY respectively for the direction check
 // currentPlayer is the actual player token
-func (r *Rules) CheckDoubleThree(board [][]uint8, posX, posY, xi, yi int8, currentPlayer uint8, st *[][]uint8) {
+func (r *Rules) CheckDoubleThree(board [][]uint8, posX, posY, xi, yi int8, currentPlayer uint8, maskThree *uint8) {
+	var flag bool
+
+	if yi == 1 && xi == 1 {
+		if *maskThree&threeDiagonalLeft != 0 {
+			return
+		}
+	} else if yi == 1 && xi == 0 {
+		if *maskThree&threeVertical != 0 {
+			return
+		}
+	} else if yi == 1 && xi == -1 {
+		if *maskThree&threeDiagonalRight != 0 {
+			return
+		}
+	} else if yi == 0 && xi == 1 {
+		if *maskThree&threeHorizontal != 0 {
+			return
+		}
+	}
 
 	if r.IsThree(board, posX, posY, xi, yi, currentPlayer) {
 		r.NbThree++
+		flag = true
 	} else if r.IsThree(board, posX+xi, posY+yi, xi, yi, currentPlayer) {
 		r.NbThree++
+		flag = true
+	}
+
+	if flag == true {
+		if yi == -1 && xi == -1 {
+			*maskThree |= threeDiagonalLeft
+		} else if yi == -1 && xi == 0 {
+			*maskThree |= threeVertical
+		} else if yi == -1 && xi == 1 {
+			*maskThree |= threeDiagonalRight
+		} else if yi == 0 && xi == -1 {
+			*maskThree |= threeHorizontal
+		}
 	}
 }
 
@@ -240,6 +271,7 @@ func (r *Rules) CheckWinner(board [][]uint8, posX, posY int8, currentPlayer uint
 // posX and poxY are where player want to play position
 // currentPlayer is the actual player token
 func (r *Rules) CheckRules(board [][]uint8, posX, posY int8, currentPlayer uint8, nbCaps uint8) {
+	var maskThree uint8
 
 	//Basic init posX/posY check
 	if !checkOnTheBoard(posX, posY) {
@@ -249,15 +281,6 @@ func (r *Rules) CheckRules(board [][]uint8, posX, posY int8, currentPlayer uint8
 	if !checkPosition(board, posX, posY) {
 		r.MovedStr = "Already used"
 		return
-	}
-
-	var sliceThree [][]uint8
-	for y := 0; y < 3; y++ {
-		lineThree := []uint8{}
-		for x := 0; x < 3; x++ {
-			lineThree = append(lineThree, uint8(0))
-		}
-		sliceThree = append(sliceThree, lineThree)
 	}
 
 	//Check around posX/posY
@@ -274,7 +297,7 @@ func (r *Rules) CheckRules(board [][]uint8, posX, posY int8, currentPlayer uint8
 				r.IsMoved = true
 				r.CheckCapture(board, posX, posY, xi, yi, currentPlayer)
 			}
-			r.CheckDoubleThree(board, posX, posY, xi, yi, currentPlayer, &sliceThree)
+			r.CheckDoubleThree(board, posX, posY, xi, yi, currentPlayer, &maskThree)
 		}
 	}
 	// Check if this move is a winning

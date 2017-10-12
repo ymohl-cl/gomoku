@@ -98,11 +98,12 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 	if g.game.GetCurrentPlayer().Name == "AI" {
 		go g.DrawFilter()
 		go func() {
+			//g.game.Bot.PlayOpposing(y, x)
 			c := make(chan uint8)
 			go g.game.Bot.Play(g.game.GetBoard(), g.data.Current, c)
-			y, x := <-c, <-c
-			fmt.Println("AI play on x ", x, " - y: ", y)
-			go g.selectToken(y, x)
+			yi, xi := <-c, <-c
+			fmt.Println("AI play on x ", xi, " - y: ", yi)
+			go g.selectToken(yi, xi)
 		}()
 	} else {
 		go g.HideFilter()

@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"fmt"
 	"math"
 	"sync"
 
@@ -10,6 +11,9 @@ import (
 
 type AI struct {
 	s *State
+	//	minWeight int8
+	//	maxWeight int8
+	nbTurn int16
 }
 
 func New() *AI {
@@ -24,6 +28,8 @@ type State struct {
 	lenMaxP2      uint8
 	player        uint8
 	pq            *Node
+	Min           int8
+	Max           int8
 }
 
 func (a AI) newState(b [][]uint8, nbCOldCurrent, nbCOldOther, lMaxP1, lMaxP2, p uint8) *State {
@@ -34,6 +40,8 @@ func (a AI) newState(b [][]uint8, nbCOldCurrent, nbCOldOther, lMaxP1, lMaxP2, p 
 		lenMaxP1:      lMaxP1,
 		lenMaxP2:      lMaxP2,
 		player:        p,
+		Min:           math.MinInt8,
+		Max:           math.MaxInt8,
 	}
 
 	return &s
@@ -56,7 +64,10 @@ func (a AI) newNode(x, y uint8) *Node {
 	}
 }
 
+var nbNode int64
+
 func (s *State) addNode(n *Node) {
+	nbNode++
 	if s.pq == nil {
 		s.pq = n
 	} else {
@@ -154,23 +165,13 @@ func (a *AI) alphabeta(s *State, prevnode *Node, alpha, beta int8, stape int8) i
 				node := a.newNode(x, y)
 				node.r.CheckRules(s.board, int8(x), int8(y), s.player, s.nbCapsCurrent)
 				if node.r.IsMoved {
-					wg := new(sync.WaitGroup)
-					wg.Add(1)
-					go func() {
-						defer wg.Done()
-						s.addNode(node)
-					}()
-					wg.Add(1)
-					var b [][]uint8
-					go func() {
-						defer wg.Done()
-						b = a.genBoard(s.board, node, s.player)
-					}()
-					wg.Wait()
+					s.addNode(node)
+					b := a.genBoard(s.board, node, s.player)
 					node.nextState = a.newState(b, s.nbCapsCurrent+node.r.NbCaps, s.nbCapsOther, s.lenMaxP1, s.lenMaxP2, s.switchPlayer())
 					Val = a.max(Val, a.alphabeta(node.nextState, node, alpha, beta, stape-1))
 					node.weight = Val
 					alpha = a.max(alpha, Val)
+					s.Min = alpha
 					if beta <= Val {
 						return Val
 					}
@@ -184,23 +185,15 @@ func (a *AI) alphabeta(s *State, prevnode *Node, alpha, beta int8, stape int8) i
 				node := a.newNode(x, y)
 				node.r.CheckRules(s.board, int8(x), int8(y), s.player, s.nbCapsCurrent)
 				if node.r.IsMoved {
-					wg := new(sync.WaitGroup)
-					wg.Add(1)
-					go func() {
-						defer wg.Done()
-						s.addNode(node)
-					}()
-					wg.Add(1)
-					var b [][]uint8
-					go func() {
-						defer wg.Done()
-						b = a.genBoard(s.board, node, s.player)
-					}()
-					wg.Wait()
+					s.addNode(node)
+					b := a.genBoard(s.board, node, s.player)
 					node.nextState = a.newState(b, s.nbCapsCurrent+node.r.NbCaps, s.nbCapsOther, s.lenMaxP1, s.lenMaxP2, s.switchPlayer())
+					node.nextState.Min = alpha
+					node.nextState.Max = beta
 					Val = a.min(Val, a.alphabeta(node.nextState, node, alpha, beta, stape-1))
 					node.weight = Val
 					beta = a.min(beta, Val)
+					s.Max = beta
 					if Val <= alpha {
 						return Val
 					}
@@ -211,32 +204,45 @@ func (a *AI) alphabeta(s *State, prevnode *Node, alpha, beta int8, stape int8) i
 	return Val
 }
 
-func (a *AI) getCoord(weight int8) (uint8, uint8) {
-	var x, y uint8
+func (a *AI) getCoord() (uint8, uint8) {
+	var refNode *Node
+	var weight int8
 
-	var tmp int8
-	tmp = math.MinInt8
+	weight = math.MinInt8
 	for node := a.s.pq; node != nil; node = node.next {
-		if tmp <= node.weight {
-			x = node.x
-			y = node.y
-			tmp = node.weight
+		if weight <= node.weight {
+			weight = node.weight
+			refNode = node
 		}
 	}
-	a.s = nil
-	return x, y
+	a.s = refNode.nextState
+	return refNode.x, refNode.y
 }
 
 func (a *AI) Play(b [][]uint8, s *database.Session, c chan uint8) {
+	nbNode = 0
 	if a.s == nil {
 		a.s = a.newState(b, uint8(s.NbCaptureP1), uint8(s.NbCaptureP2), 0, 0, ruler.TokenP2)
+		//a.prevalphabeta(a.s, nil, math.MinInt8, math.MaxInt8, 4)
 	}
-	//a.prevalphabeta(a.s, nil, math.MinInt8, math.MaxInt8, 4)
-	a.alphabeta(a.s, nil, math.MinInt8, math.MaxInt8, 4)
-	//	a.getLen(a.s)
-	x, y := a.getCoord(0)
+	a.alphabeta(a.s, nil, a.s.Min, a.s.Max, 4)
+	x, y := a.getCoord()
+	fmt.Println(nbNode, " nodes ont ete generes")
 	c <- y
 	c <- x
+}
+
+func (a *AI) PlayOpposing(y, x uint8) {
+	if a.s == nil {
+		return
+	}
+	for node := a.s.pq; node != nil; node = node.next {
+		if y == node.y && x == node.x {
+			a.s = node.nextState
+			a.s.pq = nil
+			return
+		}
+	}
 }
 
 func (a *AI) min(x, y int8) int8 {
