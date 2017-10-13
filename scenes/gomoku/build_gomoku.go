@@ -288,7 +288,7 @@ func (g *Gomoku) addBlockTime() error {
 
 	y += conf.ButtonHeight / 2
 	x += conf.ButtonWidth / 2
-	if t, err = text.New("00:00:00", conf.TxtMedium, conf.Font, x, y); err != nil {
+	if t, err = text.New("00:00:00:00", conf.TxtMedium, conf.Font, x, y); err != nil {
 		return err
 	}
 	t.SetVariantStyle(conf.ColorTxtRed, conf.ColorTxtGreen, conf.ColorTxtBlue, conf.ColorTxtOpacity, objects.SFix)

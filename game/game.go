@@ -130,7 +130,7 @@ func (g *Game) Move(x, y uint8) (bool, error) {
 	}
 
 	//CheckAllRules
-	g.rules.CheckRules(g.board, int8(x), int8(y), valueToken, uint8(*nbCaps))
+	g.rules.CheckRules(&g.board, int8(x), int8(y), valueToken, uint8(*nbCaps))
 	//add Capture nb
 	*nbCaps += int32(g.rules.NbCaps)
 	//Verify Check
@@ -177,6 +177,6 @@ func (g Game) GetTimeGame() time.Duration {
 	return time.Since(g.timerGame)
 }
 
-func (g Game) GetBoard() [][]uint8 {
-	return g.board
+func (g Game) GetBoard() *[][]uint8 {
+	return &g.board
 }

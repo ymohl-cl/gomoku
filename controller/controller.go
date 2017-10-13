@@ -33,7 +33,9 @@ func TimeToString(d time.Duration) string {
 	hour := int(d.Hours())
 	min := int(d.Minutes())
 	sec := int(d.Seconds())
+	mil := int(d / time.Millisecond)
 
+	mil -= (sec * 1000)
 	sec -= (min * 60)
 	min -= (hour * 60)
 
@@ -56,7 +58,13 @@ func TimeToString(d time.Duration) string {
 		str += "0"
 	}
 	// add min to string
-	str += strconv.Itoa(sec)
+	str += strconv.Itoa(sec) + ":"
 
+	mil /= 10
+	if mil < 10 {
+		str += "0"
+	}
+	// add Nanoseconds to string
+	str += strconv.Itoa(mil)
 	return str
 }
