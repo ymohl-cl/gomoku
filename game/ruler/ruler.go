@@ -279,6 +279,22 @@ func (r *Rules) CheckWinner(board *[][]uint8, posX, posY int8, currentPlayer uin
 	}
 }
 
+/*function negamax(node, depth, α, β, color)
+02     if depth = 0 or node is a terminal node
+03         return color * the heuristic value of node
+
+04     childNodes := GenerateMoves(node)
+05     childNodes := OrderMoves(childNodes)
+06     bestValue := −∞
+07     foreach child in childNodes
+08         v := −negamax(child, depth − 1, −β, −α, −color)
+09         bestValue := max( bestValue, v )
+10         α := max( α, v )
+11         if α ≥ β
+12             break
+13     return bestValue
+*/
+
 // CheckRules : Execute all Check (moves/captures/doubleThree/Win)
 // board is actual board
 // posX and poxY are where player want to play position
