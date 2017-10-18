@@ -26,6 +26,8 @@ type State struct {
 	beta          int8
 	player        uint8
 	pq            *Node
+	nodes         map[uint8]map[uint8]*Node
+	save          *Node
 }
 
 func (a AI) newState(b *[][]uint8, nbCOldCurrent, nbCOldOther, lMaxP1, lMaxP2, p uint8) *State {
@@ -36,6 +38,7 @@ func (a AI) newState(b *[][]uint8, nbCOldCurrent, nbCOldOther, lMaxP1, lMaxP2, p
 		lenMaxP1:      lMaxP1,
 		lenMaxP2:      lMaxP2,
 		player:        p,
+		nodes:         make(map[uint8]map[uint8]*Node),
 	}
 
 	return &s
@@ -88,6 +91,7 @@ func (s *State) Clean() {
 	s.lenMaxP2 = 0
 	s.player = 0
 	s.pq = nil
+	s.nodes = nil
 }
 
 func (s *State) Set(b *[][]uint8, nbCOldCurrent, nbCOldOther, lMaxP1, lMaxP2, p uint8) {
@@ -99,9 +103,16 @@ func (s *State) Set(b *[][]uint8, nbCOldCurrent, nbCOldOther, lMaxP1, lMaxP2, p 
 	s.player = p
 	s.alpha = math.MinInt8
 	s.beta = math.MaxInt8
+	s.nodes = make(map[uint8]map[uint8]*Node)
 }
 
 func (s *State) addNode(n *Node) {
+	//	if _, ok := s.nodes[n.y]; !ok {
+	//		s.nodes[n.y] = make(map[uint8]*Node)
+	//	}
+	//	s.nodes[n.y][n.x] = n
+	//	s.save = n
+
 	if s.pq == nil {
 		s.pq = n
 	} else {
@@ -110,6 +121,7 @@ func (s *State) addNode(n *Node) {
 		s.pq.next = tmp
 	}
 }
+
 func (a *AI) copyBoard(b [][]uint8) [][]uint8 {
 	var newBoard [][]uint8
 	for _, line := range b {
@@ -200,13 +212,31 @@ func (s *State) SetBeta(b int8) {
 	s.beta = b
 }
 
-func (s *State) Search(n *Node) *Node {
-	for test := s.pq; test != nil; test = test.next {
-		if test.x == n.x && test.y == n.y {
-			return test
-		}
+func (s *State) SearchByPosition(y, x uint8) *Node {
+	if _, ok := s.nodes[y]; !ok {
+		return nil
+	}
+	if node, ok := s.nodes[y][x]; ok {
+		return node
 	}
 	return nil
+}
+
+func (s *State) Search(n *Node) *Node {
+	if _, ok := s.nodes[n.y]; !ok {
+		return nil
+	}
+	if node, ok := s.nodes[n.y][n.x]; ok {
+		return node
+	}
+	return nil
+
+	/*	for test := s.pq; test != nil; test = test.next {
+			if test.x == n.x && test.y == n.y {
+				return test
+			}
+		}
+		return nil*/
 }
 
 func (a *AI) alphabeta(s *State, alpha, beta int8, stape int8, workNode *Node) int8 {
@@ -215,7 +245,7 @@ func (a *AI) alphabeta(s *State, alpha, beta int8, stape int8, workNode *Node) i
 	var test bool
 	//	var findNode *Node
 
-	if node = s.Search(workNode); node != nil {
+	/*	if node = s.Search(workNode); node != nil {
 		test = true
 		if node.minV >= beta {
 			return node.minV
@@ -225,7 +255,7 @@ func (a *AI) alphabeta(s *State, alpha, beta int8, stape int8, workNode *Node) i
 		}
 		alpha = a.max(alpha, node.minV)
 		beta = a.min(beta, node.maxV)
-	}
+	}*/
 
 	if stape == 0 || workNode.r.IsWin {
 		score = a.eval(s, workNode, stape)
@@ -433,11 +463,48 @@ if s.player == ruler.TokenP2 {
 }*/
 
 func (a *AI) getCoord(weight int8) (uint8, uint8) {
-	var x, y uint8
+	//	return a.s.save.y, a.s.save.x
+	//var x, y uint8
 	var refNode *Node
 
+	//	fmt.Println("max and min of state: ", a.s.alpha, " - ", a.s.beta)
+	//	fmt.Println("save node: ", a.s.save)
 	//	a.s = &a.s.pq.nextState
-	//	var tmp int8
+	//	min := int8(math.MaxInt8)
+	/*	max := int8(math.MinInt8)
+		for _, m := range a.s.nodes {
+			for _, node := range m {
+				fmt.Print("Y: ", node.y, " - X: ", node.x, " | Weight Node: ", node.weight, " | ")
+				fmt.Print(" min: ", node.minV, " - max: ", node.maxV, " | ")
+				if max <= node.weight {
+					max = node.weight
+					fmt.Println("Choice this move")
+					//				min = node.minV
+					//				max = node.maxV
+					refNode = node
+				} else {
+					fmt.Println("No choice")
+				}*/
+	/*			weight := node.weight
+				fmt.Print("Y: ", node.y, " - X: ", node.x, " | Weight Node: ", weight, " | ")
+				fmt.Print(" min: ", node.minV, " - max: ", node.maxV, " | ")
+				if tmp >= weight {
+					fmt.Println("Choice this move")
+					//x = node.x
+					//y = node.y
+					tmp = node.weight
+					refNode = node
+				} else {
+					fmt.Println("No choice")
+				}*/
+	//	}
+	//	}
+	//a.s = &refNode.nextState
+	//if a.s.save != nil {
+	//	refNode = a.s.save
+	//}
+	//a.s = nil
+	//return refNode.y, refNode.x
 	tmp := int8(math.MinInt8)
 	for node := a.s.pq; node != nil; node = node.next {
 		//fmt.Println("lower: ", node.minV, " - upper: ", node.maxV, " - weight: ", node.weight)
@@ -446,38 +513,39 @@ func (a *AI) getCoord(weight int8) (uint8, uint8) {
 		//		weight *= -1
 		//		}
 		if tmp <= weight {
-			x = node.x
-			y = node.y
+			//		x = node.x
+			//		y = node.y
 			tmp = node.weight
 			refNode = node
 			//tmp = node.weight
 			//refNode = node
 		}
 	}
-
-	/*	if mi != tmp {
-		fmt.Println("Not first")
-	}*/
-	a.s = &refNode.nextState
-	//	a.s.pq = nil
-	//fmt.Println("----- Getting Coord -----")
-	//fmt.Println("a.s alpha: ", a.s.alpha)
-	//fmt.Println("a.s beta: ", a.s.beta)
-	//refNode.nextState.alpha = a.s.alpha
-	//*a.s = refNode.nextState
-	//if a.s.alpha != refNode.nextState.alpha || a.s.beta != refNode.nextState.beta {
-	//	fmt.Println("Error on herit nextState on getCoord")
-	//}
-	//fmt.Println("Switch to nextState (opponent) ")
-	//fmt.Println("a.s alpha: ", a.s.alpha)
-	//fmt.Println("a.s beta: ", a.s.beta)
-	return x, y
+	return refNode.y, refNode.x
 }
+
+/*	if mi != tmp {
+	fmt.Println("Not first")
+}*/
+//	a.s = &refNode.nextState
+//	a.s.pq = nil
+//fmt.Println("----- Getting Coord -----")
+//fmt.Println("a.s alpha: ", a.s.alpha)
+//fmt.Println("a.s beta: ", a.s.beta)
+//refNode.nextState.alpha = a.s.alpha
+//*a.s = refNode.nextState
+//if a.s.alpha != refNode.nextState.alpha || a.s.beta != refNode.nextState.beta {
+//	fmt.Println("Error on herit nextState on getCoord")
+//}
+//fmt.Println("Switch to nextState (opponent) ")
+//fmt.Println("a.s alpha: ", a.s.alpha)
+//fmt.Println("a.s beta: ", a.s.beta)
+//	return x, y
 
 func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	var workNode *Node
 
-	if a.s == nil || a.s.pq == nil {
+	if a.s == nil { //|| a.s.pq == nil {
 		a.s = a.newState(b, uint8(s.NbCaptureP1), uint8(s.NbCaptureP2), 0, 0, ruler.TokenP2)
 		a.s.alpha = math.MinInt8
 		a.s.beta = math.MaxInt8
@@ -497,7 +565,7 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	a.alphabeta(a.s, math.MinInt8, math.MaxInt8, 4, workNode)
 
 	//	a.getLen(a.s)
-	x, y := a.getCoord(0)
+	y, x := a.getCoord(0)
 	//	fmt.Println("------------- End -------------")
 	//	fmt.Println("Time total to clean node: ", timeTotalNode)
 	//	fmt.Println("Time total to add node on list: ", timeTotalAddNode)
@@ -510,20 +578,32 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 }
 
 func (a *AI) PlayOpposing(y, x uint8) {
-	if a.s == nil || a.s.pq == nil {
+	/*	if a.s == nil || a.s.pq == nil {
+		return
+	}*/
+
+	if a.s == nil {
 		return
 	}
-	for node := a.s.pq; node != nil; node = node.next {
-		if y == node.y && x == node.x {
-			//			fmt.Println("------------------ START ------------------")
-			//node.nextState.alpha = a.s.alpha
-			*a.s = node.nextState
-			//			fmt.Println("alpha opposant: ", a.s.alpha)
-			//			fmt.Println("beta opposant: ", a.s.beta)
-			return
-		}
+	node := a.s.SearchByPosition(y, x)
+	if node != nil {
+		*a.s = node.nextState
+	} else {
+		a.s = nil
 	}
-	a.s = nil
+	return
+	/*
+		for node := a.s.pq; node != nil; node = node.next {
+			if y == node.y && x == node.x {
+				//			fmt.Println("------------------ START ------------------")
+				//node.nextState.alpha = a.s.alpha
+				*a.s = node.nextState
+				//			fmt.Println("alpha opposant: ", a.s.alpha)
+				//			fmt.Println("beta opposant: ", a.s.beta)
+				return
+			}
+		}*/
+	//	a.s = nil
 	//	fmt.Println("FUCCCCK")
 }
 
