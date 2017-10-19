@@ -37,6 +37,7 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 	var x, y uint8
 	var err error
 	var end bool
+	var mess string
 
 	if len(values) != 2 {
 		panic(errors.New("More two values specified on select token"))
@@ -56,7 +57,7 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 
 	player := g.game.GetCurrentPlayer()
 
-	if end, err = g.game.Move(x, y); err != nil {
+	if end, mess, err = g.game.Move(x, y); err != nil {
 		// setNotice
 		g.setNotice("You can't make this move")
 		return
@@ -87,7 +88,8 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 	}()
 
 	if end == true {
-		g.setNotice("WINNER YEAH BRAVO ! VOILA")
+		g.setNotice("WINNER YEAH BRAVO ! VOILA | " + mess)
+
 		time.Sleep(5 * time.Second)
 		g.switcher(conf.SMenu, true)
 		return

@@ -114,7 +114,7 @@ func (g *Game) SwitchPlayer() {
 // Move : Call the rules checker
 // Do the move according to the circumstances
 // return if current player win
-func (g *Game) Move(x, y uint8) (bool, error) {
+func (g *Game) Move(x, y uint8) (bool, string, error) {
 	var valueToken uint8
 	var nbCaps *int32
 
@@ -136,7 +136,7 @@ func (g *Game) Move(x, y uint8) (bool, error) {
 	//Verify Check
 	fmt.Println(g.rules)
 	if g.rules.IsMoved == false {
-		return false, errors.New(g.rules.MovedStr)
+		return false, "", errors.New(g.rules.MovedStr)
 	}
 	if g.rules.IsCaptured == true {
 		for _, cap := range g.rules.GetCaptures() {
@@ -147,7 +147,7 @@ func (g *Game) Move(x, y uint8) (bool, error) {
 	g.AppliesMove(x, y)
 	g.SwitchPlayer()
 
-	return g.rules.IsWin, nil
+	return g.rules.IsWin, g.rules.MessageWin, nil
 }
 
 // GetCaptures : return a reference of slice of actual player captures

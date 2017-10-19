@@ -3,10 +3,15 @@ package ai
 import (
 	"fmt"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/ymohl-cl/gomoku/database"
 	"github.com/ymohl-cl/gomoku/game/ruler"
+)
+
+const (
+	posCenter = 9
 )
 
 var timeTotalNode time.Duration
@@ -26,6 +31,8 @@ func New() *AI {
 type State struct {
 	nbCapsCurrent uint8
 	nbCapsOther   uint8
+	nbTCurrent    uint8
+	nbTOther      uint8
 	player        uint8
 	pq            *Node
 }
@@ -73,9 +80,11 @@ func (s *State) Clean() {
 	s.pq = nil
 }
 
-func (s *State) Set(nbCOldCurrent, nbCOldOther, p uint8) {
+func (s *State) Set(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, p uint8) {
 	s.nbCapsCurrent = nbCOldOther
 	s.nbCapsOther = nbCOldCurrent
+	s.nbTCurrent = nbTOldCurrent
+	s.nbTOther = nbTOldOther
 	s.player = p
 }
 
@@ -88,14 +97,14 @@ func (s *State) addNode(n *Node) {
 		s.pq.next = tmp
 	}
 }
-func (a *AI) copyBoard(b [][]uint8) [][]uint8 {
+func (a *AI) copyBoard(b *[][]uint8) *[][]uint8 {
 	var newBoard [][]uint8
-	for _, line := range b {
+	for _, line := range *b {
 		newLine := make([]uint8, 19)
 		copy(newLine, line)
 		newBoard = append(newBoard, newLine)
 	}
-	return newBoard
+	return &newBoard
 }
 
 func (s State) switchPlayer() uint8 {
@@ -108,19 +117,23 @@ func (s State) switchPlayer() uint8 {
 func (a AI) eval(s *State, stape uint8, r *ruler.Rules) int8 {
 	var salt int8
 
-	if s.player == ruler.TokenP1 {
-		salt = 10
-	} else {
-		salt = 9
-	}
+	salt = math.MinInt8 + (4 - int8(stape))
 
-	if r.IsWin {
-		salt += 100
-	} else {
-		salt += int8((s.nbCapsCurrent + r.NbCaps) * (s.nbCapsCurrent + r.NbCaps))
-	}
+	if !r.IsWin {
+		if r.NbThree == 0 {
+			salt += 1
+		}
+		if s.nbCapsCurrent+r.NbCaps > s.nbCapsOther {
+			salt += 5 - int8(s.nbCapsCurrent+r.NbCaps)
+		} else {
+			salt += 20
+		}
 
-	salt += (int8(stape) - 4)
+		//if s.nbTOther > s.nbTCurrent {
+		//	salt += int8(s.nbTOther - s.nbTCurrent)
+		//}
+		//salt += 3 - int8(r.NbThree)
+	}
 
 	if s.player == ruler.TokenP2 {
 		return salt
@@ -161,12 +174,144 @@ func (a *AI) restoreMove(b *[][]uint8, r *ruler.Rules, player uint8, x, y uint8)
 	}
 }
 
-func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8) int8 {
-	score := int8(-125)
+func getPointsOpti(b *[][]uint8) ([]int8, []int8) {
+	var yS []int8
+	var xS []int8
+
+	// checkDiagonalTopLeft
+	for y, x := int8(0), int8(0); y != posCenter && x != posCenter; y, x = y+1, x+1 {
+		r := ruler.New()
+		r.CheckRules(b, x, y, ruler.TokenP2, 0)
+		if r.IsMoved {
+			yS = append(yS, y)
+			xS = append(xS, x)
+			break
+		}
+	}
+
+	// checkDiagonalBotRight
+	for y, x := int8(18), int8(18); y != posCenter && x != posCenter; y, x = y-1, x-1 {
+		r := ruler.New()
+		r.CheckRules(b, x, y, ruler.TokenP2, 0)
+		if r.IsMoved {
+			yS = append(yS, y)
+			xS = append(xS, x)
+			break
+		}
+	}
+
+	// checkDiagonalBotLeft
+	for y, x := int8(18), int8(0); y != posCenter && x != posCenter; y, x = y-1, x+1 {
+		r := ruler.New()
+		r.CheckRules(b, x, y, ruler.TokenP2, 0)
+		if r.IsMoved {
+			yS = append(yS, y)
+			xS = append(xS, x)
+			break
+		}
+	}
+
+	// checkDiagonalTopRight
+	for y, x := int8(0), int8(18); y != posCenter && x != posCenter; y, x = y+1, x-1 {
+		r := ruler.New()
+		r.CheckRules(b, x, y, ruler.TokenP2, 0)
+		if r.IsMoved {
+			yS = append(yS, y)
+			xS = append(xS, x)
+			break
+		}
+	}
+
+	return yS, xS
+}
+
+func (a *AI) alreadyCheck(x, y int8, xS, yS []int8) bool {
+	for index, y := range yS {
+		if y == y && x == xS[index] {
+			return true
+		}
+	}
+	return false
+}
+
+func (a *AI) preAlphaBeta(s *State, b *[][]uint8) {
+	var yS []int8
+	var xS []int8
+	alphaS := []int8{int8(-125), int8(-125), int8(-125), int8(-125)}
+	betaS := []int8{int8(125), int8(125), int8(125), int8(125)}
+	var depth uint8
+
+	//	var aA, aB, aC, aD int8
+	//	var bA, bB, bC, bD int8
+	depth = 4
+	wg := new(sync.WaitGroup)
+	yS, xS = getPointsOpti(b)
+
+	for index, y := range yS {
+		cBoard := a.copyBoard(b)
+		Mnode := a.newNode(uint8(xS[index]), uint8(y))
+		state := a.newState(0, 0, ruler.TokenP1)
+		r := ruler.New()
+		r.CheckRules(b, int8(Mnode.x), int8(Mnode.y), s.player, s.nbCapsCurrent)
+		//node.weight = -a.eval(s, stape, r)
+		a.applyMove(cBoard, r, s.player, Mnode.x, Mnode.y)
+
+		Mnode.nextState.Set(s.nbCapsCurrent+r.NbCaps, s.nbCapsOther, s.nbTCurrent, s.nbTOther, s.switchPlayer())
+		wg.Add(1)
+		go func(i int, N *Node, wait *sync.WaitGroup) {
+			defer wait.Done()
+			defer fmt.Println("Finish one")
+			N.weight = -a.alphabeta(&N.nextState, cBoard, &alphaS[i], &betaS[i], depth-1, state, r)
+			a.s.addNode(N)
+		}(index, Mnode, wg)
+	}
+
+	wg.Wait()
+
+	weight := int8(math.MinInt8)
+	var saveIndex int8
+	fmt.Println("------------ View value -------------")
+	for index, y := range yS {
+		fmt.Println("Position Y: ", y, " - X: ", xS[index])
+		fmt.Println("Alpha: ", alphaS[index], " - Beta: ", betaS[index])
+
+		for n := a.s.pq; n != nil; n = n.next {
+			if int8(n.y) == y && int8(n.x) == xS[index] && weight <= n.weight {
+				fmt.Print("node Y: ", n.y, " - node X: ", n.x)
+				fmt.Println(" - weight: ", n.weight)
+				weight = n.weight
+				saveIndex = int8(index)
+			}
+		}
+	}
+	fmt.Println("------------- End Values ------------")
+
+	for y := uint8(0); y < 19; y++ {
+		for x := uint8(0); x < 19; x++ {
+			if a.alreadyCheck(int8(x), int8(y), xS, yS) {
+				continue
+			}
+			Mnode := a.newNode(x, y)
+			state := a.newState(0, 0, ruler.TokenP1)
+			r := ruler.New()
+			r.CheckRules(b, int8(Mnode.x), int8(Mnode.y), s.player, s.nbCapsCurrent)
+			if r.IsMoved {
+				a.applyMove(b, r, s.player, Mnode.x, Mnode.y)
+				Mnode.nextState.Set(s.nbCapsCurrent+r.NbCaps, s.nbCapsOther, state.nbTCurrent, state.nbTOther, s.switchPlayer())
+				Mnode.weight = -a.alphabeta(&Mnode.nextState, b, &alphaS[saveIndex], &betaS[saveIndex], depth-1, state, r)
+				a.restoreMove(b, r, s.player, x, y)
+				a.s.addNode(Mnode)
+			}
+		}
+	}
+}
+
+func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta *int8, stape uint8, oldState *State, oldRule *ruler.Rules) int8 {
+	score := int8(-120)
 	var node *Node
 
-	if stape == 0 {
-		return 0
+	if stape == 0 || oldRule.IsWin {
+		return -a.eval(oldState, stape+1, oldRule)
 	}
 
 	for y := uint8(0); y < 19; y++ {
@@ -175,38 +320,39 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8) in
 			r.CheckRules(b, int8(x), int8(y), s.player, s.nbCapsCurrent)
 			if r.IsMoved {
 				node = a.newNode(x, y)
-				node.weight = -a.eval(s, stape, r)
-				weight := node.weight
-
-				if !r.IsWin || score > node.weight {
-					// applymove and capture
-					a.applyMove(b, r, s.player, x, y)
-					node.nextState.Set(s.nbCapsCurrent+r.NbCaps, s.nbCapsOther, s.switchPlayer())
-					node.weight = -a.alphabeta(&node.nextState, b, -beta, -alpha, stape-1)
-					// restore move and capture
-					a.restoreMove(b, r, s.player, x, y)
-
-					if node.weight == 0 {
-						node.weight = weight
-					}
+				//node.weight = -a.eval(s, stape, r)
+				a.applyMove(b, r, s.player, x, y)
+				countToken := uint8(0)
+				if r.IsCaptured {
+					countToken = 2
 				}
+				node.nextState.Set(s.nbCapsCurrent+r.NbCaps, s.nbCapsOther, s.nbTCurrent+1, s.nbTOther-countToken, s.switchPlayer())
+				*beta = -*beta
+				*alpha = -*alpha
+				node.weight = -a.alphabeta(&node.nextState, b, beta, alpha, stape-1, s, r)
+				a.restoreMove(b, r, s.player, x, y)
 
 				if score < node.weight {
+					s.addNode(node)
 					score = node.weight
 				}
 
-				s.addNode(node)
-				//				score = node.weight
-				if node.weight > alpha {
-					alpha = node.weight
-					if alpha >= beta {
+				if node.weight > *alpha {
+					*alpha = node.weight
+					if *alpha >= *beta {
 						//					fmt.Println("stape: ", stape, " - Alpha: ", alpha, " - Beta: ", beta, " - Score: ", score)
-						return score
+						//			if c != nil {
+						//				c <- node.weight
+						//			}
+						return node.weight
 					}
 				}
 			}
 		}
 	}
+	//	if c != nil {
+	//		c <- score
+	//	}
 	return score
 }
 
@@ -254,8 +400,9 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	//var test time.Duration
 	//test += time.Since(time.Now())
 	//a.prevalphabeta(a.s, nil, math.MinInt8, math.MaxInt8, 4)
-	//	r := ruler.New()
-	a.alphabeta(a.s, b, int8(-125), int8(125), 4)
+	//state := a.newState(0, 0, ruler.TokenP1)
+	//r := ruler.New()
+	a.preAlphaBeta(a.s, b)
 
 	//	a.getLen(a.s)
 	x, y := a.getCoord(0)

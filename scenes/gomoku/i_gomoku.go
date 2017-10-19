@@ -87,12 +87,12 @@ func (g *Gomoku) IsInit() bool {
 // Run the scene
 func (g *Gomoku) Run() error {
 	//	var err error
-	var wg sync.WaitGroup
+	//var wg sync.WaitGroup
 
 	if ok := g.music.IsInit(); ok {
-		wg.Add(1)
-		go g.music.Play(&wg, g.renderer)
-		wg.Wait()
+		//wg.Add(1)
+		//go g.music.Play(&wg, g.renderer)
+		//wg.Wait()
 	}
 	g.game.Run()
 	g.initMove()

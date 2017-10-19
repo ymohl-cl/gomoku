@@ -39,7 +39,8 @@ type Rules struct {
 	NbThree uint8
 
 	//Win
-	IsWin bool
+	IsWin      bool
+	MessageWin string
 }
 
 // New : Return a new instance and set default values of Rules struct
@@ -248,7 +249,7 @@ func (r Rules) isWin(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer ui
 		x := posX + (xi * i)
 		y := posY + (yi * i)
 		if !checkOnTheBoard(x, y) {
-			return false
+			continue
 		}
 		if (x == posX && y == posY) || (*board)[y][x] == currentPlayer {
 			nbMe++
@@ -276,6 +277,10 @@ func (r *Rules) CheckWinner(board *[][]uint8, posX, posY int8, currentPlayer uin
 		r.IsWin = true
 	} else if r.isWin(board, posX, posY, 0, 1, currentPlayer) {
 		r.IsWin = true
+	}
+
+	if r.IsWin {
+		r.MessageWin = "Win by align five token"
 	}
 }
 
@@ -348,6 +353,7 @@ func (r *Rules) CheckRules(board *[][]uint8, posX, posY int8, currentPlayer uint
 
 	if nbCaps+r.NbCaps >= 5 {
 		r.IsWin = true
+		r.MessageWin = "Win by capture: " + string(nbCaps+r.NbCaps)
 		return
 	}
 	r.CheckWinner(board, posX, posY, currentPlayer)
