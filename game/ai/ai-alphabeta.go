@@ -1,11 +1,20 @@
 package ai
 
 import (
+	"fmt"
 	"math"
 	"time"
 
 	"github.com/ymohl-cl/gomoku/database"
 	"github.com/ymohl-cl/gomoku/game/ruler"
+)
+
+const (
+	ExactBound = 0
+	LowerBound = 1
+	UpperBound = 2
+
+	maxStape = 3
 )
 
 type AI struct {
@@ -17,25 +26,23 @@ func New() *AI {
 }
 
 type State struct {
-	board         *[][]uint8
-	nbCapsCurrent uint8
-	nbCapsOther   uint8
-	lenMaxP1      uint8
-	lenMaxP2      uint8
-	alpha         int8
-	beta          int8
-	player        uint8
-	pq            *Node
+	board          *[][]uint8
+	nbCapsCurrent  uint8
+	nbCapsOther    uint8
+	nbThreeCurrent uint8
+	nbThreeOther   uint8
+	player         uint8
+	pq             *Node
 }
 
-func (a AI) newState(b *[][]uint8, nbCOldCurrent, nbCOldOther, lMaxP1, lMaxP2, p uint8) *State {
+func (a AI) newState(b *[][]uint8, nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, p uint8) *State {
 	s := State{
-		board:         b,
-		nbCapsCurrent: nbCOldOther,
-		nbCapsOther:   nbCOldCurrent,
-		lenMaxP1:      lMaxP1,
-		lenMaxP2:      lMaxP2,
-		player:        p,
+		board:          b,
+		nbCapsCurrent:  nbCOldOther,
+		nbCapsOther:    nbCOldCurrent,
+		nbThreeCurrent: nbTOldOther,
+		nbThreeOther:   nbTOldCurrent,
+		player:         p,
 	}
 
 	return &s
@@ -46,59 +53,23 @@ type Node struct {
 	x         uint8
 	y         uint8
 	weight    int8
-	minV      int8
-	maxV      int8
-	nextState State
+	nextState *State
 	next      *Node
+	flag      uint8
+	value     int8
 }
 
-func (a AI) newNode() *Node {
-	return &Node{
-		minV: math.MinInt8,
-		maxV: math.MaxInt8,
+func (a AI) newNode(s *State, x, y uint8) (bool, *Node) {
+
+	node := &Node{
+		x: x,
+		y: y,
 	}
-}
 
-func (n Node) newByCopy(b *[][]uint8, s *State) *Node {
-	newNode := &Node{
-		x:      n.x,
-		y:      n.y,
-		weight: n.weight,
-		next:   n.next,
+	if n := s.SearchNode(node); n != nil {
+		return true, n
 	}
-	newNode.r.Copy(&n.r)
-	newNode.nextState.Set(b, s.nbCapsCurrent+n.r.NbCaps, s.nbCapsOther, s.lenMaxP1, s.lenMaxP2, s.switchPlayer())
-	return newNode
-}
-
-func (n *Node) Clean(x, y uint8) {
-	n.r.Clean()
-	n.x = x
-	n.y = y
-	n.weight = 0
-	n.nextState.Clean()
-	n.next = nil
-}
-
-func (s *State) Clean() {
-	s.board = nil
-	s.nbCapsCurrent = 0
-	s.nbCapsOther = 0
-	s.lenMaxP1 = 0
-	s.lenMaxP2 = 0
-	s.player = 0
-	s.pq = nil
-}
-
-func (s *State) Set(b *[][]uint8, nbCOldCurrent, nbCOldOther, lMaxP1, lMaxP2, p uint8) {
-	s.board = b
-	s.nbCapsCurrent = nbCOldOther
-	s.nbCapsOther = nbCOldCurrent
-	s.lenMaxP1 = lMaxP1
-	s.lenMaxP2 = lMaxP2
-	s.player = p
-	s.alpha = math.MinInt8
-	s.beta = math.MaxInt8
+	return false, node
 }
 
 func (s *State) addNode(n *Node) {
@@ -148,12 +119,12 @@ func (a AI) eval(s *State, n *Node, stape int8) int8 {
 
 	if !n.r.IsWin {
 		ret = 30
-		ret += int8(s.nbCapsCurrent) + int8(s.nbCapsOther)
+		ret += 4 * int8(s.nbCapsOther-s.nbCapsCurrent)
+		ret += 2 * int8(s.nbThreeOther)
+		ret -= (maxStape - stape)
 	} else {
-		ret = math.MaxInt8
+		ret = 100
 	}
-
-	ret -= stape
 
 	if s.player == ruler.TokenP1 {
 		return ret
@@ -161,28 +132,17 @@ func (a AI) eval(s *State, n *Node, stape int8) int8 {
 	return -ret
 }
 
-/*func (a *AI) prevalphabeta(s *State, prevnode *Node, alpha, beta int8, stape int8) {
-var y, x uint8
-var Val int8
-wg := new(sync.WaitGroup)
-
-Val = math.MinInt8
-for y = 0; y < 19; y++ {
-	for x = 0; x < 19; x++ { /*pour tout enfant si de s faire */
-/*			wg.Add(1)
-			go func(xi, yi uint8) {
-				defer wg.Done()
-				node := a.newNode(xi, yi)
-				node.r.CheckRules(s.board, int8(xi), int8(yi), s.player, s.nbCapsCurrent)
-				if node.r.IsMoved {
-					s.addNode(node)
-					b := a.genBoard(s.board, node, s.player)
-					node.nextState = a.newState(b, s.nbCapsCurrent+node.r.NbCaps, s.nbCapsOther, s.lenMaxP1, s.lenMaxP2, s.switchPlayer())
-					node.weight = a.max(Val, a.alphabeta(node.nextState, node, alpha, beta, stape-1))
-				}
+func (s *State) SearchNode(n *Node) *Node {
+	if n == nil {
+		return nil
 	}
-	wg.Wait()
-}*/
+	for test := s.pq; test != nil; test = test.next {
+		if test.x == n.x && test.y == n.y {
+			return test
+		}
+	}
+	return nil
+}
 
 var timeTotalNode time.Duration
 var timeTotalRule time.Duration
@@ -192,264 +152,96 @@ var timeTotalCopyBoard time.Duration
 
 //var timeTotalState time.Duration
 
-func (s *State) SetAlpha(a int8) {
-	s.alpha = a
-}
-
-func (s *State) SetBeta(b int8) {
-	s.beta = b
-}
-
-func (s *State) Search(n *Node) *Node {
-	for test := s.pq; test != nil; test = test.next {
-		if test.x == n.x && test.y == n.y {
-			return test
-		}
-	}
-	return nil
-}
-
 func (a *AI) alphabeta(s *State, alpha, beta int8, stape int8, workNode *Node) int8 {
-	var score int8
-	var node *Node
-	var test bool
+	var best int8
+	var val int8
+	var node, n *Node
+	var find bool
 	//	var findNode *Node
 
-	if node = s.Search(workNode); node != nil {
-		test = true
-		if node.minV >= beta {
-			return node.minV
-		}
-		if node.maxV <= alpha {
-			return node.maxV
-		}
-		alpha = a.max(alpha, node.minV)
-		beta = a.min(beta, node.maxV)
-	}
-
-	if stape == 0 || workNode.r.IsWin {
-		score = a.eval(s, workNode, stape)
-		if node == nil {
-			node = workNode
-		}
-	} else if s.player == ruler.TokenP2 {
-		score = math.MinInt8
-		aPrime := alpha
-		for y := uint8(0); y < 19; y++ {
-			for x := uint8(0); x < 19; x++ {
-				workNode.Clean(x, y)
-				workNode.r.CheckRules(s.board, int8(x), int8(y), s.player, s.nbCapsCurrent)
-				if workNode.r.IsMoved {
-					node = workNode.newByCopy(a.genBoard(s.board, workNode, s.player), s)
-					score = a.max(score, a.alphabeta(&node.nextState, aPrime, beta, stape-1, workNode))
-					aPrime = a.max(aPrime, score)
-					node.weight = score
-
-					if score >= beta {
-						break
-					}
-					if !test {
-						s.addNode(node)
-					}
-				}
-			}
-		}
-	} else {
-		score = math.MaxInt8
-		bPrime := beta
-		for y := uint8(0); y < 19; y++ {
-			for x := uint8(0); x < 19; x++ {
-				workNode.Clean(x, y)
-				workNode.r.CheckRules(s.board, int8(x), int8(y), s.player, s.nbCapsCurrent)
-				if workNode.r.IsMoved {
-					node = workNode.newByCopy(a.genBoard(s.board, workNode, s.player), s)
-					score = a.min(score, a.alphabeta(&node.nextState, alpha, bPrime, stape-1, workNode))
-					node.weight = score
-					bPrime = a.min(bPrime, score)
-					if score <= alpha {
-						break
-					}
-
-					if !test {
-						s.addNode(node)
-					}
-				}
-			}
-		}
-	}
-
-	node.weight = score
-	if score <= alpha {
-		node.maxV = score
-		s.beta = node.maxV
-	}
-	if score > alpha && score < beta {
-		node.minV = score
-		node.maxV = score
-		s.beta = node.maxV
-		s.alpha = node.minV
-	}
-	if score >= beta {
-		node.minV = score
-		s.alpha = node.minV
-	}
-
-	return score
-}
-
-/*func (a *AI) alphabeta(s *State, alpha, beta int8, stape int8, workNode *Node) int8 {
-	if stape <= 0 || workNode.r.IsWin {
-		fmt.Println("WorkNode is win")
+	if stape == 0 || (workNode != nil && workNode.r.IsWin) {
 		return a.eval(s, workNode, stape)
 	}
 
+	alphaOrg := alpha
+	if n = s.SearchNode(workNode); n != nil {
+		if n.flag == ExactBound {
+			return n.value
+		} else if n.flag == LowerBound {
+			alpha = a.max(alpha, n.value)
+		} else if n.flag == UpperBound {
+			beta = a.min(beta, n.value)
+		}
+		if alpha >= beta {
+			return n.value
+		}
+	}
+
+	best = math.MinInt8
+	var x uint8
 	for y := uint8(0); y < 19; y++ {
-		for x := uint8(0); x < 19; x++ {
-			workNode.Clean(x, y)
-			workNode.r.CheckRules(s.board, int8(x), int8(y), s.player, s.nbCapsCurrent)
-			if workNode.r.IsMoved {
-				node := workNode.newByCopy(a.genBoard(s.board, workNode, s.player), s)
-				score := a.alphabeta(&node.nextState, -beta, -alpha, stape-1, workNode)
-				fmt.Println("score: ", score)
-				if score >= alpha {
-					alpha = score
-					s.addNode(node)
-					if alpha >= beta {
-						break
+		for x = 0; x < 19; x++ {
+			find, node = a.newNode(s, x, y)
+			if find == false {
+				node.r.CheckRules(s.board, int8(x), int8(y), s.player, s.nbCapsCurrent)
+			}
+			if node.r.IsMoved {
+				if node.nextState == nil {
+					node.nextState = a.newState(a.genBoard(s.board, node, s.player), s.nbCapsCurrent+node.r.NbCaps, s.nbCapsOther, s.nbThreeCurrent+node.r.NbThree, s.nbThreeOther, s.switchPlayer())
+				}
+				val = -a.alphabeta(node.nextState, -beta, -alpha, stape-1, node)
+				node.weight = val
+				if val > best {
+					best = val
+					if best > alpha {
+						alpha = best
+						if alpha >= beta {
+							break
+						}
 					}
+				}
+				if find == false {
+					s.addNode(node)
 				}
 			}
 		}
 	}
-	return alpha
-}*/
+	if n = s.SearchNode(workNode); n != nil {
+		workNode = n
+	}
+	// Transposition Table Store; node is the lookup key for ttEntry
+	workNode.value = best
+	if best <= alphaOrg {
+		workNode.flag = UpperBound
+	} else if best >= beta {
+		workNode.flag = LowerBound
+	} else {
+		workNode.flag = ExactBound
+	}
+	//ttEntry.depth := depth
+	//TranspositionTableStore( node, ttEntry )
 
-/* alpha est toujours inférieur à beta */
-/*func (a *AI) alphabeta(s *State, prevnode *Node, alpha, beta int8, stape int8, workNode *Node) int8 {
-var y, x uint8
-var Val int8
-
-if stape <= 0 || (prevnode != nil && prevnode.r.IsWin) {
-	return a.eval(s, prevnode, stape)
+	return best
 }
-if s.player == ruler.TokenP2 {
-	Val = math.MinInt8
-	for y = 0; y < 19; y++ {
-		for x = 0; x < 19; x++ { /*pour tout enfant si de s faire */
-/*				timeNode := time.Now()
-			workNode.Clean(x, y)
-			//	node := a.newNode(x, y)
-			timeTotalNode += time.Since(timeNode)
-			timeRule := time.Now()
-			workNode.r.CheckRules(s.board, int8(x), int8(y), s.player, s.nbCapsCurrent)
-			//node.r.CheckRules(s.board, int8(x), int8(y), s.player, s.nbCapsCurrent)
-			timeTotalRule += time.Since(timeRule)
-			if workNode.r.IsMoved {
-				timeBoard := time.Now()
-				node := workNode.newByCopy(a.genBoard(s.board, workNode, s.player), s)
-				timeTotalCopyBoard += time.Since(timeBoard)
-				//				wg := new(sync.WaitGroup)
-				//				wg.Add(1)
-				//				go func() {
-				//					timeAdd := time.Now()
-				//					defer wg.Done()
-				//						s.addNode(node)
-				//					timeTotalAddNode += time.Since(timeAdd)
-				//				}()
-				//					wg.Add(1)
-				//					go func() {
-				//						defer wg.Done()
-				//					}()
-				//					wg.Wait()
-				//					timeState := time.Now()
-				//					timeTotalState += time.Since(timeState)
-				Val = a.max(Val, a.alphabeta(&node.nextState, node, alpha, beta, stape-1, workNode))
-				node.weight = Val
-				alpha = a.max(alpha, Val)
-				fmt.Println("t2 alpha: ", alpha)
-				fmt.Println("t2 beta: ", beta)
-				fmt.Println("t2 Value:", Val)
-				//				node.nextState.SetBeta(beta)
-				//	node.nextState.SetAlpha(alpha)
-				//node.nextState.SetAlpha(alpha)
-				if beta <= Val {
-					return Val
-				}
-				//node.nextState.SetBeta(beta)
-				s.addNode(node)
-			}
-		}
-	}
-} else {
-	Val = math.MaxInt8
-	for y = 0; y < 19; y++ {
-		for x = 0; x < 19; x++ { /*pour tout enfant si de s faire */
-/*				timeNode := time.Now()
-				workNode.Clean(x, y)
-				//				node := a.newNode(x, y)
-				timeTotalNode += time.Since(timeNode)
-				timeRule := time.Now()
-				workNode.r.CheckRules(s.board, int8(x), int8(y), s.player, s.nbCapsCurrent)
-				//				node.r.CheckRules(s.board, int8(x), int8(y), s.player, s.nbCapsCurrent)
-				timeTotalRule += time.Since(timeRule)
-				if workNode.r.IsMoved {
-					timeBoard := time.Now()
-					node := workNode.newByCopy(a.genBoard(s.board, workNode, s.player), s)
-					timeTotalCopyBoard += time.Since(timeBoard)
-					//					wg := new(sync.WaitGroup)
-					//					wg.Add(1)
-					//					go func() {
-					//						timeAdd := time.Now()
-					//						defer wg.Done()
-					//						s.addNode(node)
-					//						timeTotalAddNode += time.Since(timeAdd)
-					//					}()
-					//					wg.Add(1)
-					//					go func() {
-					//						defer wg.Done()
-					//					}()
-					//					wg.Wait()
-					//					timeState := time.Now()
-					//					timeTotalState += time.Since(timeState)
-					Val = a.min(Val, a.alphabeta(&node.nextState, node, alpha, beta, stape-1, workNode))
-					node.weight = Val
-					beta = a.min(beta, Val)
-
-					fmt.Println("t1 alpha: ", alpha)
-					fmt.Println("t1 beta: ", beta)
-					fmt.Println("t1 Value:", Val)
-					//		node.nextState.SetBeta(beta)
-					//					node.nextState.SetAlpha(alpha)
-					if Val <= alpha {
-						return Val
-					}
-					//node.nextState.SetAlpha(alpha)
-					s.addNode(node)
-				}
-			}
-		}
-	}
-	return Val
-}*/
 
 func (a *AI) getCoord(weight int8) (uint8, uint8) {
 	var x, y uint8
-	var refNode *Node
+	//var refNode *Node
 
 	//	a.s = &a.s.pq.nextState
 	//	var tmp int8
-	tmp := int8(math.MinInt8)
+	//tmp := int8(math.MinInt8)
 	for node := a.s.pq; node != nil; node = node.next {
-		//fmt.Println("lower: ", node.minV, " - upper: ", node.maxV, " - weight: ", node.weight)
-		weight := node.weight
+		fmt.Println("x : ", node.x, " - y : ", node.y, "weight: ", node.weight, " - node value", node.value)
+		//weight := node.weight
 		//		if weight < 0 {
 		//		weight *= -1
 		//		}
-		if tmp <= weight {
+		if node.weight == weight {
 			x = node.x
 			y = node.y
-			tmp = node.weight
-			refNode = node
+			//tmp = node.weight
+			//refNode = node
 			//tmp = node.weight
 			//refNode = node
 		}
@@ -458,7 +250,7 @@ func (a *AI) getCoord(weight int8) (uint8, uint8) {
 	/*	if mi != tmp {
 		fmt.Println("Not first")
 	}*/
-	a.s = &refNode.nextState
+	a.s = nil
 	//	a.s.pq = nil
 	//fmt.Println("----- Getting Coord -----")
 	//fmt.Println("a.s alpha: ", a.s.alpha)
@@ -474,15 +266,54 @@ func (a *AI) getCoord(weight int8) (uint8, uint8) {
 	return x, y
 }
 
+func (a *AI) mtdf(s *State, workNode *Node, f, d int8) int8 {
+
+	g := int8(f)
+	upperbound := int8(100)
+	lowerbound := int8(-100)
+	beta := int8(0)
+	for lowerbound < upperbound {
+		if g == lowerbound {
+			beta = g + 1
+		} else {
+			beta = g
+		}
+		g = a.alphabeta(s, beta-1, beta, d, workNode)
+		if g < beta {
+			upperbound = g
+		} else {
+			lowerbound = g
+		}
+	}
+	return g
+}
+
+func (a *AI) iterative_deepening(s *State, workNode *Node) int8 {
+
+	timeStart := time.Now()
+
+	firstguess := int8(0)
+	for d := int8(0); d < maxStape; d++ {
+		firstguess = a.mtdf(s, workNode, firstguess, d)
+		fmt.Println("Time : ", time.Since(timeStart), "- Stape : ", d)
+
+		if time.Since(timeStart) >= time.Millisecond*100 {
+			return firstguess
+		}
+		//if times_up() then break;
+	}
+	return firstguess
+}
+
 func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
-	var workNode *Node
+	//var workNode *Node
 
 	if a.s == nil || a.s.pq == nil {
 		a.s = a.newState(b, uint8(s.NbCaptureP1), uint8(s.NbCaptureP2), 0, 0, ruler.TokenP2)
-		a.s.alpha = math.MinInt8
-		a.s.beta = math.MaxInt8
+		//a.s.alpha = math.MinInt8
+		//a.s.beta = math.MaxInt8
 	}
-	workNode = a.newNode()
+	_, n := a.newNode(a.s, 0, 0)
 	timeTotalNode = 0
 	//	timeTotalAddNode = 0
 	timeTotalCopyBoard = 0
@@ -494,10 +325,13 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	var test time.Duration
 	test += time.Since(time.Now())
 	//a.prevalphabeta(a.s, nil, math.MinInt8, math.MaxInt8, 4)
-	a.alphabeta(a.s, math.MinInt8, math.MaxInt8, 4, workNode)
+
+	w := a.iterative_deepening(a.s, n)
+	fmt.Println("return iterative : ", w)
+	//a.alphabeta(a.s, -100, 100, maxStape, n)
 
 	//	a.getLen(a.s)
-	x, y := a.getCoord(0)
+	x, y := a.getCoord(w)
 	//	fmt.Println("------------- End -------------")
 	//	fmt.Println("Time total to clean node: ", timeTotalNode)
 	//	fmt.Println("Time total to add node on list: ", timeTotalAddNode)
@@ -517,7 +351,7 @@ func (a *AI) PlayOpposing(y, x uint8) {
 		if y == node.y && x == node.x {
 			//			fmt.Println("------------------ START ------------------")
 			//node.nextState.alpha = a.s.alpha
-			*a.s = node.nextState
+			a.s = node.nextState
 			//			fmt.Println("alpha opposant: ", a.s.alpha)
 			//			fmt.Println("beta opposant: ", a.s.beta)
 			return

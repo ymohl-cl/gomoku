@@ -248,7 +248,7 @@ func (r Rules) isWin(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer ui
 		x := posX + (xi * i)
 		y := posY + (yi * i)
 		if !checkOnTheBoard(x, y) {
-			return false
+			continue
 		}
 		if (x == posX && y == posY) || (*board)[y][x] == currentPlayer {
 			nbMe++
