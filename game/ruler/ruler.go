@@ -41,6 +41,8 @@ type Rules struct {
 	//Win
 	IsWin      bool
 	MessageWin string
+
+	NbToken uint8
 }
 
 // New : Return a new instance and set default values of Rules struct
@@ -242,7 +244,7 @@ func (r *Rules) CheckDoubleThree(board *[][]uint8, posX, posY, xi, yi int8, curr
 // posX and poxY are where player want to play position
 // xi and yi are steps of posX and posY respectively for the direction check
 // currentPlayer is the actual player token
-func (r Rules) isWin(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) bool {
+func (r *Rules) isWin(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) bool {
 	var nbMe uint8
 
 	for i := int8(-4); i <= 4; i++ {
@@ -254,11 +256,19 @@ func (r Rules) isWin(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer ui
 		if (x == posX && y == posY) || (*board)[y][x] == currentPlayer {
 			nbMe++
 			if nbMe == 5 {
+				r.NbToken = nbMe
 				return true
 			}
 		} else {
+			if r.NbToken < nbMe {
+				r.NbToken = nbMe
+			}
 			nbMe = 0
 		}
+	}
+
+	if r.NbToken < nbMe {
+		r.NbToken = nbMe
 	}
 	return false
 }
