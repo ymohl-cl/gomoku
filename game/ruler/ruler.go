@@ -1,5 +1,7 @@
 package ruler
 
+import "fmt"
+
 //Token values and size of board
 const (
 	TokenEmpty         = 0
@@ -39,8 +41,10 @@ type Rules struct {
 	NbThree uint8
 
 	//Win
-	IsWin      bool
-	MessageWin string
+	IsWin         bool
+	CapturableWin []*Capture
+	PositionWin   []*Capture
+	MessageWin    string
 
 	NbToken uint8
 }
@@ -149,9 +153,10 @@ func (r *Rules) CheckCapture(board *[][]uint8, posX, posY, xi, yi int8, currentP
 // posX and poxY are where player want to play position
 // xi and yi are steps of posX and posY respectively for the direction check
 // currentPlayer is the actual player token
-func (r Rules) IsThree(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) bool {
+func (r *Rules) IsThree(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) bool {
 	var nbMe uint8
 
+	r.PositionWin = nil
 	//Check line
 	for i := int8(-1); i <= 2; i++ {
 		x := posX + (xi * i)
@@ -161,6 +166,7 @@ func (r Rules) IsThree(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer 
 		}
 		if (*board)[y][x] == currentPlayer {
 			nbMe++
+			r.PositionWin = append(r.PositionWin, &Capture{X: x, Y: y})
 			if nbMe > 2 {
 				return false
 			}
@@ -228,6 +234,9 @@ func (r *Rules) CheckDoubleThree(board *[][]uint8, posX, posY, xi, yi int8, curr
 		return
 	}
 
+	r.PositionWin = append(r.PositionWin, &Capture{X: posX, Y: posY})
+	r.CheckCaptureAfterMove(board, posX, posY, currentPlayer)
+
 	if yi == -1 && xi == -1 {
 		*maskThree |= threeDiagonalLeft
 	} else if yi == -1 && xi == 0 {
@@ -247,6 +256,7 @@ func (r *Rules) CheckDoubleThree(board *[][]uint8, posX, posY, xi, yi int8, curr
 func (r *Rules) isWin(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) bool {
 	var nbMe uint8
 
+	r.PositionWin = nil
 	for i := int8(-4); i <= 4; i++ {
 		x := posX + (xi * i)
 		y := posY + (yi * i)
@@ -255,6 +265,7 @@ func (r *Rules) isWin(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer u
 		}
 		if (x == posX && y == posY) || (*board)[y][x] == currentPlayer {
 			nbMe++
+			r.PositionWin = append(r.PositionWin, &Capture{X: x, Y: y})
 			if nbMe == 5 {
 				r.NbToken = nbMe
 				return true
@@ -263,6 +274,7 @@ func (r *Rules) isWin(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer u
 			if r.NbToken < nbMe {
 				r.NbToken = nbMe
 			}
+			r.PositionWin = nil
 			nbMe = 0
 		}
 	}
@@ -291,6 +303,8 @@ func (r *Rules) CheckWinner(board *[][]uint8, posX, posY int8, currentPlayer uin
 
 	if r.IsWin {
 		r.MessageWin = "Win by align five token"
+		r.CapturableWin = nil
+		r.CheckCaptureAfterMove(board, posX, posY, currentPlayer)
 	}
 }
 
@@ -360,12 +374,13 @@ func (r *Rules) CheckRules(board *[][]uint8, posX, posY int8, currentPlayer uint
 		r.MovedStr = "Not neighborhood"
 		return
 	}
-
+	fmt.Println("nbt : ", r.NbThree)
 	if nbCaps+r.NbCaps >= 5 {
 		r.IsWin = true
 		r.MessageWin = "Win by capture: " + string(nbCaps+r.NbCaps)
 		return
 	}
+
 	r.CheckWinner(board, posX, posY, currentPlayer)
 
 	if r.IsWin == false && r.IsCaptured == false && r.NbThree >= 2 {
@@ -373,4 +388,35 @@ func (r *Rules) CheckRules(board *[][]uint8, posX, posY int8, currentPlayer uint
 		r.MovedStr = "DoubleThree"
 	}
 	return
+}
+
+func (r *Rules) CheckCaptureAfterMove(board *[][]uint8, posX, posY int8, currentPlayer uint8) {
+	(*board)[uint8(posY)][uint8(posX)] = currentPlayer
+	player := uint8(TokenP1)
+	if currentPlayer == TokenP1 {
+		player = TokenP2
+	}
+	fmt.Println("Bonjour")
+	for _, cap := range r.PositionWin {
+		for yi := int8(-1); yi <= 1; yi++ {
+			for xi := int8(-1); xi <= 1; xi++ {
+				x := cap.X + xi
+				y := cap.Y + yi
+				if (xi == 0 && yi == 0) || !checkOnTheBoard(x, y) {
+					continue
+				}
+				//Can we put in this posX/posY
+				if (*board)[y][x] == currentPlayer {
+					rFake := New()
+					rFake.CheckCapture(board, cap.X+2*xi, cap.Y+2*yi, -xi, -yi, player)
+					fmt.Println("Hop la x : ", x, " - y :", y)
+					if rFake.IsCaptured == true {
+						fmt.Println("New Capturablewin x : ", x, " - y : ", y)
+						r.CapturableWin = append(r.CapturableWin, &Capture{X: x, Y: y})
+					}
+				}
+			}
+		}
+	}
+	(*board)[uint8(posY)][uint8(posX)] = TokenEmpty
 }

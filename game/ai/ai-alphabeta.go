@@ -11,6 +11,7 @@ import (
 
 const (
 	posCenter = 9
+	maxDepth  = 4
 )
 
 var timeTotalNode time.Duration
@@ -36,10 +37,12 @@ type State struct {
 	pq            *Node
 }
 
-func (a AI) newState(nbCOldCurrent, nbCOldOther, p uint8) *State {
+func (a AI) newState(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, p uint8) *State {
 	s := State{
 		nbCapsCurrent: nbCOldOther,
 		nbCapsOther:   nbCOldCurrent,
+		nbTCurrent:    nbTOldOther,
+		nbTOther:      nbTOldCurrent,
 		player:        p,
 	}
 
@@ -79,11 +82,11 @@ func (s *State) Clean() {
 	s.pq = nil
 }
 
-func (s *State) Set(nbCOldCurrent, nbCOldOther, p uint8) {
+func (s *State) Set(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, p uint8) {
 	s.nbCapsCurrent = nbCOldOther
 	s.nbCapsOther = nbCOldCurrent
-	//	s.nbTCurrent = nbTOldCurrent
-	//	s.nbTOther = nbTOldOther
+	s.nbTCurrent = nbTOldCurrent
+	s.nbTOther = nbTOldOther
 	s.player = p
 }
 
@@ -116,35 +119,61 @@ func (s State) switchPlayer() uint8 {
 func (a AI) eval(s *State, stape uint8, r *ruler.Rules) int8 {
 	var ret int8
 
-	ret = math.MaxInt8 - 1
+	ret = math.MaxInt8 - (maxDepth - int8(stape))
 	//ret -= (4 - int8(stape))
 
-	fmt.Print("Eval on stape: ", stape)
-
+	//fmt.Println("Value tree: ", s.nbTOther, " : ", s.nbTCurrent)
+	//	if r.NbThree == 0 && len(r.CapturableWin) == 0 {
+	ret -= 1
+	//} else
 	if !r.IsWin {
-		valueCaps := 5 - uint8(s.nbCapsCurrent+r.NbCaps)
-		valueLine := uint8(0)
-		if r.NbThree > 0 && r.NbToken == 3 {
-			valueLine = 1
-		} else {
-			valueLine = 5 - r.NbToken
-		}
-
-		fmt.Print(" - ValueLine: ", valueLine)
-		fmt.Print(" - ValueCaps: ", valueCaps)
-		if valueLine < valueCaps {
-			fmt.Println("ValueLine: ", valueLine)
-			ret -= int8(valueLine)
-		} else {
-			ret -= int8(valueCaps)
-		}
-
+		//if r.NbThree == 1 {
+		//	ret -= 1
+		//}
+		//	ret = 100
+		//ret += int8(s.nbCapsOther - s.nbCapsCurrent)
+		ret -= int8(s.nbCapsCurrent - s.nbCapsOther)
+		//	if r.NbThree != 1 && len(r.CapturableWin) != 0 {
+		//	} else {
+		//		ret -= 1
+		//	}
+	}
+	/* else if !r.IsWin {
+		//		fmt.Println("current: ", s.nbTCurrent, " other: ", s.nbTOther)
+		//		if s.nbTCurrent != 0 && (s.nbTCurrent >= s.nbTOther) {
+		//			ret += 10
+		//		}
+		//ret = 10
+		//ret = math.MaxInt8 / 2
+		//		ret -= int8(s.nbTCurrent - s.nbTOther)
+	}
+	*/
+	//		valueCaps := 5 - uint8(s.nbCapsCurrent+r.NbCaps)
+	//		valueCaps := 5 - uint8(s.nbCapsOther)
+	//		valueLine := uint8(0)
+	//		if (r.NbThree > 0 && r.NbToken == 3) || r.NbToken == 4 {
+	//valueLine = 1
+	//			ret -= 1
+	//		}
+	/* else {
+		valueLine = 5 - r.NbToken
 	}
 
-	if s.player == ruler.TokenP1 {
-		ret *= -1
-	}
-	fmt.Println(" - Ret Eval: ", ret)
+	fmt.Print(" - ValueLine: ", valueLine)
+	fmt.Print(" - ValueCaps: ", valueCaps)
+	if valueLine < valueCaps {
+		fmt.Println("ValueLine: ", valueLine)
+		ret -= int8(valueLine)
+	} else {
+		ret -= int8(valueCaps)
+	}*/
+
+	//	}
+
+	// if ruler.TokenP1 == s.player, TokenP2 playing.
+	//	if s.player == ruler.TokenP2 {
+	//		ret *= -1
+	//	}
 	return ret
 }
 
@@ -314,12 +343,12 @@ func (a *AI) preAlphaBeta(s *State, b *[][]uint8) {
 	}
 }
 */
-func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldState *State, oldRule *ruler.Rules) int8 {
-	score := int8(math.MinInt8)
+func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules) int8 {
+	score := int8(math.MinInt8) + 1
 	var node *Node
 
 	if stape == 0 || oldRule.IsWin {
-		return a.eval(oldState, stape+1, oldRule)
+		return -a.eval(s, stape+1, oldRule)
 	}
 
 	for y := uint8(0); y < 19; y++ {
@@ -334,24 +363,33 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 				//	if r.IsCaptured {
 				//			countToken = 2
 				//		}
-				node.nextState.Set(s.nbCapsCurrent+r.NbCaps, s.nbCapsOther, s.switchPlayer())
+				node.nextState.Set(s.nbCapsCurrent+r.NbCaps, s.nbCapsOther, s.nbTCurrent+r.NbThree, s.nbTOther, s.switchPlayer())
 				//*beta = -*beta
 				//*alpha = -*alpha
-				node.weight = -a.alphabeta(&node.nextState, b, -beta, -alpha, stape-1, s, r)
+				node.weight = -a.alphabeta(&node.nextState, b, -beta, -alpha, stape-1, r)
 				a.restoreMove(b, r, s.player, x, y)
 				s.addNode(node)
 
-				score = a.max(score, node.weight)
-				//*alpha = a.max(*alpha, score)
-				alpha = a.max(alpha, node.weight)
-
-				if alpha >= beta {
-					//					fmt.Println("stape: ", stape, " - Alpha: ", alpha, " - Beta: ", beta, " - Score: ", score)
-					//			if c != nil {
-					//				c <- node.weight
-					//			}
-					return beta
+				//				fmt.Println("node-weight: ", node.weight, " score: ", score, " stape: ", stape)
+				//				fmt.Println("Test begin -- alpha: ", alpha, " beta: ", beta)
+				if score < node.weight {
+					score = node.weight
 				}
+
+				if alpha < node.weight {
+					alpha = node.weight
+					if alpha >= beta {
+						//						fmt.Println("alpha: ", alpha, " beta: ", beta)
+						return score
+					}
+				}
+				//	score = a.max(score, node.weight)
+				//*alpha = a.max(*alpha, score)
+
+				//					fmt.Println("stape: ", stape, " - Alpha: ", alpha, " - Beta: ", beta, " - Score: ", score)
+				//			if c != nil {
+				//				c <- node.weight
+				//			}
 			}
 		}
 	}
@@ -369,7 +407,7 @@ func (a *AI) getCoord(weight int8) (uint8, uint8) {
 	for node := a.s.pq; node != nil; node = node.next {
 		weight := node.weight
 		fmt.Print("Y: ", node.y, " - X: ", node.x, " | Weight Node: ", node.weight, " | ")
-		if tmp >= weight {
+		if tmp <= weight {
 			fmt.Println("Choiced !")
 			x = node.x
 			y = node.y
@@ -389,7 +427,7 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	//	var workNode *Node
 
 	if a.s == nil || a.s.pq == nil {
-		a.s = a.newState(uint8(s.NbCaptureP1), uint8(s.NbCaptureP2), ruler.TokenP2)
+		a.s = a.newState(uint8(s.NbCaptureP1), uint8(s.NbCaptureP2), 0, 0, ruler.TokenP2)
 		//		a.s.alpha = math.MinInt8
 		//		a.s.beta = math.MaxInt8
 	}
@@ -408,7 +446,10 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	//state := a.newState(0, 0, ruler.TokenP1)
 	r := ruler.New()
 	//a.preAlphaBeta(a.s, b)
-	a.alphabeta(a.s, b, math.MinInt8, math.MaxInt8, 4, a.s, r)
+	ret := a.alphabeta(a.s, b, math.MinInt8+1, math.MaxInt8, maxDepth, r)
+	fmt.Println("Ret: ", ret)
+	//	fmt.Println("min int8: ", math.MinInt8)
+	//	fmt.Println("max int8: ", math.MaxInt8)
 
 	//	a.getLen(a.s)
 	x, y := a.getCoord(0)
