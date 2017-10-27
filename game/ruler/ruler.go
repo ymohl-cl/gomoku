@@ -1,7 +1,5 @@
 package ruler
 
-import "fmt"
-
 //Token values and size of board
 const (
 	TokenEmpty         = 0
@@ -46,7 +44,9 @@ type Rules struct {
 	PositionWin   []*Capture
 	MessageWin    string
 
+	// Winneable
 	NbToken uint8
+	NbLine  uint8
 }
 
 // New : Return a new instance and set default values of Rules struct
@@ -267,21 +267,21 @@ func (r *Rules) isWin(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer u
 			nbMe++
 			r.PositionWin = append(r.PositionWin, &Capture{X: x, Y: y})
 			if nbMe == 5 {
-				r.NbToken = nbMe
+				//				r.NbToken = nbMe
 				return true
 			}
 		} else {
-			if r.NbToken < nbMe {
-				r.NbToken = nbMe
-			}
+			//			if r.NbToken < nbMe {
+			//				r.NbToken = nbMe
+			//			}
 			r.PositionWin = nil
 			nbMe = 0
 		}
 	}
 
-	if r.NbToken < nbMe {
-		r.NbToken = nbMe
-	}
+	//	if r.NbToken < nbMe {
+	//		r.NbToken = nbMe
+	//	}
 	return false
 }
 
@@ -374,7 +374,7 @@ func (r *Rules) CheckRules(board *[][]uint8, posX, posY int8, currentPlayer uint
 		r.MovedStr = "Not neighborhood"
 		return
 	}
-	fmt.Println("nbt : ", r.NbThree)
+	//fmt.Println("nbt : ", r.NbThree)
 	if nbCaps+r.NbCaps >= 5 {
 		r.IsWin = true
 		r.MessageWin = "Win by capture: " + string(nbCaps+r.NbCaps)
@@ -387,7 +387,75 @@ func (r *Rules) CheckRules(board *[][]uint8, posX, posY int8, currentPlayer uint
 		r.IsMoved = false
 		r.MovedStr = "DoubleThree"
 	}
+
+	r.CheckWinneable(board, posX, posY, currentPlayer)
 	return
+}
+
+func (r *Rules) CheckWinneable(board *[][]uint8, posX, posY int8, currentPlayer uint8) {
+	if nb := r.isWinneable(board, posX, posY, 1, -1, currentPlayer); nb >= r.NbToken {
+		if nb > r.NbToken {
+			r.NbToken = nb
+			r.NbLine = 1
+		} else {
+			r.NbLine++
+		}
+	}
+
+	if nb := r.isWinneable(board, posX, posY, 1, 0, currentPlayer); nb >= r.NbToken {
+		if nb > r.NbToken {
+			r.NbToken = nb
+			r.NbLine = 1
+		} else {
+			r.NbLine++
+		}
+	}
+
+	if nb := r.isWinneable(board, posX, posY, 1, 1, currentPlayer); nb >= r.NbToken {
+		if nb > r.NbToken {
+			r.NbToken = nb
+			r.NbLine = 1
+		} else {
+			r.NbLine++
+		}
+	}
+
+	if nb := r.isWinneable(board, posX, posY, 0, 1, currentPlayer); nb >= r.NbToken {
+		if nb > r.NbToken {
+			r.NbToken = nb
+			r.NbLine = 1
+		} else {
+			r.NbLine++
+		}
+	}
+}
+
+func (r *Rules) isWinneable(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) uint8 {
+	var nbToken uint8
+	var nbAvailable uint8
+
+	for i := int8(-4); i <= 4; i++ {
+		x := posX + (xi * i)
+		y := posY + (yi * i)
+		if !checkOnTheBoard(x, y) {
+			continue
+		}
+		if (x == posX && y == posY) || (*board)[y][x] == currentPlayer {
+			nbToken++
+			nbAvailable++
+		} else if (*board)[y][x] == TokenEmpty {
+			nbAvailable++
+		} else {
+			nbAvailable = 0
+			nbToken = 0
+		}
+
+		if nbAvailable >= 5 {
+			return nbToken
+		}
+	}
+
+	return 0
 }
 
 func (r *Rules) CheckCaptureAfterMove(board *[][]uint8, posX, posY int8, currentPlayer uint8) {
@@ -396,7 +464,7 @@ func (r *Rules) CheckCaptureAfterMove(board *[][]uint8, posX, posY int8, current
 	if currentPlayer == TokenP1 {
 		player = TokenP2
 	}
-	fmt.Println("Bonjour")
+	//fmt.Println("Bonjour")
 	for _, cap := range r.PositionWin {
 		for yi := int8(-1); yi <= 1; yi++ {
 			for xi := int8(-1); xi <= 1; xi++ {
@@ -409,9 +477,9 @@ func (r *Rules) CheckCaptureAfterMove(board *[][]uint8, posX, posY int8, current
 				if (*board)[y][x] == currentPlayer {
 					rFake := New()
 					rFake.CheckCapture(board, cap.X+2*xi, cap.Y+2*yi, -xi, -yi, player)
-					fmt.Println("Hop la x : ", x, " - y :", y)
+					//fmt.Println("Hop la x : ", x, " - y :", y)
 					if rFake.IsCaptured == true {
-						fmt.Println("New Capturablewin x : ", x, " - y : ", y)
+						//				fmt.Println("New Capturablewin x : ", x, " - y : ", y)
 						r.CapturableWin = append(r.CapturableWin, &Capture{X: x, Y: y})
 					}
 				}
