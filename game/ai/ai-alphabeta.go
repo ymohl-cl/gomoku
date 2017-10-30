@@ -30,15 +30,15 @@ func New() *AI {
 
 type State struct {
 	prevRule      *ruler.Rules
-	nbCapsCurrent uint8
-	nbCapsOther   uint8
-	nbTCurrent    uint8
-	nbTOther      uint8
+	nbCapsCurrent int8
+	nbCapsOther   int8
+	nbTCurrent    int8
+	nbTOther      int8
 	player        uint8
 	pq            *Node
 }
 
-func (a AI) newState(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, p uint8) *State {
+func (a AI) newState(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther int8, p uint8) *State {
 	s := State{
 		nbCapsCurrent: nbCOldOther,
 		nbCapsOther:   nbCOldCurrent,
@@ -83,12 +83,12 @@ func (s *State) Clean() {
 	s.pq = nil
 }
 
-func (s *State) Set(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, p uint8, pr *ruler.Rules) {
+func (s *State) Set(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther int8, p uint8, pr *ruler.Rules) {
 	s.prevRule = pr
 	s.nbCapsCurrent = nbCOldOther
 	s.nbCapsOther = nbCOldCurrent
-	s.nbTCurrent = nbTOldCurrent
-	s.nbTOther = nbTOldOther
+	s.nbTCurrent = nbTOldOther
+	s.nbTOther = nbTOldCurrent
 	s.player = p
 }
 
@@ -118,46 +118,100 @@ func (s State) switchPlayer() uint8 {
 	return ruler.TokenP1
 }
 
-func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State) int8 {
-	ret := int8(63)
+func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
+	retPlayer := int8(0)
+	retAI := int8(0)
 
 	if r.IsWin {
 		return -127 + int8(maxDepth-stape)
 	}
 
 	// Eval caps
-	var basicCurrent int8
-	var basicOther int8
+	//	var basicCurrent int8
+	//	var basicOther int8
 
-	if s.player == ruler.TokenP2 {
-		//basicCurrent = int8(s.nbCapsCurrent - base.nbCapsOther)
-		basicCurrent = int8(s.nbCapsOther - base.nbCapsOther)
-		//basicOther = int8(s.nbCapsOther - base.nbCapsCurrent)
-		basicOther = int8(s.nbCapsCurrent - base.nbCapsCurrent)
-	} else {
-		basicCurrent = int8(s.nbCapsOther - base.nbCapsCurrent)
-		basicOther = int8(s.nbCapsCurrent - base.nbCapsOther)
+	//	capsPlayer := int8(s.nbCapsOther) * 5 // - base.nbCapsOther)
+	//	capsAI := int8(s.nbCapsCurrent) * 5   // - base.nbCapsCurrent)
+
+	evalCapsPlayer := int8(s.nbCapsOther - base.nbCapsOther)
+	evalCapsAI := int8(s.nbCapsCurrent - base.nbCapsCurrent)
+
+	var treePlayer int8
+	var treeAi int8
+
+	//	if evalCapsPlayer > evalCapsAI {
+	treePlayer = s.nbTOther*5 + evalCapsPlayer*5
+	//	} else {
+	//		treePlayer = s.nbTOther - evalCapsAI
+	//	}
+	//	if evalCapsAI > evalCapsPlayer {
+	treeAi = s.nbCapsCurrent*5 + evalCapsAI*5
+	//	} else {
+	//	treeAi = s.nbCapsCurrent - evalCapsPlayer
+	//	}
+
+	//retPlayer -= (capsPlayer + treePlayer)
+	retPlayer -= treePlayer
+	//fmt.Println("player = scoreCaps: ", capsPlayer, " - scoreTree: ", treePlayer, " - evalCapsAI: ", evalCapsAI)
+	//retAI += (capsAI + treeAi)
+	retAI += treeAi
+	//fmt.Println("AI = scoreCaps: ", capsAI, " - scoreTree: ", treeAi, " - evalCapsPlayer: ", evalCapsPlayer)
+
+	if evalCapsPlayer > evalCapsAI && s.nbTOther > s.nbTCurrent {
+		return -115
 	}
+
+	return retPlayer + retAI
+	/*	if retPlayer <= 0 && (-127-retPlayer) <= (127-retAI) {
+			return retPlayer
+		}
+		return retAI*/
+	/*	if s.player == ruler.TokenP2 {
+			//basicCurrent = int8(s.nbCapsCurrent - base.nbCapsOther)
+			basicCurrent = int8(s.nbCapsOther - base.nbCapsOther)
+			//basicOther = int8(s.nbCapsOther - base.nbCapsCurrent)
+			basicOther = int8(s.nbCapsCurrent - base.nbCapsCurrent)
+		} else {
+			basicCurrent = int8(s.nbCapsOther - base.nbCapsCurrent)
+			basicOther = int8(s.nbCapsCurrent - base.nbCapsOther)
+		}*/
 
 	//	if r.NbToken == 1 && basicCurrent == 0 {
 	//		return 63
 	//	}
 
-	lineCurrent := int8(r.NbToken * r.NbLine)
-	lineOther := int8(s.prevRule.NbToken * s.prevRule.NbLine)
-	if lineCurrent >= lineOther {
-		ret += lineCurrent
-	} else {
-		ret -= lineOther
-	}
+	//	lineCurrent := int8(r.NbToken * r.NbLine)
+	//	lineOther := int8(s.prevRule.NbToken * s.prevRule.NbLine)
+	//	if lineCurrent >= lineOther {
+	//		ret += lineCurrent
+	//	} else {
+	//		ret -= lineOther
+	//	}
 
-	scoreOther := int8(s.nbCapsCurrent) * 5
-	scoreCurrent := int8(s.nbCapsOther) * 5
-	if scoreCurrent >= scoreOther {
-		ret += (scoreCurrent - basicOther)
-	} else {
-		ret -= (scoreOther - basicCurrent)
-	}
+	//scoreOther := int8(s.nbCapsCurrent) * 5
+	//scoreCurrent := int8(s.nbCapsOther) * 5
+
+	/*
+		if basicCurrent >= basicOther {
+			ret += basicCurrent - basicOther //(scoreCurrent - basicOther)
+		} else {
+			ret -= basicOther - basicCurrent //(scoreOther - basicCurrent)
+		}
+	*/
+
+	//	treeCurrent := s.nbTOther
+	//	treeOther := s.nbTCurrent
+	//	if stape == 1 {
+	//		fmt.Println("treeCurrent: ", treeCurrent, "- treeOther: ", treeOther)
+
+	//	}
+	/*	scoreTree := int8((treeCurrent - treeOther))
+		if treeCurrent != 0 && treeCurrent-treeOther == 0 {
+			scoreTree -= 1
+		}
+		scoreTree *= 5
+		ret += scoreTree*/
+
 	// end eval caps
 
 	/* Eval tree no capturable
@@ -170,10 +224,10 @@ func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State) int8 {
 	*/
 
 	// return result
-	if s.player == ruler.TokenP2 {
-		return -ret
-	}
-	return ret
+	/*	if s.player == ruler.TokenP2 {
+			return -ret
+		}
+		return ret*/
 }
 
 func (s *State) Search(n *Node) *Node {
@@ -342,19 +396,19 @@ func (a *AI) preAlphaBeta(s *State, b *[][]uint8) {
 	}
 }
 */
-func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State) int8 {
+func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
 	score := int8(math.MinInt8) + 1
 	var node *Node
 
 	if stape == 0 || oldRule.IsWin { // || (oldRule.NbThree > 0 && len(oldRule.CapturableWin) == 0) {
-		ret := a.eval(s, stape+1, oldRule, base)
+		ret := a.eval(s, stape+1, oldRule, base, prevRule)
 		return ret
 	}
 
 	for y := uint8(0); y < 19; y++ {
 		for x := uint8(0); x < 19; x++ {
 			r := ruler.New()
-			r.CheckRules(b, int8(x), int8(y), s.player, s.nbCapsCurrent)
+			r.CheckRules(b, int8(x), int8(y), s.player, uint8(s.nbCapsCurrent))
 			if r.IsMoved {
 				node = a.newNode(x, y)
 				//node.weight = -a.eval(s, stape, r)
@@ -363,10 +417,14 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 				//	if r.IsCaptured {
 				//			countToken = 2
 				//		}
-				node.nextState.Set(s.nbCapsCurrent+r.NbCaps, s.nbCapsOther, s.nbTCurrent+r.NbThree, s.nbTOther, s.switchPlayer(), oldRule)
+				node.nextState.Set(s.nbCapsCurrent+int8(r.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(r.NbThree), s.nbTOther, s.switchPlayer(), oldRule)
 				//*beta = -*beta
 				//*alpha = -*alpha
-				node.weight = -a.alphabeta(&node.nextState, b, -beta, -alpha, stape-1, r, base)
+				node.weight = -a.alphabeta(&node.nextState, b, -beta, -alpha, stape-1, r, base, oldRule)
+				//				if flag == true && stape == 1 {
+				//					fmt.Println("X: ", x, "Y: ", y)
+				//				fmt.Println("alpha: ", alpha, " - beta: ", beta, " - weight: ", node.weight, " - stape: ", stape)
+				//				}
 				a.restoreMove(b, r, s.player, x, y)
 				s.addNode(node)
 
@@ -427,7 +485,7 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	//	var workNode *Node
 
 	if a.s == nil || a.s.pq == nil {
-		a.s = a.newState(uint8(s.NbCaptureP1), uint8(s.NbCaptureP2), 0, 0, ruler.TokenP2)
+		a.s = a.newState(int8(s.NbCaptureP1), int8(s.NbCaptureP2), 0, 0, ruler.TokenP2)
 		//		a.s.alpha = math.MinInt8
 		//		a.s.beta = math.MaxInt8
 	}
@@ -445,8 +503,9 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	//a.prevalphabeta(a.s, nil, math.MinInt8, math.MaxInt8, 4)
 	//state := a.newState(0, 0, ruler.TokenP1)
 	r := ruler.New()
+	prevRule := ruler.New()
 	//a.preAlphaBeta(a.s, b)
-	ret := a.alphabeta(a.s, b, math.MinInt8+1, math.MaxInt8, maxDepth, r, a.s)
+	ret := a.alphabeta(a.s, b, math.MinInt8+1, math.MaxInt8, maxDepth, r, a.s, prevRule)
 	fmt.Println("Ret: ", ret)
 	//	fmt.Println("min int8: ", math.MinInt8)
 	//	fmt.Println("max int8: ", math.MaxInt8)
