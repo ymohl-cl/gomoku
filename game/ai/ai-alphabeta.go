@@ -119,115 +119,50 @@ func (s State) switchPlayer() uint8 {
 }
 
 func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
-	retPlayer := int8(0)
-	retAI := int8(0)
-
-	if r.IsWin {
-		return -127 + int8(maxDepth-stape)
-	}
+	ret := int8(63)
 
 	// Eval caps
-	//	var basicCurrent int8
-	//	var basicOther int8
+	var basicCurrent int8
+	var basicOther int8
 
-	//	capsPlayer := int8(s.nbCapsOther) * 5 // - base.nbCapsOther)
-	//	capsAI := int8(s.nbCapsCurrent) * 5   // - base.nbCapsCurrent)
-
-	evalCapsPlayer := int8(s.nbCapsOther - base.nbCapsOther)
-	evalCapsAI := int8(s.nbCapsCurrent - base.nbCapsCurrent)
-
-	var treePlayer int8
-	var treeAi int8
-
-	//	if evalCapsPlayer > evalCapsAI {
-	treePlayer = s.nbTOther*5 + evalCapsPlayer*5
-	//	} else {
-	//		treePlayer = s.nbTOther - evalCapsAI
-	//	}
-	//	if evalCapsAI > evalCapsPlayer {
-	treeAi = s.nbCapsCurrent*5 + evalCapsAI*5
-	//	} else {
-	//	treeAi = s.nbCapsCurrent - evalCapsPlayer
-	//	}
-
-	//retPlayer -= (capsPlayer + treePlayer)
-	retPlayer -= treePlayer
-	//fmt.Println("player = scoreCaps: ", capsPlayer, " - scoreTree: ", treePlayer, " - evalCapsAI: ", evalCapsAI)
-	//retAI += (capsAI + treeAi)
-	retAI += treeAi
-	//fmt.Println("AI = scoreCaps: ", capsAI, " - scoreTree: ", treeAi, " - evalCapsPlayer: ", evalCapsPlayer)
-
-	if evalCapsPlayer > evalCapsAI && s.nbTOther > s.nbTCurrent {
-		return -115
+	if s.player == ruler.TokenP2 {
+		//basicCurrent = int8(s.nbCapsCurrent - base.nbCapsOther)
+		basicCurrent = int8(s.nbCapsOther - base.nbCapsOther)
+		//basicOther = int8(s.nbCapsOther - base.nbCapsCurrent)
+		basicOther = int8(s.nbCapsCurrent - base.nbCapsCurrent)
+	} else {
+		basicCurrent = int8(s.nbCapsOther - base.nbCapsCurrent)
+		basicOther = int8(s.nbCapsCurrent - base.nbCapsOther)
 	}
 
-	return retPlayer + retAI
-	/*	if retPlayer <= 0 && (-127-retPlayer) <= (127-retAI) {
-			return retPlayer
-		}
-		return retAI*/
-	/*	if s.player == ruler.TokenP2 {
-			//basicCurrent = int8(s.nbCapsCurrent - base.nbCapsOther)
-			basicCurrent = int8(s.nbCapsOther - base.nbCapsOther)
-			//basicOther = int8(s.nbCapsOther - base.nbCapsCurrent)
-			basicOther = int8(s.nbCapsCurrent - base.nbCapsCurrent)
+	if r.IsWin {
+		if basicCurrent > 0 {
+			return -127 + int8(maxDepth-stape)
 		} else {
-			basicCurrent = int8(s.nbCapsOther - base.nbCapsCurrent)
-			basicOther = int8(s.nbCapsCurrent - base.nbCapsOther)
-		}*/
+			return -126 + int8(maxDepth-stape)
+		}
 
-	//	if r.NbToken == 1 && basicCurrent == 0 {
-	//		return 63
-	//	}
-
-	//	lineCurrent := int8(r.NbToken * r.NbLine)
-	//	lineOther := int8(s.prevRule.NbToken * s.prevRule.NbLine)
-	//	if lineCurrent >= lineOther {
-	//		ret += lineCurrent
-	//	} else {
-	//		ret -= lineOther
-	//	}
+	}
 
 	//scoreOther := int8(s.nbCapsCurrent) * 5
 	//scoreCurrent := int8(s.nbCapsOther) * 5
 
-	/*
-		if basicCurrent >= basicOther {
-			ret += basicCurrent - basicOther //(scoreCurrent - basicOther)
-		} else {
-			ret -= basicOther - basicCurrent //(scoreOther - basicCurrent)
-		}
-	*/
+	//if basicCurrent > basicOther {
+	ret += (basicCurrent*5 - basicOther*4)
+	//} else {
+	//	ret -= (scoreOther*3 - basicCurrent)
+	//}
 
-	//	treeCurrent := s.nbTOther
-	//	treeOther := s.nbTCurrent
-	//	if stape == 1 {
-	//		fmt.Println("treeCurrent: ", treeCurrent, "- treeOther: ", treeOther)
-
-	//	}
-	/*	scoreTree := int8((treeCurrent - treeOther))
-		if treeCurrent != 0 && treeCurrent-treeOther == 0 {
-			scoreTree -= 1
-		}
-		scoreTree *= 5
-		ret += scoreTree*/
-
-	// end eval caps
-
-	/* Eval tree no capturable
-	if r.NbThree > 0 && len(r.CapturableWin) == 0 && basicCurrent == 0 {
-		return -127 + (int8(maxDepth-stape) - 10)
-	} else if r.NbThree > 0 && len(r.CapturableWin) == 0 {
-		return -ret
+	treeCurrent := s.nbTOther
+	treeOther := s.nbTCurrent
+	//if treeCurrent > treeOther {
+	if len(r.CapturableWin) > 0 {
+		ret += int8(treeCurrent - treeOther*2)
+	} else {
+		ret += int8(treeCurrent*2 - treeOther)
 	}
-	// end eval no capturable
-	*/
 
-	// return result
-	/*	if s.player == ruler.TokenP2 {
-			return -ret
-		}
-		return ret*/
+	return -ret
 }
 
 func (s *State) Search(n *Node) *Node {
