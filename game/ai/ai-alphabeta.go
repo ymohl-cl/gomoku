@@ -118,14 +118,26 @@ func (s State) switchPlayer() uint8 {
 	return ruler.TokenP1
 }
 
+// Evaluaton proto
+/*
+	Rechercher l'alignement le plus long
+	Rechercher le nombre d'alignement possible sur cette longueur
+	Rechercher le nombre de tree
+	Rechercher le nombre de Caps
+
+*/
+
 func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
-	retPlayer := int8(0)
-	retAI := int8(0)
+	//Player := int8(0)
+	//retAI := int8(0)
 
 	if r.IsWin {
-		return -127 + int8(maxDepth-stape)
+		ret := -127 + (int8(maxDepth-stape) * 5)
+		ret -= s.nbTOther
+		return ret
 	}
 
+	return 0
 	// Eval caps
 	//	var basicCurrent int8
 	//	var basicOther int8
@@ -133,35 +145,39 @@ func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State, prevRule *r
 	//	capsPlayer := int8(s.nbCapsOther) * 5 // - base.nbCapsOther)
 	//	capsAI := int8(s.nbCapsCurrent) * 5   // - base.nbCapsCurrent)
 
-	evalCapsPlayer := int8(s.nbCapsOther - base.nbCapsOther)
-	evalCapsAI := int8(s.nbCapsCurrent - base.nbCapsCurrent)
+	//	diffCapsAI := int8(s.nbCapsCurrent - base.nbCapsCurrent)
+	//	diffCapsPlayer := int8(s.nbCapsOther - base.nbCapsOther)
+	//	if diffCapsPlayer > 0 {
+	//		return 0 + s.nbCapsOther
+	//	}
+	//	return 0 - s.nbTCurrent
 
-	var treePlayer int8
-	var treeAi int8
+	//	var treePlayer int8
+	//	var treeAi int8
 
 	//	if evalCapsPlayer > evalCapsAI {
-	treePlayer = s.nbTOther*5 + evalCapsPlayer*5
+	//	treePlayer = s.nbTOther*5 + evalCapsPlayer*5
 	//	} else {
 	//		treePlayer = s.nbTOther - evalCapsAI
 	//	}
 	//	if evalCapsAI > evalCapsPlayer {
-	treeAi = s.nbCapsCurrent*5 + evalCapsAI*5
+	//	treeAi = s.nbCapsCurrent*5 + evalCapsAI*5
 	//	} else {
 	//	treeAi = s.nbCapsCurrent - evalCapsPlayer
 	//	}
 
 	//retPlayer -= (capsPlayer + treePlayer)
-	retPlayer -= treePlayer
+	//	retPlayer -= treePlayer
 	//fmt.Println("player = scoreCaps: ", capsPlayer, " - scoreTree: ", treePlayer, " - evalCapsAI: ", evalCapsAI)
 	//retAI += (capsAI + treeAi)
-	retAI += treeAi
+	//	retAI += treeAi
 	//fmt.Println("AI = scoreCaps: ", capsAI, " - scoreTree: ", treeAi, " - evalCapsPlayer: ", evalCapsPlayer)
 
-	if evalCapsPlayer > evalCapsAI && s.nbTOther > s.nbTCurrent {
-		return -115
-	}
+	//	if evalCapsPlayer > evalCapsAI && s.nbTOther > s.nbTCurrent {
+	//		return -115
+	//	}
 
-	return retPlayer + retAI
+	//	return retPlayer + retAI
 	/*	if retPlayer <= 0 && (-127-retPlayer) <= (127-retAI) {
 			return retPlayer
 		}
@@ -401,6 +417,9 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 	var node *Node
 
 	if stape == 0 || oldRule.IsWin { // || (oldRule.NbThree > 0 && len(oldRule.CapturableWin) == 0) {
+		if s.nbCapsOther == 0 {
+			fmt.Println("Hello")
+		}
 		ret := a.eval(s, stape+1, oldRule, base, prevRule)
 		return ret
 	}
@@ -428,13 +447,13 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 				a.restoreMove(b, r, s.player, x, y)
 				s.addNode(node)
 
-				//				fmt.Println("node-weight: ", node.weight, " score: ", score, " stape: ", stape)
+				fmt.Println("node-weight: ", node.weight, " score: ", score, " stape: ", stape, " - X: ", x, " - Y: ", y)
 				//				fmt.Println("Test begin -- alpha: ", alpha, " beta: ", beta)
-				if score < node.weight {
+				if score <= node.weight {
 					score = node.weight
 				}
 
-				if alpha < node.weight {
+				if alpha <= node.weight {
 					alpha = node.weight
 					if alpha >= beta {
 						//						fmt.Println("alpha: ", alpha, " beta: ", beta)
