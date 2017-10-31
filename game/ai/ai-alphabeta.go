@@ -152,23 +152,23 @@ func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State, prevRule *r
 	}
 
 	//Caps
-	ret += (basicCurrent*5 - basicOther*4)
+	ret += (basicCurrent*7 - basicOther*6)
 
 	//Three
 	treeCurrent := s.nbTOther
 	treeOther := s.nbTCurrent
 
 	if len(r.CapturableWin) > 0 {
-		ret += int8(treeCurrent - treeOther*2)
+		ret += int8(treeCurrent - treeOther*3)
 	} else {
-		ret += int8(treeCurrent*2 - treeOther)
+		ret += int8(treeCurrent*3 - treeOther)
 	}
 
 	//Align
 	AlignCurrent := s.nbAlignOther
 	AlignOther := s.nbAlignCurrent
 
-	ret += int8(AlignCurrent*3 - AlignOther)
+	ret += int8(AlignCurrent*4 - AlignOther)
 
 	return -ret
 }
