@@ -11,7 +11,7 @@ import (
 
 const (
 	posCenter = 9
-	maxDepth  = 4
+	maxDepth  = 6
 )
 
 var timeTotalNode time.Duration
@@ -29,22 +29,26 @@ func New() *AI {
 }
 
 type State struct {
-	prevRule      *ruler.Rules
-	nbCapsCurrent int8
-	nbCapsOther   int8
-	nbTCurrent    int8
-	nbTOther      int8
-	player        uint8
-	pq            *Node
+	prevRule       *ruler.Rules
+	nbCapsCurrent  int8
+	nbCapsOther    int8
+	nbTCurrent     int8
+	nbTOther       int8
+	nbAlignCurrent int8
+	nbAlignOther   int8
+	player         uint8
+	pq             *Node
 }
 
-func (a AI) newState(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther int8, p uint8) *State {
+func (a AI) newState(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, nbAlignOldCurrent, nbAlignOldOther int8, p uint8) *State {
 	s := State{
-		nbCapsCurrent: nbCOldOther,
-		nbCapsOther:   nbCOldCurrent,
-		nbTCurrent:    nbTOldOther,
-		nbTOther:      nbTOldCurrent,
-		player:        p,
+		nbCapsCurrent:  nbCOldOther,
+		nbCapsOther:    nbCOldCurrent,
+		nbTCurrent:     nbTOldOther,
+		nbTOther:       nbTOldCurrent,
+		nbAlignCurrent: nbAlignOldOther,
+		nbAlignOther:   nbAlignOldCurrent,
+		player:         p,
 	}
 
 	return &s
@@ -83,12 +87,15 @@ func (s *State) Clean() {
 	s.pq = nil
 }
 
-func (s *State) Set(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther int8, p uint8, pr *ruler.Rules) {
+func (s *State) Set(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, nbAlignOldCurrent, nbAlignOldOther int8, p uint8, pr *ruler.Rules) {
 	s.prevRule = pr
 	s.nbCapsCurrent = nbCOldOther
 	s.nbCapsOther = nbCOldCurrent
 	s.nbTCurrent = nbTOldOther
 	s.nbTOther = nbTOldCurrent
+	tmpNbAlignCurrent := s.nbAlignCurrent
+	s.nbAlignCurrent = s.max(s.nbAlignOther, nbAlignOldOther)
+	s.nbAlignOther = s.max(tmpNbAlignCurrent, nbAlignOldCurrent)
 	s.player = p
 }
 
@@ -158,9 +165,18 @@ func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State, prevRule *r
 	//if treeCurrent > treeOther {
 	if len(r.CapturableWin) > 0 {
 		ret += int8(treeCurrent - treeOther*2)
+		//		if prevRule.NbCaps > 0 {
+		//			ret += 1
+		//		}
 	} else {
 		ret += int8(treeCurrent*2 - treeOther)
 	}
+
+	AlignCurrent := s.nbAlignOther
+	AlignOther := s.nbAlignCurrent
+	//if treeCurrent > treeOther {
+
+	ret += int8(AlignCurrent*3 - AlignOther)
 
 	return -ret
 }
@@ -352,7 +368,7 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 				//	if r.IsCaptured {
 				//			countToken = 2
 				//		}
-				node.nextState.Set(s.nbCapsCurrent+int8(r.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(r.NbThree), s.nbTOther, s.switchPlayer(), oldRule)
+				node.nextState.Set(s.nbCapsCurrent+int8(r.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(r.NbThree), s.nbTOther, int8(r.NbToken), s.nbAlignOther, s.switchPlayer(), oldRule)
 				//*beta = -*beta
 				//*alpha = -*alpha
 				node.weight = -a.alphabeta(&node.nextState, b, -beta, -alpha, stape-1, r, base, oldRule)
@@ -420,7 +436,7 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	//	var workNode *Node
 
 	if a.s == nil || a.s.pq == nil {
-		a.s = a.newState(int8(s.NbCaptureP1), int8(s.NbCaptureP2), 0, 0, ruler.TokenP2)
+		a.s = a.newState(int8(s.NbCaptureP1), int8(s.NbCaptureP2), 0, 0, 0, 0, ruler.TokenP2)
 		//		a.s.alpha = math.MinInt8
 		//		a.s.beta = math.MaxInt8
 	}
@@ -483,7 +499,7 @@ func (a *AI) PlayOpposing(y, x uint8) {
 	return y
 }
 */
-func (a *AI) max(x, y int8) int8 {
+func (s *State) max(x, y int8) int8 {
 	if x > y {
 		return x
 	}
