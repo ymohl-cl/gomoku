@@ -11,7 +11,7 @@ import (
 
 const (
 	posCenter = 9
-	maxDepth  = 6
+	maxDepth  = 4
 )
 
 var timeTotalNode time.Duration
@@ -128,10 +128,9 @@ func (s State) switchPlayer() uint8 {
 func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
 	ret := int8(63)
 
-	// Eval caps
+	// Var Caps
 	var basicCurrent int8
 	var basicOther int8
-
 	if s.player == ruler.TokenP2 {
 		//basicCurrent = int8(s.nbCapsCurrent - base.nbCapsOther)
 		basicCurrent = int8(s.nbCapsOther - base.nbCapsOther)
@@ -142,39 +141,32 @@ func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State, prevRule *r
 		basicOther = int8(s.nbCapsCurrent - base.nbCapsOther)
 	}
 
+	//Win
 	if r.IsWin {
 		if basicCurrent > 0 {
 			return -127 + int8(maxDepth-stape)
 		} else {
-			return -126 + int8(maxDepth-stape)
+			return -117 + int8(maxDepth-stape)
 		}
 
 	}
 
-	//scoreOther := int8(s.nbCapsCurrent) * 5
-	//scoreCurrent := int8(s.nbCapsOther) * 5
-
-	//if basicCurrent > basicOther {
+	//Caps
 	ret += (basicCurrent*5 - basicOther*4)
-	//} else {
-	//	ret -= (scoreOther*3 - basicCurrent)
-	//}
 
+	//Three
 	treeCurrent := s.nbTOther
 	treeOther := s.nbTCurrent
-	//if treeCurrent > treeOther {
+
 	if len(r.CapturableWin) > 0 {
 		ret += int8(treeCurrent - treeOther*2)
-		//		if prevRule.NbCaps > 0 {
-		//			ret += 1
-		//		}
 	} else {
 		ret += int8(treeCurrent*2 - treeOther)
 	}
 
+	//Align
 	AlignCurrent := s.nbAlignOther
 	AlignOther := s.nbAlignCurrent
-	//if treeCurrent > treeOther {
 
 	ret += int8(AlignCurrent*3 - AlignOther)
 
