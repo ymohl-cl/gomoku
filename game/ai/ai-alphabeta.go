@@ -21,11 +21,12 @@ var timeTotalCopyBoard time.Duration
 var timeTotalState time.Duration
 
 type AI struct {
-	s *State
+	s        *State
+	NbPlayed uint8
 }
 
 func New() *AI {
-	return &AI{}
+	return &AI{NbPlayed: 1}
 }
 
 type State struct {
@@ -432,43 +433,54 @@ func (a *AI) getCoord(weight int8) (uint8, uint8) {
 	return x, y
 }
 
-func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
-	//	var workNode *Node
+func (a *AI) FirstPass(s *State, b *[][]uint8) {
+	for y := 0; y < 19; y++ {
+		for x := 0; x < 19; x++ {
+			r := ruler.New()
+			r.CheckRules(b, int8(x), int8(y), s.player, uint8(s.nbCapsCurrent))
+			if r.IsMoved {
+				node := a.newNode(uint8(x), uint8(y))
+				if r.IsWin {
+					node.weight = 127
+					a.s.addNode(node)
+					return
+				} else {
+					r := ruler.New()
+					r.CheckRules(b, int8(x), int8(y), s.switchPlayer(), uint8(s.nbCapsCurrent))
+					if r.IsWin {
+						node.weight = 126
+						a.s.addNode(node)
+					}
+				}
+			}
+		}
+	}
+}
 
+func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
+	var x, y uint8
+
+	a.NbPlayed++
 	if a.s == nil || a.s.pq == nil {
 		a.s = a.newState(int8(s.NbCaptureP1), int8(s.NbCaptureP2), 0, 0, 0, 0, ruler.TokenP2)
-		//		a.s.alpha = math.MinInt8
-		//		a.s.beta = math.MaxInt8
 	}
-	//	workNode = a.newNode()
-	//timeTotalNode = 0
-	//	timeTotalAddNode = 0
-	//timeTotalCopyBoard = 0
-	//timeTotalRule = 0
-	//	timeTotalState = 0
 
-	//	fmt.Println("AI a.s alpha: ", a.s.alpha)
-	//	fmt.Println("AI a.s beta: ", a.s.beta)
-	//var test time.Duration
-	//test += time.Since(time.Now())
-	//a.prevalphabeta(a.s, nil, math.MinInt8, math.MaxInt8, 4)
-	//state := a.newState(0, 0, ruler.TokenP1)
-	r := ruler.New()
-	prevRule := ruler.New()
-	//a.preAlphaBeta(a.s, b)
-	ret := a.alphabeta(a.s, b, math.MinInt8+1, math.MaxInt8, maxDepth, r, a.s, prevRule)
-	fmt.Println("Ret: ", ret)
-	//	fmt.Println("min int8: ", math.MinInt8)
-	//	fmt.Println("max int8: ", math.MaxInt8)
+	a.FirstPass(a.s, b)
+	if a.s.pq != nil {
+		x, y = a.getCoord(0)
+	} else {
 
-	//	a.getLen(a.s)
-	x, y := a.getCoord(0)
-	//	fmt.Println("------------- End -------------")
-	//	fmt.Println("Time total to clean node: ", timeTotalNode)
-	//	fmt.Println("Time total to add node on list: ", timeTotalAddNode)
-	//	fmt.Println("Time total to copy board, node and state: ", timeTotalCopyBoard)
-	//	fmt.Println("Time total to check Rule: ", timeTotalRule)
-	//	fmt.Println("Time total to create new state: ", timeTotalState)
+		r := ruler.New()
+		prevRule := ruler.New()
+
+		if a.NbPlayed > maxDepth {
+			a.NbPlayed = maxDepth
+		}
+		fmt.Println("Depth: ", a.NbPlayed)
+		ret := a.alphabeta(a.s, b, math.MinInt8+1, math.MaxInt8, a.NbPlayed, r, a.s, prevRule)
+		fmt.Println("Ret: ", ret)
+		x, y = a.getCoord(0)
+	}
 
 	c <- y
 	c <- x
