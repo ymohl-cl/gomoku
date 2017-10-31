@@ -380,6 +380,9 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 				if alpha < node.weight {
 					alpha = node.weight
 					if alpha >= beta {
+						if stape == 4 {
+							fmt.Println("alpha : ", alpha, " - beta", beta)
+						}
 						//						fmt.Println("alpha: ", alpha, " beta: ", beta)
 						return score
 					}
@@ -397,6 +400,9 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 	//	if c != nil {
 	//		c <- score
 	//	}
+	if stape == 4 {
+		fmt.Println("alpha : ", alpha, " - beta", beta)
+	}
 	return score
 }
 
@@ -407,15 +413,15 @@ func (a *AI) getCoord(weight int8) (uint8, uint8) {
 	tmp := int8(math.MinInt8)
 	for node := a.s.pq; node != nil; node = node.next {
 		weight := node.weight
-		fmt.Print("Y: ", node.y, " - X: ", node.x, " | Weight Node: ", node.weight, " | ")
+		//fmt.Print("Y: ", node.y, " - X: ", node.x, " | Weight Node: ", node.weight, " | ")
 		if tmp <= weight {
-			fmt.Println("Choiced !")
+			//fmt.Println("Choiced !")
 			x = node.x
 			y = node.y
 			tmp = node.weight
 			//			refNode = node
 		} else {
-			fmt.Println("Not")
+			//fmt.Println("Not")
 		}
 	}
 
