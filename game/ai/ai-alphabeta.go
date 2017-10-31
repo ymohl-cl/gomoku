@@ -135,32 +135,48 @@ func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State, prevRule *r
 		basicOther = int8(s.nbCapsCurrent - base.nbCapsOther)
 	}
 
-	if r.IsWin {
-		if basicCurrent > 0 {
+	if a.checkIsWin(r, s) {
+		return -127 + int8(maxDepth-stape)
+		/*if basicCurrent > 0 {
 			return -127 + int8(maxDepth-stape)
 		} else {
 			return -126 + int8(maxDepth-stape)
-		}
+		}*/
 
 	}
 
-	//scoreOther := int8(s.nbCapsCurrent) * 5
+	//	if (r.NbToken == 3 && r.NbThree > 0) || r.NbToken == 4 {
+	//		ret = 110
+	//	}
+
+	//	ret += (basicCurrent*5 - basicOther)
+	//	scoreOther := int8(s.nbCapsCurrent) * 5
 	//scoreCurrent := int8(s.nbCapsOther) * 5
 
-	//if basicCurrent > basicOther {
-	ret += (basicCurrent*5 - basicOther*4)
-	//} else {
-	//	ret -= (scoreOther*3 - basicCurrent)
-	//}
+	ret += basicCurrent*5 - basicOther*4
+	/*
+		if basicOther > basicCurrent {
+			ret -= s.nbCapsCurrent
+		}
+	*/
+	/*	if basicCurrent <= basicOther {
+			ret += (basicCurrent*5 - basicOther*4)
+		} else {
+			ret -= (basicOther*5 - basicCurrent*4)
+		}*/
 
 	treeCurrent := s.nbTOther
-	treeOther := s.nbTCurrent
+	ret += treeCurrent * 2
+	//	if treeCurrent > 0 {
+	//		ret += int8(treeCurrent * 5)
+	//	}
+	//	treeOther := s.nbTCurrent
 	//if treeCurrent > treeOther {
-	if len(r.CapturableWin) > 0 {
-		ret += int8(treeCurrent - treeOther*2)
-	} else {
-		ret += int8(treeCurrent*2 - treeOther)
-	}
+	/*	if len(r.CapturableWin) > 0 {
+			ret += int8(treeCurrent - treeOther*2)
+		} else {
+			ret += int8(treeCurrent*2 - treeOther)
+		}*/
 
 	return -ret
 }
@@ -331,11 +347,18 @@ func (a *AI) preAlphaBeta(s *State, b *[][]uint8) {
 	}
 }
 */
+func (a *AI) checkIsWin(r *ruler.Rules, s *State) bool {
+	if (r.IsWin && s.player == ruler.TokenP2) || (r.IsWin && s.player == ruler.TokenP1 && r.NbCaps > 0) {
+		return true
+	}
+	return false
+}
+
 func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
 	score := int8(math.MinInt8) + 1
 	var node *Node
 
-	if stape == 0 || oldRule.IsWin { // || (oldRule.NbThree > 0 && len(oldRule.CapturableWin) == 0) {
+	if stape == 0 || a.checkIsWin(oldRule, s) { // || (oldRule.NbThree > 0 && len(oldRule.CapturableWin) == 0) {
 		ret := a.eval(s, stape+1, oldRule, base, prevRule)
 		return ret
 	}
