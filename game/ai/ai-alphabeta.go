@@ -23,14 +23,15 @@ var timeTotalState time.Duration
 type AI struct {
 	s        *State
 	NbPlayed uint8
+	alpha    int8
+	beta     int8
 }
 
 func New() *AI {
-	return &AI{NbPlayed: 1}
+	return &AI{NbPlayed: 1, alpha: math.MinInt8 + 1, beta: math.MaxInt8}
 }
 
 type State struct {
-	prevRule       *ruler.Rules
 	nbCapsCurrent  int8
 	nbCapsOther    int8
 	nbTCurrent     int8
@@ -38,6 +39,8 @@ type State struct {
 	nbAlignCurrent int8
 	nbAlignOther   int8
 	player         uint8
+	alpha          int8
+	beta           int8
 	pq             *Node
 }
 
@@ -49,6 +52,8 @@ func (a AI) newState(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, nbA
 		nbTOther:       nbTOldCurrent,
 		nbAlignCurrent: nbAlignOldOther,
 		nbAlignOther:   nbAlignOldCurrent,
+		alpha:          math.MinInt8 + 1,
+		beta:           math.MaxInt8,
 		player:         p,
 	}
 
@@ -56,19 +61,18 @@ func (a AI) newState(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, nbA
 }
 
 type Node struct {
-	x      uint8
-	y      uint8
-	weight int8
-	//	minV      int8
-	//	maxV      int8
+	x         uint8
+	y         uint8
+	weight    int8
+	rule      ruler.Rules
+	alpha     int8
+	beta      int8
 	nextState State
 	next      *Node
 }
 
 func (a AI) newNode(x, y uint8) *Node {
 	return &Node{
-		//		minV: math.MinInt8,
-		//		maxV: math.MaxInt8,
 		x: x,
 		y: y,
 	}
@@ -88,8 +92,7 @@ func (s *State) Clean() {
 	s.pq = nil
 }
 
-func (s *State) Set(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, nbAlignOldCurrent, nbAlignOldOther int8, p uint8, pr *ruler.Rules) {
-	s.prevRule = pr
+func (s *State) Set(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, nbAlignOldCurrent, nbAlignOldOther int8, p uint8) {
 	s.nbCapsCurrent = nbCOldOther
 	s.nbCapsOther = nbCOldCurrent
 	s.nbTCurrent = nbTOldOther
@@ -340,6 +343,15 @@ func (a *AI) preAlphaBeta(s *State, b *[][]uint8) {
 	}
 }
 */
+func (s *State) getNode(x, y uint8) *Node {
+	for n := s.pq; n != nil; n = n.next {
+		if n.x == x && n.y == y {
+			return n
+		}
+	}
+	return nil
+}
+
 func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
 	score := int8(math.MinInt8) + 1
 	var node *Node
@@ -354,56 +366,48 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 			r := ruler.New()
 			r.CheckRules(b, int8(x), int8(y), s.player, uint8(s.nbCapsCurrent))
 			if r.IsMoved {
-				node = a.newNode(x, y)
-				//node.weight = -a.eval(s, stape, r)
+				found := true
+				node = s.getNode(x, y)
+				if node == nil {
+					node = a.newNode(x, y)
+					found = false
+				}
 				a.applyMove(b, r, s.player, x, y)
-				//	countToken := uint8(0)
-				//	if r.IsCaptured {
-				//			countToken = 2
-				//		}
-				node.nextState.Set(s.nbCapsCurrent+int8(r.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(r.NbThree), s.nbTOther, int8(r.NbToken), s.nbAlignOther, s.switchPlayer(), oldRule)
-				//*beta = -*beta
-				//*alpha = -*alpha
+				if found == false {
+					node.nextState.Set(s.nbCapsCurrent+int8(r.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(r.NbThree), s.nbTOther, int8(r.NbToken), s.nbAlignOther, s.switchPlayer())
+				} else {
+					fmt.Println("Not define state")
+				}
 				node.weight = -a.alphabeta(&node.nextState, b, -beta, -alpha, stape-1, r, base, oldRule)
-				//				if flag == true && stape == 1 {
-				//					fmt.Println("X: ", x, "Y: ", y)
-				//				fmt.Println("alpha: ", alpha, " - beta: ", beta, " - weight: ", node.weight, " - stape: ", stape)
-				//				}
 				a.restoreMove(b, r, s.player, x, y)
-				s.addNode(node)
+				if found == false {
+					s.addNode(node)
+				} else {
+					fmt.Println("Not add node")
+				}
 
-				//				fmt.Println("node-weight: ", node.weight, " score: ", score, " stape: ", stape)
-				//				fmt.Println("Test begin -- alpha: ", alpha, " beta: ", beta)
 				if score < node.weight {
 					score = node.weight
 				}
 
+				//	node.alpha = alpha
+				//				node.beta = beta
 				if alpha < node.weight {
 					alpha = node.weight
+					//	node.alpha = alpha
 					if alpha >= beta {
-						//						fmt.Println("alpha: ", alpha, " beta: ", beta)
 						return score
 					}
 				}
-				//	score = a.max(score, node.weight)
-				//*alpha = a.max(*alpha, score)
-
-				//					fmt.Println("stape: ", stape, " - Alpha: ", alpha, " - Beta: ", beta, " - Score: ", score)
-				//			if c != nil {
-				//				c <- node.weight
-				//			}
 			}
 		}
 	}
-	//	if c != nil {
-	//		c <- score
-	//	}
 	return score
 }
 
 func (a *AI) getCoord(weight int8) (uint8, uint8) {
 	var x, y uint8
-	//	var refNode *Node
+	var refNode *Node
 
 	tmp := int8(math.MinInt8)
 	for node := a.s.pq; node != nil; node = node.next {
@@ -414,14 +418,14 @@ func (a *AI) getCoord(weight int8) (uint8, uint8) {
 			x = node.x
 			y = node.y
 			tmp = node.weight
-			//			refNode = node
+			refNode = node
 		} else {
 			fmt.Println("Not")
 		}
 	}
 
-	//	a.s = &refNode.nextState
-	a.s = nil
+	a.s = &refNode.nextState
+	a.s.alpha = refNode.weight
 	return x, y
 }
 
@@ -457,19 +461,21 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 		a.s = a.newState(int8(s.NbCaptureP1), int8(s.NbCaptureP2), 0, 0, 0, 0, ruler.TokenP2)
 	}
 
+	savePq := a.s.pq
+	a.s.pq = nil
 	a.FirstPass(a.s, b)
 	if a.s.pq != nil {
 		x, y = a.getCoord(0)
 	} else {
-
+		a.s.pq = savePq
 		r := ruler.New()
 		prevRule := ruler.New()
 
 		if a.NbPlayed > maxDepth {
 			a.NbPlayed = maxDepth
 		}
-		fmt.Println("Depth: ", a.NbPlayed)
-		ret := a.alphabeta(a.s, b, math.MinInt8+1, math.MaxInt8, a.NbPlayed, r, a.s, prevRule)
+		fmt.Println("Depth: ", a.NbPlayed, " - alpha: ", a.alpha, " - beta: ", a.beta)
+		ret := a.alphabeta(a.s, b, a.alpha, a.beta, a.NbPlayed, r, a.s, prevRule)
 		fmt.Println("Ret: ", ret)
 		x, y = a.getCoord(0)
 	}
@@ -484,25 +490,18 @@ func (a *AI) PlayOpposing(y, x uint8) {
 	}
 	for node := a.s.pq; node != nil; node = node.next {
 		if y == node.y && x == node.x {
-			//			fmt.Println("------------------ START ------------------")
-			//node.nextState.alpha = a.s.alpha
-			*a.s = node.nextState
-			//			fmt.Println("alpha opposant: ", a.s.alpha)
-			//			fmt.Println("beta opposant: ", a.s.beta)
+			tmpState := a.s
+			a.s = &node.nextState
+			a.alpha = tmpState.alpha - 1
+			a.beta = node.weight + 2
 			return
 		}
 	}
 	a.s = nil
-	//	fmt.Println("FUCCCCK")
+	a.alpha = math.MinInt8 + 1
+	a.beta = math.MaxInt8
 }
 
-/*func (a *AI) min(x, y int8) int8 {
-	if x < y {
-		return x
-	}
-	return y
-}
-*/
 func (s *State) max(x, y int8) int8 {
 	if x > y {
 		return x

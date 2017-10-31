@@ -100,7 +100,7 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 	if g.game.GetCurrentPlayer().Name == "AI" {
 		go g.DrawFilter()
 		go func() {
-			//g.game.Bot.PlayOpposing(y, x)
+			g.game.Bot.PlayOpposing(y, x)
 			c := make(chan uint8)
 			go g.game.Bot.Play(g.game.GetBoard(), g.data.Current, c)
 			yi, xi := <-c, <-c
