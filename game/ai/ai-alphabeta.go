@@ -3,6 +3,7 @@ package ai
 import (
 	"fmt"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/ymohl-cl/gomoku/database"
@@ -41,7 +42,11 @@ type State struct {
 	player         uint8
 	alpha          int8
 	beta           int8
-	pq             *Node
+	//	pq             map[uint8]map[uint8]*Node
+	pq       *[19][19]*Node
+	initPq   bool
+	lastSave *Node
+	//	pq             *Node
 }
 
 func (a AI) newState(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, nbAlignOldCurrent, nbAlignOldOther int8, p uint8) *State {
@@ -55,6 +60,7 @@ func (a AI) newState(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, nbA
 		alpha:          math.MinInt8 + 1,
 		beta:           math.MaxInt8,
 		player:         p,
+		//pq:             make(map[uint8]map[uint8]*Node),
 	}
 
 	return &s
@@ -71,7 +77,12 @@ type Node struct {
 	next      *Node
 }
 
-func (a AI) newNode(x, y uint8) *Node {
+func (n *Node) SetCoord(y, x uint8) {
+	n.y = y
+	n.x = x
+}
+
+func newNode(x, y uint8) *Node {
 	return &Node{
 		x: x,
 		y: y,
@@ -89,7 +100,7 @@ func (s *State) Clean() {
 	s.nbCapsCurrent = 0
 	s.nbCapsOther = 0
 	s.player = 0
-	s.pq = nil
+	//	s.pq = nil
 }
 
 func (s *State) Set(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, nbAlignOldCurrent, nbAlignOldOther int8, p uint8) {
@@ -101,17 +112,16 @@ func (s *State) Set(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, nbAl
 	s.nbAlignCurrent = s.max(s.nbAlignOther, nbAlignOldOther)
 	s.nbAlignOther = s.max(tmpNbAlignCurrent, nbAlignOldCurrent)
 	s.player = p
+	//	s.pq = make(map[uint8]map[uint8]Node, 19)
 }
 
 func (s *State) addNode(n *Node) {
-	if s.pq == nil {
-		s.pq = n
-	} else {
-		tmp := s.pq
-		s.pq = n
-		s.pq.next = tmp
-	}
+	/*	if mapX := s.pq[n.y]; mapX == nil {
+			s.pq[n.y] = make(map[uint8]Node, 19)
+		}
+		s.pq[n.y][n.x] = *n*/
 }
+
 func (a *AI) copyBoard(b *[][]uint8) *[][]uint8 {
 	var newBoard [][]uint8
 	for _, line := range *b {
@@ -178,12 +188,18 @@ func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State, prevRule *r
 }
 
 func (s *State) Search(n *Node) *Node {
-	for test := s.pq; test != nil; test = test.next {
-		if test.x == n.x && test.y == n.y {
-			return test
+	/*	if mapX := s.pq[n.y]; mapX != nil {
+		if node := mapX[n.x]; node != nil {
+			return node
 		}
-	}
+	}*/
 	return nil
+	/*	for test := s.pq; test != nil; test = test.next {
+			if test.x == n.x && test.y == n.y {
+				return test
+			}
+		}
+		return nil*/
 }
 
 func (a *AI) applyMove(b *[][]uint8, r *ruler.Rules, player uint8, x, y uint8) {
@@ -344,12 +360,90 @@ func (a *AI) preAlphaBeta(s *State, b *[][]uint8) {
 }
 */
 func (s *State) getNode(x, y uint8) *Node {
-	for n := s.pq; n != nil; n = n.next {
+	node := s.pq[y][x]
+	/*	if mapX := s.pq[y]; mapX != nil {
+			if node := mapX[x]; node != nil {
+				return node
+			}
+		}
+		return nil*/
+
+	/*	for n := s.pq; n != nil; n = n.next {
 		if n.x == x && n.y == y {
 			return n
 		}
+	}*/
+	return node
+}
+
+func (s *State) update() {
+	wg := new(sync.WaitGroup)
+
+	for _, mapX := range s.pq {
+		for _, node := range mapX {
+			if node != nil {
+				wg.Add(1)
+				go func(n *Node) {
+					defer wg.Done()
+					n.nextState.nbTCurrent = s.nbTOther
+					n.nextState.nbTOther = s.nbTCurrent + int8(n.rule.NbThree)
+				}(node)
+			}
+		}
 	}
-	return nil
+
+	/*
+		for y := uint8(0); y < 19; y++ {
+			for x := uint8(0); x < 19; x++ {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					node := s.pq[y][x]
+					node.nextState.nbTCurrent = s.nbTOther
+					node.nextState.nbTOther = s.nbTCurrent + int8(node.rule.NbThree)
+				}()
+			}
+		}
+	*/
+	wg.Wait()
+}
+
+func (s *State) InitMove(b *[][]uint8) {
+	m := new(sync.Mutex)
+	if s.initPq == true {
+		//	fmt.Println("Update state")
+		s.update()
+		return
+	}
+
+	//fmt.Println("Create new node lst")
+	wg := new(sync.WaitGroup)
+	//	s.pq = make(map[uint8]map[uint8]*Node, 19)
+	s.initPq = true
+	s.pq = new([19][19]*Node)
+
+	for y := uint8(0); y < 19; y++ {
+		//m.Lock()
+		//s.pq[y] = make(map[uint8]*Node, 19)
+		//m.Unlock()
+		for x := uint8(0); x < 19; x++ {
+			wg.Add(1)
+			go func(iy, ix uint8) {
+				defer wg.Done()
+				rule := new(ruler.Rules)
+				rule.CheckRules(b, int8(ix), int8(iy), s.player, uint8(s.nbCapsCurrent))
+				if rule.IsMoved {
+					node := newNode(ix, iy)
+					node.rule = *rule
+					node.nextState.Set(s.nbCapsCurrent+int8(node.rule.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(node.rule.NbThree), s.nbTOther, int8(node.rule.NbToken), s.nbAlignOther, s.switchPlayer())
+					m.Lock()
+					s.pq[iy][ix] = node
+					m.Unlock()
+				}
+			}(y, x)
+		}
+	}
+	wg.Wait()
 }
 
 func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
@@ -360,30 +454,67 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 		return ret
 	}
 
-	for y := uint8(0); y < 19; y++ {
-		for x := uint8(0); x < 19; x++ {
-			found := true
-			node := s.getNode(x, y)
-			if node == nil {
-				node = a.newNode(x, y)
-				found = false
-				node.rule.CheckRules(b, int8(x), int8(y), s.player, uint8(s.nbCapsCurrent))
-			}
-			if node.rule.IsMoved {
-				a.applyMove(b, &node.rule, s.player, x, y)
-				if found == false {
-					node.nextState.Set(s.nbCapsCurrent+int8(node.rule.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(node.rule.NbThree), s.nbTOther, int8(node.rule.NbToken), s.nbAlignOther, s.switchPlayer())
-				} else {
-					node.nextState.nbTCurrent = s.nbTOther
-					node.nextState.nbTOther = s.nbTCurrent + int8(node.rule.NbThree)
-				}
+	s.InitMove(b)
+
+	for _, mapX := range s.pq {
+		for _, node := range mapX {
+			if node != nil {
+				a.applyMove(b, &node.rule, s.player, node.x, node.y)
+
 				node.weight = -a.alphabeta(&node.nextState, b, -beta, -alpha, stape-1, &node.rule, base, oldRule)
-				a.restoreMove(b, &node.rule, s.player, x, y)
-				if found == false {
-					s.addNode(node)
+				a.restoreMove(b, &node.rule, s.player, node.x, node.y)
+
+				if stape == 4 {
+					fmt.Println("score min: node (x - y - weight): ", node.x, " - ", node.y, " - ", node.weight)
+				}
+				if score < node.weight {
+					if stape == 4 {
+						fmt.Println("node add")
+					}
+					s.lastSave = node
+					score = node.weight
 				}
 
+				s.alpha = alpha
+				if alpha < node.weight {
+					if stape == 4 {
+						fmt.Println("alpha min: node (x - y - weight): ", node.x, " - ", node.y, " - ", node.weight)
+					}
+					alpha = node.weight
+					s.alpha = alpha
+					if alpha >= beta {
+						return score
+					}
+				}
+			}
+		}
+	}
+
+	/*	for y := uint8(0); y < 19; y++ {
+		for x := uint8(0); x < 19; x++ {
+			//			found := true
+			node := s.pq[y][x]
+			//			if node == nil {
+			//				node = a.newNode(x, y)
+			//				found = false
+			//				node.rule.CheckRules(b, int8(x), int8(y), s.player, uint8(s.nbCapsCurrent))
+			//			}
+			if node.rule.IsMoved {
+				a.applyMove(b, &node.rule, s.player, x, y)
+				//				if found == false {
+				//					node.nextState.Set(s.nbCapsCurrent+int8(node.rule.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(node.rule.NbThree), s.nbTOther, int8(node.rule.NbToken), s.nbAlignOther, s.switchPlayer())
+				//				} else {
+				//					node.nextState.nbTCurrent = s.nbTOther
+				//					node.nextState.nbTOther = s.nbTCurrent + int8(node.rule.NbThree)
+				//				}
+				node.weight = -a.alphabeta(&node.nextState, b, -beta, -alpha, stape-1, &node.rule, base, oldRule)
+				a.restoreMove(b, &node.rule, s.player, x, y)
+				//				if found == false {
+				//					s.addNode(node)
+				//				}
+
 				if score < node.weight {
+					s.lastSave = node
 					score = node.weight
 				}
 
@@ -398,7 +529,7 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 				}
 			}
 		}
-	}
+	}*/
 	return score
 }
 
@@ -406,17 +537,24 @@ func (a *AI) getCoord(weight int8) (uint8, uint8) {
 	var x, y uint8
 	var refNode *Node
 
-	tmp := int8(math.MinInt8)
-	for node := a.s.pq; node != nil; node = node.next {
-		weight := node.weight
-		if tmp <= weight {
-			x = node.x
-			y = node.y
-			tmp = node.weight
-			refNode = node
-		}
-	}
+	//	tmp := int8(math.MinInt8)
+	//	for _, mapX := range a.s.pq {
+	//		for _, node := range mapX {
+	//			weight := node.weight
+	//			if tmp <= weight {
+	//				fmt.Println("- x - y - weight: ", node.x, " - ", node.y, " - ", node.weight)
+	node := a.s.lastSave
+	x = node.x
+	y = node.y
+	//				tmp = node.weight
+	refNode = node
+	//			}
+	//		}
+	//	}
 
+	/*	for node := a.s.pq; node != nil; node = node.next {
+		}
+	*/
 	a.s = &refNode.nextState
 	return x, y
 }
@@ -427,7 +565,7 @@ func (a *AI) FirstPass(s *State, b *[][]uint8) {
 			r := ruler.New()
 			r.CheckRules(b, int8(x), int8(y), s.player, uint8(s.nbCapsCurrent))
 			if r.IsMoved {
-				node := a.newNode(uint8(x), uint8(y))
+				node := newNode(uint8(x), uint8(y))
 				if r.IsWin {
 					node.weight = 127
 					a.s.addNode(node)
@@ -452,14 +590,14 @@ func (a *AI) updateFirstPass(x, y uint8, save *Node) {
 			return
 		}
 	}
-	a.s.pq = nil
+	//	a.s.pq = nil
 }
 
 func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	var x, y uint8
 
 	a.NbPlayed++
-	if a.s == nil || a.s.pq == nil {
+	if a.s == nil || a.s.initPq == false {
 		a.s = a.newState(int8(s.NbCaptureP1), int8(s.NbCaptureP2), 0, 0, 0, 0, ruler.TokenP2)
 	}
 
@@ -490,17 +628,21 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 }
 
 func (a *AI) PlayOpposing(y, x uint8) {
-	if a.s == nil || a.s.pq == nil {
+	if a.s == nil || a.s.initPq == false {
+		a.s = nil
+		a.alpha = math.MinInt8 + 1
+		a.beta = math.MaxInt8
 		return
 	}
-	for node := a.s.pq; node != nil; node = node.next {
-		if y == node.y && x == node.x {
-			a.s = &node.nextState
-			a.alpha = a.s.alpha
-			a.beta = node.weight + 2
-			return
-		}
+	node := a.s.getNode(x, y)
+	if node != nil {
+
+		a.s = &node.nextState
+		a.alpha = a.s.alpha
+		a.beta = node.weight + 2
+		return
 	}
+
 	a.s = nil
 	a.alpha = math.MinInt8 + 1
 	a.beta = math.MaxInt8
