@@ -354,7 +354,6 @@ func (s *State) getNode(x, y uint8) *Node {
 
 func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
 	score := int8(math.MinInt8) + 1
-	var node *Node
 
 	if stape == 0 || oldRule.IsWin { // || (oldRule.NbThree > 0 && len(oldRule.CapturableWin) == 0) {
 		ret := a.eval(s, stape+1, oldRule, base, prevRule)
@@ -363,38 +362,36 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 
 	for y := uint8(0); y < 19; y++ {
 		for x := uint8(0); x < 19; x++ {
-			r := ruler.New()
-			r.CheckRules(b, int8(x), int8(y), s.player, uint8(s.nbCapsCurrent))
-			if r.IsMoved {
-				found := true
-				node = s.getNode(x, y)
-				if node == nil {
-					node = a.newNode(x, y)
-					found = false
-				}
-				a.applyMove(b, r, s.player, x, y)
+			found := true
+			node := s.getNode(x, y)
+			if node == nil {
+				node = a.newNode(x, y)
+				found = false
+				node.rule.CheckRules(b, int8(x), int8(y), s.player, uint8(s.nbCapsCurrent))
+			}
+			if node.rule.IsMoved {
+				a.applyMove(b, &node.rule, s.player, x, y)
 				if found == false {
-					node.nextState.Set(s.nbCapsCurrent+int8(r.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(r.NbThree), s.nbTOther, int8(r.NbToken), s.nbAlignOther, s.switchPlayer())
+					node.nextState.Set(s.nbCapsCurrent+int8(node.rule.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(node.rule.NbThree), s.nbTOther, int8(node.rule.NbToken), s.nbAlignOther, s.switchPlayer())
 				} else {
-					fmt.Println("Not define state")
+					node.nextState.nbTCurrent = s.nbTOther
+					node.nextState.nbTOther = s.nbTCurrent + int8(node.rule.NbThree)
 				}
-				node.weight = -a.alphabeta(&node.nextState, b, -beta, -alpha, stape-1, r, base, oldRule)
-				a.restoreMove(b, r, s.player, x, y)
+				node.weight = -a.alphabeta(&node.nextState, b, -beta, -alpha, stape-1, &node.rule, base, oldRule)
+				a.restoreMove(b, &node.rule, s.player, x, y)
 				if found == false {
 					s.addNode(node)
-				} else {
-					fmt.Println("Not add node")
 				}
 
 				if score < node.weight {
 					score = node.weight
 				}
 
-				//	node.alpha = alpha
+				s.alpha = alpha
 				//				node.beta = beta
 				if alpha < node.weight {
 					alpha = node.weight
-					//	node.alpha = alpha
+					s.alpha = alpha
 					if alpha >= beta {
 						return score
 					}
@@ -412,20 +409,15 @@ func (a *AI) getCoord(weight int8) (uint8, uint8) {
 	tmp := int8(math.MinInt8)
 	for node := a.s.pq; node != nil; node = node.next {
 		weight := node.weight
-		fmt.Print("Y: ", node.y, " - X: ", node.x, " | Weight Node: ", node.weight, " | ")
 		if tmp <= weight {
-			fmt.Println("Choiced !")
 			x = node.x
 			y = node.y
 			tmp = node.weight
 			refNode = node
-		} else {
-			fmt.Println("Not")
 		}
 	}
 
 	a.s = &refNode.nextState
-	a.s.alpha = refNode.weight
 	return x, y
 }
 
@@ -453,6 +445,16 @@ func (a *AI) FirstPass(s *State, b *[][]uint8) {
 	}
 }
 
+func (a *AI) updateFirstPass(x, y uint8, save *Node) {
+	for n := save; n != nil; n = n.next {
+		if n.x == x && n.y == y {
+			a.s = &n.nextState
+			return
+		}
+	}
+	a.s.pq = nil
+}
+
 func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	var x, y uint8
 
@@ -461,24 +463,27 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 		a.s = a.newState(int8(s.NbCaptureP1), int8(s.NbCaptureP2), 0, 0, 0, 0, ruler.TokenP2)
 	}
 
-	savePq := a.s.pq
-	a.s.pq = nil
-	a.FirstPass(a.s, b)
-	if a.s.pq != nil {
-		x, y = a.getCoord(0)
-	} else {
-		a.s.pq = savePq
-		r := ruler.New()
-		prevRule := ruler.New()
+	//	save := a.s.pq
+	//	a.s.pq = nil
+	//	a.FirstPass(a.s, b)
+	//	if a.s.pq != nil {
+	//		x, y = a.getCoord(0)
+	//		a.updateFirstPass(x, y, save)
+	//	} else {
+	a.s.nbTCurrent = 0
+	a.s.nbTOther = 0
+	//	a.s.pq = save
+	r := ruler.New()
+	prevRule := ruler.New()
 
-		if a.NbPlayed > maxDepth {
-			a.NbPlayed = maxDepth
-		}
-		fmt.Println("Depth: ", a.NbPlayed, " - alpha: ", a.alpha, " - beta: ", a.beta)
-		ret := a.alphabeta(a.s, b, a.alpha, a.beta, a.NbPlayed, r, a.s, prevRule)
-		fmt.Println("Ret: ", ret)
-		x, y = a.getCoord(0)
+	if a.NbPlayed > maxDepth {
+		a.NbPlayed = maxDepth
 	}
+	fmt.Println("Depth: ", a.NbPlayed, " - alpha: ", -a.beta, " - beta: ", a.beta)
+	ret := a.alphabeta(a.s, b, math.MinInt8+1, a.beta, maxDepth, r, a.s, prevRule)
+	fmt.Println("Ret: ", ret)
+	x, y = a.getCoord(0)
+	//	}
 
 	c <- y
 	c <- x
@@ -490,9 +495,8 @@ func (a *AI) PlayOpposing(y, x uint8) {
 	}
 	for node := a.s.pq; node != nil; node = node.next {
 		if y == node.y && x == node.x {
-			tmpState := a.s
 			a.s = &node.nextState
-			a.alpha = tmpState.alpha - 1
+			a.alpha = a.s.alpha
 			a.beta = node.weight + 2
 			return
 		}
