@@ -454,32 +454,50 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 		return ret
 	}
 
-	s.InitMove(b)
+	if s.initPq == false {
+		s.pq = new([19][19]*Node)
+		s.initPq = true
+	}
 
-	for _, mapX := range s.pq {
-		for _, node := range mapX {
+	for y := uint8(0); y < 19; y++ {
+		for x := uint8(0); x < 19; x++ {
+			node := s.pq[y][x]
+			if node == nil {
+				node = newNode(x, y)
+				node.rule.CheckRules(b, int8(x), int8(y), s.player, uint8(s.nbCapsCurrent))
+				if node.rule.IsMoved {
+					node.nextState.Set(s.nbCapsCurrent+int8(node.rule.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(node.rule.NbThree), s.nbTOther, int8(node.rule.NbToken), s.nbAlignOther, s.switchPlayer())
+					s.pq[y][x] = node
+				} else {
+					node = nil
+				}
+			} else {
+				node.nextState.nbTCurrent = s.nbTOther
+				node.nextState.nbTOther = s.nbTCurrent + int8(node.rule.NbThree)
+			}
+
 			if node != nil {
 				a.applyMove(b, &node.rule, s.player, node.x, node.y)
 
 				node.weight = -a.alphabeta(&node.nextState, b, -beta, -alpha, stape-1, &node.rule, base, oldRule)
 				a.restoreMove(b, &node.rule, s.player, node.x, node.y)
 
-				if stape == 4 {
-					fmt.Println("score min: node (x - y - weight): ", node.x, " - ", node.y, " - ", node.weight)
-				}
+				//	if stape == 4 {
+				//		fmt.Println("score min: node (x - y - weight): ", node.x, " - ", node.y, " - ", node.weight)
+				//	}
 				if score < node.weight {
-					if stape == 4 {
-						fmt.Println("node add")
-					}
+					//		if stape == 4 {
+					//			fmt.Println("node add")
+					//		}
 					s.lastSave = node
 					score = node.weight
 				}
 
 				s.alpha = alpha
 				if alpha < node.weight {
-					if stape == 4 {
-						fmt.Println("alpha min: node (x - y - weight): ", node.x, " - ", node.y, " - ", node.weight)
-					}
+					//	if stape == 4 {
+					//			fmt.Println("alpha min: node (x - y - weight): ", node.x, " - ", node.y, " - ", node.weight)
+					//	}
 					alpha = node.weight
 					s.alpha = alpha
 					if alpha >= beta {

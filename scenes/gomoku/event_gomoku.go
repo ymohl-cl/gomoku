@@ -59,7 +59,8 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 
 	if end, mess, err = g.game.Move(x, y); err != nil {
 		// setNotice
-		g.setNotice("You can't make this move")
+		fmt.Println("mess: ", mess, " - err: ", err)
+		g.setNotice("You can't make this move: " + mess)
 		return
 	}
 

@@ -51,57 +51,103 @@ type Rules struct {
 
 // New : Return a new instance and set default values of Rules struct
 func New() *Rules {
-	return &Rules{IsMoved: false, MovedStr: "", IsCaptured: false, NbThree: 0, IsWin: false}
+	return &Rules{}
 }
 
-func (r Rules) NewCopy() *Rules {
-	return &Rules{
-		IsMoved:    r.IsMoved,
-		MovedStr:   r.MovedStr,
-		IsCaptured: r.IsCaptured,
-		caps:       r.caps,
-		NbThree:    r.NbThree,
-		IsWin:      r.IsWin,
-	}
-}
-
-func (r *Rules) Copy(ref *Rules) {
-	r.IsMoved = ref.IsMoved
-	r.MovedStr = ref.MovedStr
-	r.IsCaptured = ref.IsCaptured
-	r.caps = ref.caps
-	r.NbCaps = ref.NbCaps
-	r.NbThree = ref.NbThree
-	r.IsWin = ref.IsWin
-}
-
-func (r *Rules) Clean() {
-	r.IsMoved = false
-	r.MovedStr = ""
-	r.IsCaptured = false
-	r.NbCaps = 0
-	r.caps = nil
-	r.NbThree = 0
-	r.IsWin = false
-}
-
-// checkPosition : check if the (posX, posY) point are inside the board
-// posX and poxY are where player want to play position
-func checkOnTheBoard(posX, posY int8) bool {
-	if posX < 0 || posY < 0 || posX >= 19 || posY >= 19 {
+// isOnTheBoard : check if the (pX, pY) point are inside the board
+func isOnTheBoard(pX, pY int8) bool {
+	if pX < 0 || pY < 0 || pX >= 19 || pY >= 19 {
 		return false
 	}
 	return true
 }
 
-// checkPosition : check if the (posX, posY) point are empty
-// board is actual board
-// posX and poxY are where player want to play position
-func checkPosition(board *[][]uint8, posX, posY int8) bool {
-	if (*board)[uint8(posY)][uint8(posX)] == TokenEmpty {
+// isEmpty : check if the (pX, pY) point are empty position
+func isEmpty(b *[][]uint8, pX, pY int8) bool {
+	if (*b)[uint8(pY)][uint8(pX)] == TokenEmpty {
 		return true
 	}
 	return false
+}
+
+// IsAvailablePosition : check if the position is available
+func (r *Rules) isAvailablePosition(b *[][]uint8, pX, pY int8) bool {
+
+	if !isOnTheBoard(pX, pY) {
+		r.MovedStr = "Index out of board"
+		return false
+	}
+	if !isEmpty(b, pX, pY) {
+		r.MovedStr = "Index already used"
+		return false
+	}
+
+	//Check around posX/posY
+	for yi := int8(-1); yi <= 1; yi++ {
+		for xi := int8(-1); xi <= 1; xi++ {
+
+			x := pX + xi
+			y := pY + yi
+
+			if (xi == 0 && yi == 0) || !isOnTheBoard(x, y) {
+				continue
+			}
+
+			if !isEmpty(b, x, y) {
+				r.IsMoved = true
+				return true
+			}
+		}
+	}
+
+	r.MovedStr = "Not neighborhood"
+	return false
+}
+
+// CheckRules : check all rules (captures/doubleThree/win conditions ..), more details on following functions
+func (r *Rules) CheckRules(board *[][]uint8, pX, pY int8, player uint8, nbCaps uint8) {
+	var maskThree uint8
+
+	if !r.isAvailablePosition(board, pX, pY) {
+		return
+	}
+
+	//Check around posX/posY
+	for yi := int8(-1); yi <= 1; yi++ {
+		for xi := int8(-1); xi <= 1; xi++ {
+			x := pX + xi
+			y := pY + yi
+			if (xi == 0 && yi == 0) || !isOnTheBoard(x, y) {
+				continue
+			}
+			if !isEmpty(board, x, y) {
+				r.CheckCapture(board, pX, pY, xi, yi, player)
+			}
+			r.CheckDoubleThree(board, pX, pY, xi, yi, player, &maskThree)
+		}
+	}
+
+	// Check if this move is a winning
+	//	if r.IsMoved == false {
+	//		r.MovedStr = "Not neighborhood"
+	//		return
+	//	}
+	//fmt.Println("nbt : ", r.NbThree)
+	if nbCaps+r.NbCaps >= 5 {
+		r.IsWin = true
+		r.MessageWin = "Win by capture: " + string(nbCaps+r.NbCaps)
+		return
+	}
+
+	r.CheckWinner(board, pX, pY, player)
+
+	if r.IsWin == false && r.IsCaptured == false && r.NbThree >= 2 {
+		r.IsMoved = false
+		r.MovedStr = "DoubleThree"
+	}
+
+	r.CheckWinneable(board, pX, pY, player)
+	return
 }
 
 // GetCaptures : return the slice of captured points
@@ -129,10 +175,10 @@ func (r *Rules) CheckCapture(board *[][]uint8, posX, posY, xi, yi int8, currentP
 		return
 	}
 	//No check if part of a capture line is out of Board
-	if !checkOnTheBoard(posX+(2*xi), posY+(2*yi)) || checkPosition(board, posX+(2*xi), posY+(2*yi)) {
+	if !isOnTheBoard(posX+(2*xi), posY+(2*yi)) || isEmpty(board, posX+(2*xi), posY+(2*yi)) {
 		return
 	}
-	if !checkOnTheBoard(posX+(3*xi), posY+(3*yi)) || checkPosition(board, posX+(3*xi), posY+(3*yi)) {
+	if !isOnTheBoard(posX+(3*xi), posY+(3*yi)) || isEmpty(board, posX+(3*xi), posY+(3*yi)) {
 		return
 	}
 	//Capture check
@@ -161,7 +207,7 @@ func (r *Rules) IsThree(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer
 	for i := int8(-1); i <= 2; i++ {
 		x := posX + (xi * i)
 		y := posY + (yi * i)
-		if !checkOnTheBoard(x, y) {
+		if !isOnTheBoard(x, y) {
 			return false
 		}
 		if (*board)[y][x] == currentPlayer {
@@ -170,25 +216,25 @@ func (r *Rules) IsThree(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer
 			if nbMe > 2 {
 				return false
 			}
-		} else if !checkPosition(board, x, y) {
+		} else if !isEmpty(board, x, y) {
 			return false
 		}
 	}
 
 	//Check Extremites
 	if nbMe == 2 {
-		if !checkOnTheBoard(posX+(-2*xi), posY+(-2*yi)) {
-			if checkPosition(board, posX+(-1*xi), posY+(-1*yi)) {
+		if !isOnTheBoard(posX+(-2*xi), posY+(-2*yi)) {
+			if isEmpty(board, posX+(-1*xi), posY+(-1*yi)) {
 				return false
 			}
-		} else if !checkPosition(board, posX+(-2*xi), posY+(-2*yi)) {
+		} else if !isEmpty(board, posX+(-2*xi), posY+(-2*yi)) {
 			return false
 		}
-		if !checkOnTheBoard(posX+(3*xi), posY+(3*yi)) {
-			if checkPosition(board, posX+(2*xi), posY+(2*yi)) {
+		if !isOnTheBoard(posX+(3*xi), posY+(3*yi)) {
+			if isEmpty(board, posX+(2*xi), posY+(2*yi)) {
 				return false
 			}
-		} else if !checkPosition(board, posX+(3*xi), posY+(3*yi)) {
+		} else if !isEmpty(board, posX+(3*xi), posY+(3*yi)) {
 			return false
 		}
 		return true
@@ -260,7 +306,7 @@ func (r *Rules) isWin(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer u
 	for i := int8(-4); i <= 4; i++ {
 		x := posX + (xi * i)
 		y := posY + (yi * i)
-		if !checkOnTheBoard(x, y) {
+		if !isOnTheBoard(x, y) {
 			continue
 		}
 		if (x == posX && y == posY) || (*board)[y][x] == currentPlayer {
@@ -324,74 +370,6 @@ func (r *Rules) CheckWinner(board *[][]uint8, posX, posY int8, currentPlayer uin
 13     return bestValue
 */
 
-// CheckRules : Execute all Check (moves/captures/doubleThree/Win)
-// board is actual board
-// posX and poxY are where player want to play position
-// currentPlayer is the actual player token
-func (r *Rules) CheckRules(board *[][]uint8, posX, posY int8, currentPlayer uint8, nbCaps uint8) {
-	var maskThree uint8
-
-	//Basic init posX/posY check
-	if !checkOnTheBoard(posX, posY) {
-		r.MovedStr = "Index not allowed"
-		return
-	}
-	if !checkPosition(board, posX, posY) {
-		r.MovedStr = "Already used"
-		return
-	}
-
-	//Check around posX/posY
-	//	wg := new(sync.WaitGroup)
-	//	m := new(sync.Mutex)
-	//	for i := int8(-1); i <= 1; i++ {
-	//		for j := int8(-1); j <= 1; j++ {
-	for yi := int8(-1); yi <= 1; yi++ {
-		for xi := int8(-1); xi <= 1; xi++ {
-			//			wg.Add(1)
-			//			go func(xi, yi int8) {
-			//				defer wg.Done()
-			x := posX + xi
-			y := posY + yi
-			if (xi == 0 && yi == 0) || !checkOnTheBoard(x, y) {
-				//				return
-				continue
-			}
-			//Can we put in this posX/posY
-			if !checkPosition(board, x, y) {
-				//We can put here
-				r.IsMoved = true
-				r.CheckCapture(board, posX, posY, xi, yi, currentPlayer)
-			}
-			//				r.CheckDoubleThree(board, posX, posY, xi, yi, currentPlayer, &maskThree, m)
-			r.CheckDoubleThree(board, posX, posY, xi, yi, currentPlayer, &maskThree)
-			//			}(j, i)
-		}
-	}
-	//	wg.Wait()
-	// Check if this move is a winning
-	if r.IsMoved == false {
-		r.MovedStr = "Not neighborhood"
-		return
-	}
-	//fmt.Println("nbt : ", r.NbThree)
-	if nbCaps+r.NbCaps >= 5 {
-		r.IsWin = true
-		r.MessageWin = "Win by capture: " + string(nbCaps+r.NbCaps)
-		return
-	}
-
-	r.CheckWinner(board, posX, posY, currentPlayer)
-
-	if r.IsWin == false && r.IsCaptured == false && r.NbThree >= 2 {
-		r.IsMoved = false
-		r.MovedStr = "DoubleThree"
-	}
-
-	r.CheckWinneable(board, posX, posY, currentPlayer)
-	return
-}
-
 func (r *Rules) CheckWinneable(board *[][]uint8, posX, posY int8, currentPlayer uint8) {
 	if nb := r.isWinneable(board, posX, posY, 1, -1, currentPlayer); nb >= r.NbToken {
 		if nb > r.NbToken {
@@ -437,7 +415,7 @@ func (r *Rules) isWinneable(board *[][]uint8, posX, posY, xi, yi int8, currentPl
 	for i := int8(-4); i <= 4; i++ {
 		x := posX + (xi * i)
 		y := posY + (yi * i)
-		if !checkOnTheBoard(x, y) {
+		if !isOnTheBoard(x, y) {
 			continue
 		}
 		if (x == posX && y == posY) || (*board)[y][x] == currentPlayer {
@@ -470,7 +448,7 @@ func (r *Rules) CheckCaptureAfterMove(board *[][]uint8, posX, posY int8, current
 			for xi := int8(-1); xi <= 1; xi++ {
 				x := cap.X + xi
 				y := cap.Y + yi
-				if (xi == 0 && yi == 0) || !checkOnTheBoard(x, y) {
+				if (xi == 0 && yi == 0) || !isOnTheBoard(x, y) {
 					continue
 				}
 				//Can we put in this posX/posY
