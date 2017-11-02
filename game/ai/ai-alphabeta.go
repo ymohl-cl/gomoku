@@ -393,11 +393,22 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 					alpha = node.weight
 					s.alpha = alpha
 					if alpha >= beta {
+						if stape == 4 {
+							fmt.Println("alpha : ", alpha, " - beta", beta)
+						}
+						fmt.Println("Coord by statpe: ", stape, " - ", node.x, " - ", node.y)
+						//						fmt.Println("alpha: ", alpha, " beta: ", beta)
 						return score
 					}
 				}
 			}
 		}
+	}
+	//	if c != nil {
+	//		c <- score
+	//	}
+	if stape == 4 {
+		fmt.Println("alpha : ", alpha, " - beta", beta)
 	}
 	return score
 }
