@@ -12,6 +12,11 @@ import (
 const (
 	posCenter = 9
 	maxDepth  = 4
+
+	state_NotYet     = 0
+	state_Exact      = 1
+	state_LowerBound = 2
+	state_UpperBound = 3
 )
 
 var timeTotalNode time.Duration
@@ -22,7 +27,7 @@ var timeTotalState time.Duration
 
 type AI struct {
 	s        *State
-	NbPlayed uint8
+	NbPlayed uint
 	alpha    int8
 	beta     int8
 }
@@ -39,8 +44,9 @@ type State struct {
 	nbAlignCurrent int8
 	nbAlignOther   int8
 	player         uint8
-	alpha          int8
-	beta           int8
+	flag           int8
+	value          int8
+	depth          uint8
 	pq             *Node
 }
 
@@ -52,8 +58,6 @@ func (a AI) newState(nbCOldCurrent, nbCOldOther, nbTOldCurrent, nbTOldOther, nbA
 		nbTOther:       nbTOldCurrent,
 		nbAlignCurrent: nbAlignOldOther,
 		nbAlignOther:   nbAlignOldCurrent,
-		alpha:          math.MinInt8 + 1,
-		beta:           math.MaxInt8,
 		player:         p,
 	}
 
@@ -354,9 +358,39 @@ func (s *State) getNode(x, y uint8) *Node {
 
 func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
 	score := int8(math.MinInt8) + 1
+	var breaq bool
+
+	if s.flag != state_NotYet && s.depth >= stape {
+		if s.flag == state_Exact {
+			// stored value is exact
+			return s.value
+		}
+		if s.flag == state_LowerBound && s.value > alpha {
+			alpha = s.value // update lowerbound alpha if needed
+		} else if s.flag == state_UpperBound && s.value < beta {
+			beta = s.value // update upperbound beta if needed
+		}
+		if alpha >= beta {
+			return s.value // if lowerbound surpasses upperbound
+		}
+	}
 
 	if stape == 0 || oldRule.IsWin { // || (oldRule.NbThree > 0 && len(oldRule.CapturableWin) == 0) {
 		ret := a.eval(s, stape+1, oldRule, base, prevRule)
+		if score <= alpha {
+			// a lowerbound value
+			s.value = ret
+			s.flag = state_LowerBound
+			s.depth = stape
+		} else if score >= beta { // an upperbound value
+			s.value = ret
+			s.flag = state_UpperBound
+			s.depth = stape
+		} else { // a true minimax value
+			s.value = ret
+			s.flag = state_Exact
+			s.depth = stape
+		}
 		return ret
 	}
 
@@ -368,15 +402,16 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 				node = a.newNode(x, y)
 				found = false
 				node.rule.CheckRules(b, int8(x), int8(y), s.player, uint8(s.nbCapsCurrent))
+				node.nextState.Set(s.nbCapsCurrent+int8(node.rule.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(node.rule.NbThree), s.nbTOther, int8(node.rule.NbToken), s.nbAlignOther, s.switchPlayer())
 			}
 			if node.rule.IsMoved {
 				a.applyMove(b, &node.rule, s.player, x, y)
-				if found == false {
-					node.nextState.Set(s.nbCapsCurrent+int8(node.rule.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(node.rule.NbThree), s.nbTOther, int8(node.rule.NbToken), s.nbAlignOther, s.switchPlayer())
-				} else {
-					node.nextState.nbTCurrent = s.nbTOther
-					node.nextState.nbTOther = s.nbTCurrent + int8(node.rule.NbThree)
-				}
+				//	if found == false {
+
+				/*				} else {
+								node.nextState.nbTCurrent = s.nbTOther
+								node.nextState.nbTOther = s.nbTCurrent + int8(node.rule.NbThree)
+							}*/
 				node.weight = -a.alphabeta(&node.nextState, b, -beta, -alpha, stape-1, &node.rule, base, oldRule)
 				a.restoreMove(b, &node.rule, s.player, x, y)
 				if found == false {
@@ -387,29 +422,48 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 					score = node.weight
 				}
 
-				s.alpha = alpha
+				//s.alpha = alpha
 				//				node.beta = beta
-				if alpha < node.weight {
-					alpha = node.weight
-					s.alpha = alpha
-					if alpha >= beta {
-						if stape == 4 {
+				if alpha < score {
+					alpha = score
+				}
+				//s.alpha = alpha
+				if score >= beta {
+					/*	if stape == 4 {
 							fmt.Println("alpha : ", alpha, " - beta", beta)
 						}
 						fmt.Println("Coord by statpe: ", stape, " - ", node.x, " - ", node.y)
 						//						fmt.Println("alpha: ", alpha, " beta: ", beta)
-						return score
-					}
+					*/
+					breaq = true
+					break
 				}
 			}
 		}
+		if breaq == true {
+			break
+		}
+	}
+	if score <= alpha {
+		// a lowerbound value
+		s.value = score
+		s.flag = state_LowerBound
+		s.depth = stape
+	} else if score >= beta { // an upperbound value
+		s.value = score
+		s.flag = state_UpperBound
+		s.depth = stape
+	} else { // a true minimax value
+		s.value = score
+		s.flag = state_Exact
+		s.depth = stape
 	}
 	//	if c != nil {
 	//		c <- score
 	//	}
-	if stape == 4 {
-		fmt.Println("alpha : ", alpha, " - beta", beta)
-	}
+	//	if stape == 4 {
+	//	fmt.Println("alpha : ", alpha, " - beta", beta)
+	//}
 	return score
 }
 
@@ -419,6 +473,7 @@ func (a *AI) getCoord(weight int8) (uint8, uint8) {
 
 	tmp := int8(math.MinInt8)
 	for node := a.s.pq; node != nil; node = node.next {
+		fmt.Println("x : ", node.x, " - y : ", node.y, " - weight : ", node.weight)
 		weight := node.weight
 		if tmp <= weight {
 			x = node.x
@@ -466,6 +521,34 @@ func (a *AI) updateFirstPass(x, y uint8, save *Node) {
 	a.s.pq = nil
 }
 
+func (a *AI) mtdf(s *State, b *[][]uint8, r, prevRule *ruler.Rules, firstguess int8, stape uint8) int8 {
+	g := firstguess
+	lowerbound := int8(math.MinInt8 + 1)
+	upperbound := int8(math.MaxInt8)
+	var beta int8
+
+	for lowerbound < upperbound {
+		beta = g
+		if g == lowerbound {
+			beta++
+		}
+		g = a.alphabeta(a.s, b, beta-1, beta, stape, r, a.s, prevRule)
+		if g < beta {
+			upperbound = g
+		} else {
+			lowerbound = g
+		}
+	}
+	return g
+}
+
+func (a *AI) iterative_deepening(s *State, b *[][]uint8, r, prevRule *ruler.Rules) {
+	firstguess := int8(0)
+	for d := uint8(1); d <= maxDepth; d++ {
+		firstguess = a.mtdf(s, b, r, prevRule, firstguess, d)
+	}
+}
+
 func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	var x, y uint8
 
@@ -490,9 +573,10 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	if a.NbPlayed > maxDepth {
 		a.NbPlayed = maxDepth
 	}
-	fmt.Println("Depth: ", a.NbPlayed, " - alpha: ", -a.beta, " - beta: ", a.beta)
-	ret := a.alphabeta(a.s, b, math.MinInt8+1, a.beta, maxDepth, r, a.s, prevRule)
-	fmt.Println("Ret: ", ret)
+	//fmt.Println("Depth: ", a.NbPlayed, " - alpha: ", -a.beta, " - beta: ", a.beta)
+	a.iterative_deepening(a.s, b, r, prevRule)
+	//ret := a.alphabeta(a.s, b, math.MinInt8+1, a.beta, maxDepth, r, a.s, prevRule)
+	//fmt.Println("Ret: ", ret)
 	x, y = a.getCoord(0)
 	//	}
 
@@ -501,7 +585,7 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 }
 
 func (a *AI) PlayOpposing(y, x uint8) {
-	if a.s == nil || a.s.pq == nil {
+	/*if a.s == nil || a.s.pq == nil {
 		return
 	}
 	for node := a.s.pq; node != nil; node = node.next {
@@ -511,7 +595,7 @@ func (a *AI) PlayOpposing(y, x uint8) {
 			a.beta = node.weight + 2
 			return
 		}
-	}
+	}*/
 	a.s = nil
 	a.alpha = math.MinInt8 + 1
 	a.beta = math.MaxInt8
