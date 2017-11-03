@@ -1,7 +1,6 @@
 package ai
 
 import (
-	"fmt"
 	"math"
 	"time"
 
@@ -352,14 +351,13 @@ func (s *State) getNode(x, y uint8) *Node {
 	return nil
 }
 
-func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
-	score := int8(math.MinInt8) + 1
+func (a *AI) alphabeta_pvs(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
 
 	if stape == 0 || oldRule.IsWin { // || (oldRule.NbThree > 0 && len(oldRule.CapturableWin) == 0) {
 		ret := a.eval(s, stape+1, oldRule, base, prevRule)
 		return ret
 	}
-
+	first := true
 	for y := uint8(0); y < 19; y++ {
 		for x := uint8(0); x < 19; x++ {
 			found := true
@@ -377,40 +375,34 @@ func (a *AI) alphabeta(s *State, b *[][]uint8, alpha, beta int8, stape uint8, ol
 					node.nextState.nbTCurrent = s.nbTOther
 					node.nextState.nbTOther = s.nbTCurrent + int8(node.rule.NbThree)
 				}
-				node.weight = -a.alphabeta(&node.nextState, b, -beta, -alpha, stape-1, &node.rule, base, oldRule)
+				if first == true {
+					node.weight = -a.alphabeta_pvs(&node.nextState, b, -beta, -alpha, stape-1, &node.rule, base, oldRule)
+					first = false
+				} else {
+					node.weight = -a.alphabeta_pvs(&node.nextState, b, -alpha-1, -alpha, stape-1, &node.rule, base, oldRule)
+					if alpha < node.weight && node.weight < beta {
+						node.weight = -a.alphabeta_pvs(&node.nextState, b, -beta, -node.weight, stape-1, &node.rule, base, oldRule)
+					}
+				}
 				a.restoreMove(b, &node.rule, s.player, x, y)
 				if found == false {
 					s.addNode(node)
 				}
 
-				if score < node.weight {
-					score = node.weight
-				}
-
-				s.alpha = alpha
-				//				node.beta = beta
 				if alpha < node.weight {
 					alpha = node.weight
-					s.alpha = alpha
-					if alpha >= beta {
-						if stape == 4 {
-							fmt.Println("alpha : ", alpha, " - beta", beta)
-						}
-						fmt.Println("Coord by statpe: ", stape, " - ", node.x, " - ", node.y)
-						//						fmt.Println("alpha: ", alpha, " beta: ", beta)
-						return score
-					}
 				}
+				if alpha >= beta {
+					return alpha
+				}
+
 			}
 		}
 	}
 	//	if c != nil {
 	//		c <- score
 	//	}
-	if stape == 4 {
-		fmt.Println("alpha : ", alpha, " - beta", beta)
-	}
-	return score
+	return alpha
 }
 
 func (a *AI) getCoord(weight int8) (uint8, uint8) {
@@ -490,9 +482,7 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	if a.NbPlayed > maxDepth {
 		a.NbPlayed = maxDepth
 	}
-	fmt.Println("Depth: ", a.NbPlayed, " - alpha: ", -a.beta, " - beta: ", a.beta)
-	ret := a.alphabeta(a.s, b, math.MinInt8+1, a.beta, maxDepth, r, a.s, prevRule)
-	fmt.Println("Ret: ", ret)
+	a.alphabeta_pvs(a.s, b, math.MinInt8+1, math.MaxInt8, maxDepth, r, a.s, prevRule)
 	x, y = a.getCoord(0)
 	//	}
 
@@ -501,7 +491,7 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 }
 
 func (a *AI) PlayOpposing(y, x uint8) {
-	if a.s == nil || a.s.pq == nil {
+	/*if a.s == nil || a.s.pq == nil {
 		return
 	}
 	for node := a.s.pq; node != nil; node = node.next {
@@ -511,7 +501,7 @@ func (a *AI) PlayOpposing(y, x uint8) {
 			a.beta = node.weight + 2
 			return
 		}
-	}
+	}*/
 	a.s = nil
 	a.alpha = math.MinInt8 + 1
 	a.beta = math.MaxInt8
