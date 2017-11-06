@@ -22,12 +22,10 @@ var timeTotalState time.Duration
 type AI struct {
 	s        *State
 	NbPlayed uint8
-	alpha    int8
-	beta     int8
 }
 
 func New() *AI {
-	return &AI{NbPlayed: 1, alpha: math.MinInt8 + 1, beta: math.MaxInt8}
+	return &AI{NbPlayed: 1}
 }
 
 type State struct {
@@ -267,79 +265,6 @@ func (a *AI) alreadyCheck(x, y int8, xS, yS []int8) bool {
 	return false
 }
 
-/*
-func (a *AI) preAlphaBeta(s *State, b *[][]uint8) {
-	var yS []int8
-	var xS []int8
-	alphaS := []int8{int8(-125), int8(-125), int8(-125), int8(-125)}
-	betaS := []int8{int8(125), int8(125), int8(125), int8(125)}
-	var depth uint8
-
-	//	var aA, aB, aC, aD int8
-	//	var bA, bB, bC, bD int8
-	depth = 4
-	wg := new(sync.WaitGroup)
-	yS, xS = getPointsOpti(b)
-
-	for index, y := range yS {
-		cBoard := a.copyBoard(b)
-		Mnode := a.newNode(uint8(xS[index]), uint8(y))
-		state := a.newState(0, 0, ruler.TokenP1)
-		r := ruler.New()
-		r.CheckRules(b, int8(Mnode.x), int8(Mnode.y), s.player, s.nbCapsCurrent)
-		//node.weight = -a.eval(s, stape, r)
-		a.applyMove(cBoard, r, s.player, Mnode.x, Mnode.y)
-
-		Mnode.nextState.Set(s.nbCapsCurrent+r.NbCaps, s.nbCapsOther, s.switchPlayer())
-		wg.Add(1)
-		go func(i int, N *Node, wait *sync.WaitGroup) {
-			defer wait.Done()
-			defer fmt.Println("Finish one")
-			N.weight = -a.alphabeta(&N.nextState, cBoard, &alphaS[i], &betaS[i], depth-1, state, r)
-			a.s.addNode(N)
-		}(index, Mnode, wg)
-	}
-
-	wg.Wait()
-
-	weight := int8(math.MinInt8)
-	var saveIndex int8
-	fmt.Println("------------ View value -------------")
-	for index, y := range yS {
-		fmt.Println("Position Y: ", y, " - X: ", xS[index])
-		fmt.Println("Alpha: ", alphaS[index], " - Beta: ", betaS[index])
-
-		for n := a.s.pq; n != nil; n = n.next {
-			if int8(n.y) == y && int8(n.x) == xS[index] && weight <= n.weight {
-				fmt.Print("node Y: ", n.y, " - node X: ", n.x)
-				fmt.Println(" - weight: ", n.weight)
-				weight = n.weight
-				saveIndex = int8(index)
-			}
-		}
-	}
-	fmt.Println("------------- End Values ------------")
-
-	for y := uint8(0); y < 19; y++ {
-		for x := uint8(0); x < 19; x++ {
-			if a.alreadyCheck(int8(x), int8(y), xS, yS) {
-				continue
-			}
-			Mnode := a.newNode(x, y)
-			state := a.newState(0, 0, ruler.TokenP1)
-			r := ruler.New()
-			r.CheckRules(b, int8(Mnode.x), int8(Mnode.y), s.player, s.nbCapsCurrent)
-			if r.IsMoved {
-				a.applyMove(b, r, s.player, Mnode.x, Mnode.y)
-				Mnode.nextState.Set(s.nbCapsCurrent+r.NbCaps, s.nbCapsOther, s.switchPlayer())
-				Mnode.weight = -a.alphabeta(&Mnode.nextState, b, &alphaS[saveIndex], &betaS[saveIndex], depth-1, state, r)
-				a.restoreMove(b, r, s.player, x, y)
-				a.s.addNode(Mnode)
-			}
-		}
-	}
-}
-*/
 func (s *State) getNode(x, y uint8) *Node {
 	for n := s.pq; n != nil; n = n.next {
 		if n.x == x && n.y == y {
@@ -351,7 +276,7 @@ func (s *State) getNode(x, y uint8) *Node {
 
 func (a *AI) alphabeta_pvs(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
 
-	if stape == 0 || oldRule.IsWin { // || (oldRule.NbThree > 0 && len(oldRule.CapturableWin) == 0) {
+	if stape == 0 || oldRule.IsWin {
 		ret := a.eval(s, stape+1, oldRule, base, prevRule)
 		return ret
 	}
@@ -457,17 +382,8 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	var x, y uint8
 
 	a.NbPlayed++
-	if a.s == nil || a.s.pq == nil {
-		a.s = a.newState(int8(s.NbCaptureP1), int8(s.NbCaptureP2), 0, 0, 0, 0, ruler.TokenP2)
-	}
+	a.s = a.newState(int8(s.NbCaptureP1), int8(s.NbCaptureP2), 0, 0, 0, 0, ruler.TokenP2)
 
-	//	save := a.s.pq
-	//	a.s.pq = nil
-	//	a.FirstPass(a.s, b)
-	//	if a.s.pq != nil {
-	//		x, y = a.getCoord(0)
-	//		a.updateFirstPass(x, y, save)
-	//	} else {
 	a.s.nbTCurrent = 0
 	a.s.nbTOther = 0
 	//	a.s.pq = save
@@ -479,27 +395,9 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	}
 	a.alphabeta_pvs(a.s, b, math.MinInt8+1, math.MaxInt8, maxDepth, r, a.s, prevRule)
 	x, y = a.getCoord(0)
-	//	}
 
 	c <- y
 	c <- x
-}
-
-func (a *AI) PlayOpposing(y, x uint8) {
-	/*if a.s == nil || a.s.pq == nil {
-		return
-	}
-	for node := a.s.pq; node != nil; node = node.next {
-		if y == node.y && x == node.x {
-			a.s = &node.nextState
-			a.alpha = a.s.alpha
-			a.beta = node.weight + 2
-			return
-		}
-	}*/
-	a.s = nil
-	a.alpha = math.MinInt8 + 1
-	a.beta = math.MaxInt8
 }
 
 func (s *State) max(x, y int8) int8 {

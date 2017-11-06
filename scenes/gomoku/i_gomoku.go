@@ -57,11 +57,8 @@ func (g *Gomoku) Build() error {
 
 // Init the scene
 func (g *Gomoku) Init() error {
-	var err error
+	//	var err error
 
-	if g.game, err = game.New(g.data); err != nil {
-		return err
-	}
 	if g.renderer == nil {
 		return errors.New(objects.ErrorRenderer)
 	}
@@ -86,7 +83,7 @@ func (g *Gomoku) IsInit() bool {
 
 // Run the scene
 func (g *Gomoku) Run() error {
-	//	var err error
+	var err error
 	//var wg sync.WaitGroup
 
 	if ok := g.music.IsInit(); ok {
@@ -94,7 +91,9 @@ func (g *Gomoku) Run() error {
 		//go g.music.Play(&wg, g.renderer)
 		//wg.Wait()
 	}
-	g.game.Run()
+	if g.game, err = game.New(g.data); err != nil {
+		return err
+	}
 	g.initMove()
 	return nil
 }
