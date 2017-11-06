@@ -70,11 +70,13 @@ type Node struct {
 	next      *Node
 }
 
-func (a AI) newNode(x, y uint8) *Node {
-	return &Node{
+func (a AI) newNode(x, y uint8, player uint8) *Node {
+	n := &Node{
 		x: x,
 		y: y,
 	}
+	n.rule.Init(player, int8(y), int8(x))
+	return n
 }
 
 func (n *Node) Clean(x, y uint8) {
@@ -128,7 +130,7 @@ func (s State) switchPlayer() uint8 {
 	return ruler.TokenP1
 }
 
-func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
+func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State) int8 {
 	ret := int8(63)
 
 	// Var Caps
@@ -159,11 +161,11 @@ func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State, prevRule *r
 	treeCurrent := s.nbTOther
 	treeOther := s.nbTCurrent
 
-	if len(r.CapturableWin) > 0 {
-		ret += int8(treeCurrent - treeOther*3)
-	} else {
-		ret += int8(treeCurrent*3 - treeOther)
-	}
+	//	if len(r.CapturableWin) > 0 {
+	//		ret += int8(treeCurrent - treeOther*3)
+	//	} else {
+	ret += int8(treeCurrent*3 - treeOther)
+	//	}
 
 	//Align
 	AlignCurrent := s.nbAlignOther
@@ -207,7 +209,7 @@ func (a *AI) restoreMove(b *[][]uint8, r *ruler.Rules, player uint8, x, y uint8)
 	}
 }
 
-func getPointsOpti(b *[][]uint8) ([]int8, []int8) {
+/*func getPointsOpti(b *[][]uint8) ([]int8, []int8) {
 	var yS []int8
 	var xS []int8
 
@@ -257,7 +259,7 @@ func getPointsOpti(b *[][]uint8) ([]int8, []int8) {
 
 	return yS, xS
 }
-
+*/
 func (a *AI) alreadyCheck(x, y int8, xS, yS []int8) bool {
 	for index, y := range yS {
 		if y == y && x == xS[index] {
@@ -349,10 +351,10 @@ func (s *State) getNode(x, y uint8) *Node {
 	return nil
 }
 
-func (a *AI) alphabeta_pvs(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State, prevRule *ruler.Rules) int8 {
+func (a *AI) alphabeta_pvs(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State) int8 {
 
-	if stape == 0 || oldRule.IsWin { // || (oldRule.NbThree > 0 && len(oldRule.CapturableWin) == 0) {
-		ret := a.eval(s, stape+1, oldRule, base, prevRule)
+	if stape == 0 || (oldRule != nil && oldRule.IsWin) { // || (oldRule.NbThree > 0 && len(oldRule.CapturableWin) == 0) {
+		ret := a.eval(s, stape+1, oldRule, base)
 		return ret
 	}
 	first := true
@@ -361,25 +363,26 @@ func (a *AI) alphabeta_pvs(s *State, b *[][]uint8, alpha, beta int8, stape uint8
 			found := true
 			node := s.getNode(x, y)
 			if node == nil {
-				node = a.newNode(x, y)
+				node = a.newNode(x, y, s.player)
 				found = false
 				node.rule.CheckRules(b, int8(x), int8(y), s.player, uint8(s.nbCapsCurrent))
 			}
 			if node.rule.IsMoved {
 				a.applyMove(b, &node.rule, s.player, x, y)
 				if found == false {
-					node.nextState.Set(s.nbCapsCurrent+int8(node.rule.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(node.rule.NbThree), s.nbTOther, int8(node.rule.NbToken), s.nbAlignOther, s.switchPlayer())
+					nbToken := node.rule.GetMaxAlign()
+					node.nextState.Set(s.nbCapsCurrent+int8(node.rule.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(node.rule.NbThree), s.nbTOther, int8(nbToken), s.nbAlignOther, s.switchPlayer())
 				} else {
 					node.nextState.nbTCurrent = s.nbTOther
 					node.nextState.nbTOther = s.nbTCurrent + int8(node.rule.NbThree)
 				}
 				if first == true {
-					node.weight = -a.alphabeta_pvs(&node.nextState, b, -beta, -alpha, stape-1, &node.rule, base, oldRule)
+					node.weight = -a.alphabeta_pvs(&node.nextState, b, -beta, -alpha, stape-1, &node.rule, base)
 					first = false
 				} else {
-					node.weight = -a.alphabeta_pvs(&node.nextState, b, -alpha-1, -alpha, stape-1, &node.rule, base, oldRule)
+					node.weight = -a.alphabeta_pvs(&node.nextState, b, -alpha-1, -alpha, stape-1, &node.rule, base)
 					if alpha < node.weight && node.weight < beta {
-						node.weight = -a.alphabeta_pvs(&node.nextState, b, -beta, -node.weight, stape-1, &node.rule, base, oldRule)
+						node.weight = -a.alphabeta_pvs(&node.nextState, b, -beta, -node.weight, stape-1, &node.rule, base)
 					}
 				}
 				a.restoreMove(b, &node.rule, s.player, x, y)
@@ -419,6 +422,7 @@ func (a *AI) getCoord(weight int8) (uint8, uint8) {
 	return x, y
 }
 
+/*
 func (a *AI) FirstPass(s *State, b *[][]uint8) {
 	for y := 0; y < 19; y++ {
 		for x := 0; x < 19; x++ {
@@ -442,7 +446,7 @@ func (a *AI) FirstPass(s *State, b *[][]uint8) {
 		}
 	}
 }
-
+*/
 func (a *AI) updateFirstPass(x, y uint8, save *Node) {
 	for n := save; n != nil; n = n.next {
 		if n.x == x && n.y == y {
@@ -471,13 +475,13 @@ func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
 	a.s.nbTCurrent = 0
 	a.s.nbTOther = 0
 	//	a.s.pq = save
-	r := ruler.New()
-	prevRule := ruler.New()
+	//r := ruler.New()
+	//prevRule := ruler.New()
 
 	if a.NbPlayed > maxDepth {
 		a.NbPlayed = maxDepth
 	}
-	a.alphabeta_pvs(a.s, b, math.MinInt8+1, math.MaxInt8, maxDepth, r, a.s, prevRule)
+	a.alphabeta_pvs(a.s, b, math.MinInt8+1, math.MaxInt8, maxDepth, nil, a.s)
 	x, y = a.getCoord(0)
 	//	}
 

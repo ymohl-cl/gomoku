@@ -118,8 +118,6 @@ func (g *Game) Move(x, y uint8) (bool, string, error) {
 	var valueToken uint8
 	var nbCaps *int32
 
-	g.rules = ruler.New()
-
 	// get current player with token value
 	if g.players.currentPlayer == g.players.p1 {
 		valueToken = ruler.TokenP1
@@ -129,8 +127,11 @@ func (g *Game) Move(x, y uint8) (bool, string, error) {
 		nbCaps = &g.data.Current.NbCaptureP2
 	}
 
+	g.rules = ruler.New(valueToken, int8(y), int8(x))
+
 	//CheckAllRules
 	g.rules.CheckRules(&g.board, int8(x), int8(y), valueToken, uint8(*nbCaps))
+	g.rules.Print()
 	//add Capture nb
 	*nbCaps += int32(g.rules.NbCaps)
 	//Verify Check
