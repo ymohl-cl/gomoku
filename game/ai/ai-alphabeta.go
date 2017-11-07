@@ -113,7 +113,8 @@ func (s *State) addNode(n *Node) {
 		s.pq.next = tmp
 	}
 }
-func (a *AI) copyBoard(b *[][]uint8) *[][]uint8 {
+
+/*func (a *AI) copyBoard(b *[19][19]uint8) *[][]uint8 {
 	var newBoard [][]uint8
 	for _, line := range *b {
 		newLine := make([]uint8, 19)
@@ -121,7 +122,7 @@ func (a *AI) copyBoard(b *[][]uint8) *[][]uint8 {
 		newBoard = append(newBoard, newLine)
 	}
 	return &newBoard
-}
+}*/
 
 func (s State) switchPlayer() uint8 {
 	if s.player == ruler.TokenP1 {
@@ -185,7 +186,7 @@ func (s *State) Search(n *Node) *Node {
 	return nil
 }
 
-func (a *AI) applyMove(b *[][]uint8, r *ruler.Rules, player uint8, x, y uint8) {
+func (a *AI) applyMove(b *[19][19]uint8, r *ruler.Rules, player uint8, x, y uint8) {
 	(*b)[y][x] = player
 	if r.IsCaptured == true {
 		for _, cap := range r.GetCaptures() {
@@ -194,7 +195,7 @@ func (a *AI) applyMove(b *[][]uint8, r *ruler.Rules, player uint8, x, y uint8) {
 	}
 }
 
-func (a *AI) restoreMove(b *[][]uint8, r *ruler.Rules, player uint8, x, y uint8) {
+func (a *AI) restoreMove(b *[19][19]uint8, r *ruler.Rules, player uint8, x, y uint8) {
 	opponent := uint8(ruler.TokenP1)
 
 	if player == ruler.TokenP1 {
@@ -351,7 +352,7 @@ func (s *State) getNode(x, y uint8) *Node {
 	return nil
 }
 
-func (a *AI) alphabeta_pvs(s *State, b *[][]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State) int8 {
+func (a *AI) alphabeta_pvs(s *State, b *[19][19]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State) int8 {
 
 	if stape == 0 || (oldRule != nil && oldRule.IsWin) { // || (oldRule.NbThree > 0 && len(oldRule.CapturableWin) == 0) {
 		ret := a.eval(s, stape+1, oldRule, base)
@@ -457,7 +458,7 @@ func (a *AI) updateFirstPass(x, y uint8, save *Node) {
 	a.s.pq = nil
 }
 
-func (a *AI) Play(b *[][]uint8, s *database.Session, c chan uint8) {
+func (a *AI) Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 	var x, y uint8
 
 	a.NbPlayed++

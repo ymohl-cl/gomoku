@@ -1,6 +1,6 @@
 package ruler
 
-import "fmt"
+import "strconv"
 
 //Token values and size of board
 const (
@@ -11,11 +11,6 @@ const (
 
 	sizeY = 19
 	sizeX = 19
-
-	threeHorizontal    = 1 << 0
-	threeVertical      = 1 << 1
-	threeDiagonalLeft  = 1 << 2
-	threeDiagonalRight = 1 << 3
 
 	alignFree    = 1 << 0
 	alignHalf    = 1 << 1
@@ -69,23 +64,23 @@ type Rules struct {
 	aligns []Align
 }
 
-// New : Return a new instance and set default values of Rules struct
-func New(p uint8, py, px int8) *Rules {
+// New return a new instance and with player and one position (y, x)
+func New(p uint8, y, x int8) *Rules {
 	return &Rules{
 		player: p,
-		y:      py,
-		x:      px,
+		y:      y,
+		x:      x,
 	}
 }
 
-// Init : _
-func (r *Rules) Init(p uint8, py, px int8) {
+// Init a rules with a player and one position (y, x)
+func (r *Rules) Init(p uint8, y, x int8) {
 	r.player = p
-	r.y = py
-	r.x = px
+	r.y = y
+	r.x = x
 }
 
-// getOtherPlayer provide the value of opponent player provided on parameter
+// getOtherPlayer provide the value of player's opponent provided on parameter
 func getOtherPlayer(p uint8) uint8 {
 	if p == TokenP1 {
 		return TokenP2
@@ -93,65 +88,30 @@ func getOtherPlayer(p uint8) uint8 {
 	return TokenP1
 }
 
-// isOnTheBoard : check if the (pX, pY) point are inside the board
-func isOnTheBoard(pX, pY int8) bool {
-	if pX < 0 || pY < 0 || pX >= 19 || pY >= 19 {
+// isOnTheBoard : check if the (y, x) point are inside the board
+func isOnTheBoard(y, x int8) bool {
+	if x < 0 || y < 0 || x >= 19 || y >= 19 {
 		return false
 	}
 	return true
 }
 
 // isEmpty : check if the (pX, pY) point are empty position
-func isEmpty(b *[][]uint8, pX, pY int8) bool {
-	if (*b)[uint8(pY)][uint8(pX)] == TokenEmpty {
+func isEmpty(b *[19][19]uint8, y, x int8) bool {
+	if (*b)[uint8(y)][uint8(x)] == TokenEmpty {
 		return true
 	}
 	return false
 }
 
-func (r *Rules) Print() {
-	if r.player == TokenP1 {
-		fmt.Println("Player: P1")
-	} else if r.player == TokenP2 {
-		fmt.Println("Player: P2")
-	} else {
-		fmt.Println("Player not define")
-	}
-
-	fmt.Println("Can move: ", r.IsMoved, " | details: ", r.MovedStr)
-
-	fmt.Println("Captured: ", r.IsCaptured, " | Nomber: ", r.NbCaps)
-	for _, cap := range r.caps {
-		fmt.Println("\t capture: ", cap.Y, "-", cap.X)
-	}
-
-	fmt.Println("Number tree: ", r.NbThree)
-
-	fmt.Println("IsWin: ", r.IsWin, " - details: ", r.MessageWin)
-
-	fmt.Println("Number align: ", len(r.aligns))
-	for _, align := range r.aligns {
-		fmt.Print("align size: ", align.size, " - Capturable: ", align.capturable)
-		if align.style&alignFree != 0 {
-			fmt.Println(" | style free ")
-		} else if align.style&alignHalf != 0 {
-			fmt.Println(" | style halfFree ")
-		} else if align.style&alignFlanked != 0 {
-			fmt.Println(" | style flanked ")
-		} else {
-			fmt.Println(" | style not define")
-		}
-	}
-}
-
 // IsAvailablePosition : check if the position is available
-func (r *Rules) isAvailablePosition(b *[][]uint8, pX, pY int8) bool {
+func (r *Rules) isAvailablePosition(b *[19][19]uint8) bool {
 
-	if !isOnTheBoard(pX, pY) {
+	if !isOnTheBoard(r.y, r.x) {
 		r.MovedStr = "Index out of board"
 		return false
 	}
-	if !isEmpty(b, pX, pY) {
+	if !isEmpty(b, r.y, r.x) {
 		r.MovedStr = "Index already used"
 		return false
 	}
@@ -160,14 +120,14 @@ func (r *Rules) isAvailablePosition(b *[][]uint8, pX, pY int8) bool {
 	for yi := int8(-1); yi <= 1; yi++ {
 		for xi := int8(-1); xi <= 1; xi++ {
 
-			x := pX + xi
-			y := pY + yi
+			x := r.x + xi
+			y := r.y + yi
 
-			if (xi == 0 && yi == 0) || !isOnTheBoard(x, y) {
+			if (xi == 0 && yi == 0) || !isOnTheBoard(y, x) {
 				continue
 			}
 
-			if !isEmpty(b, x, y) {
+			if !isEmpty(b, y, x) {
 				r.IsMoved = true
 				return true
 			}
@@ -178,34 +138,34 @@ func (r *Rules) isAvailablePosition(b *[][]uint8, pX, pY int8) bool {
 	return false
 }
 
-func (r *Rules) getMaskFromBoard(b *[][]uint8, pX, pY, xi, yi int8, mask *[11]uint8) {
-	tx := uint8(pX + (xi * 5))
-	ty := uint8(pY + (yi * 5))
-	otx := uint8(pX + (xi * -5))
-	oty := uint8(pY + (yi * -5))
+func (r *Rules) getMaskFromBoard(b *[19][19]uint8, dirY, dirX int8, mask *[11]uint8) {
+	tx := uint8(r.x + (dirX * 5))
+	ty := uint8(r.y + (dirY * 5))
+	otx := uint8(r.x + (dirX * -5))
+	oty := uint8(r.y + (dirY * -5))
 
 	(*mask)[5] = r.player
 
 	for i := int8(0); i < 5; i++ {
 
-		if isOnTheBoard(int8(tx), int8(ty)) {
+		if isOnTheBoard(int8(ty), int8(tx)) {
 			(*mask)[i] = (*b)[ty][tx]
 		} else {
 			(*mask)[i] = outOfBoard
 		}
 
-		if isOnTheBoard(int8(otx), int8(oty)) {
+		if isOnTheBoard(int8(oty), int8(otx)) {
 			(*mask)[10-i] = (*b)[oty][otx]
 		} else {
 			(*mask)[10-i] = outOfBoard
 		}
 
-		if yi != 0 {
+		if dirY != 0 {
 			ty++
 			oty--
 		}
-		if xi != 0 {
-			if xi < 0 {
+		if dirX != 0 {
+			if dirX < 0 {
 				tx++
 				otx--
 
@@ -217,41 +177,38 @@ func (r *Rules) getMaskFromBoard(b *[][]uint8, pX, pY, xi, yi int8, mask *[11]ui
 	}
 }
 
-func (r *Rules) analyzeCapture(mask *[11]uint8, player uint8, pX, pY, xi, yi int8) {
-	cible := getOtherPlayer(player)
+func (r *Rules) analyzeCapture(mask *[11]uint8, dirY, dirX int8) {
+	cible := getOtherPlayer(r.player)
 
-	if (*mask)[4] == cible && (*mask)[3] == cible && (*mask)[2] == player {
+	if (*mask)[4] == cible && (*mask)[3] == cible && (*mask)[2] == r.player {
 		r.NbCaps++
-		r.caps = append(r.caps, NewCapture(pX+xi, pY+yi))
-		r.caps = append(r.caps, NewCapture(pX+(xi*2), pY+(yi*2)))
+		r.caps = append(r.caps, NewCapture(r.x+dirX, r.y+dirY))
+		r.caps = append(r.caps, NewCapture(r.x+(dirX*2), r.y+(dirY*2)))
 	}
 
-	if (*mask)[6] == cible && (*mask)[7] == cible && (*mask)[8] == player {
+	if (*mask)[6] == cible && (*mask)[7] == cible && (*mask)[8] == r.player {
 		r.NbCaps++
-		r.caps = append(r.caps, NewCapture(pX+(xi-1), pY+(yi*-1)))
-		r.caps = append(r.caps, NewCapture(pX+(xi*-2), pY+(yi*-2)))
+		r.caps = append(r.caps, NewCapture(r.x+(dirX*-1), r.y+(dirY*-1)))
+		r.caps = append(r.caps, NewCapture(r.x+(dirX*-2), r.y+(dirY*-2)))
 	}
 }
 
-func (r *Rules) positionIsCapturable(b *[][]uint8, pX, pY int8, player uint8) bool {
-	opponent := getOtherPlayer(player)
+func (r *Rules) positionIsCapturable(b *[19][19]uint8, posY, posX int8) bool {
+	opponent := getOtherPlayer(r.player)
 
-	for y := int8(-1); y <= 1; y++ {
-		for x := int8(-1); x <= 1; x++ {
-			if x == 0 && y == 0 {
+	for dirY := int8(-1); dirY <= 1; dirY++ {
+		for dirX := int8(-1); dirX <= 1; dirX++ {
+			if dirY == 0 && dirX == 0 {
 				continue
 			}
 
-			xi := pX + x
-			yi := pY + y
-
-			if !isOnTheBoard(xi, yi) || !isOnTheBoard(xi*2, yi*2) || !isOnTheBoard(xi*-1, yi*-1) {
+			if !isOnTheBoard(posY+dirY, posX+dirX) || !isOnTheBoard(posY+dirY*2, posX+dirX*2) || !isOnTheBoard(posY+dirY*-1, posX+dirX*-1) {
 				continue
 			}
 
-			if (*b)[yi][xi] == player {
-				if ((*b)[yi*2][xi*2] == opponent && (*b)[yi*-1][xi*-1] == TokenEmpty) ||
-					((*b)[yi*2][xi*2] == TokenEmpty && (*b)[yi*-1][xi*-1] == opponent) {
+			if (*b)[posY+dirY][posX+dirX] == r.player {
+				if ((*b)[posY+dirY*2][posX+dirX*2] == opponent && (*b)[posY+dirY*-1][posX+dirX*-1] == TokenEmpty) ||
+					((*b)[posY+dirY*2][posX+dirX*2] == TokenEmpty && (*b)[posY+dirY*-1][posX+dirX*-1] == opponent) {
 					return true
 				}
 			}
@@ -260,24 +217,27 @@ func (r *Rules) positionIsCapturable(b *[][]uint8, pX, pY int8, player uint8) bo
 	return false
 }
 
-func (r *Rules) alignIsCapturable(b *[][]uint8, mask *[11]uint8, pX, pY, xi, yi int8, player uint8) bool {
-	var index int
-
-	for index = 5; index >= 0 && (*mask)[index] == player; index-- {
-	}
-	index += 1
-
-	for i := 0; i < 5; i++ {
-		tx := pX + xi*int8(index)
-		ty := pY + yi*int8(index)
-		if r.positionIsCapturable(b, tx, ty, player) {
+func (r *Rules) alignIsCapturable(b *[19][19]uint8, mask *[11]uint8, dirY, dirX int8) bool {
+	for index := 5; index >= 0 && (*mask)[index] == r.player; index-- {
+		y := r.y + dirY*int8(5-index)
+		x := r.x + dirX*int8(5-index)
+		if r.positionIsCapturable(b, y, x) {
 			return true
 		}
 	}
+
+	for index := 6; index < 11 && (*mask)[index] == r.player; index++ {
+		y := r.y + dirY*int8(5-index)
+		x := r.x + dirX*int8(5-index)
+		if r.positionIsCapturable(b, y, x) {
+			return true
+		}
+	}
+
 	return false
 }
 
-func (r *Rules) analyzeAlign(mask *[11]uint8, player uint8, b *[][]uint8, pX, pY, xi, yi int8) {
+func (r *Rules) analyzeAlign(mask *[11]uint8, b *[19][19]uint8, dirY, dirX int8) {
 	a := Align{size: 1}
 	availablePosition := 1
 	var lastIndex int
@@ -285,7 +245,7 @@ func (r *Rules) analyzeAlign(mask *[11]uint8, player uint8, b *[][]uint8, pX, pY
 
 	for i := 4; i >= 0; i-- {
 		lastIndex = i
-		if (*mask)[i] == player {
+		if (*mask)[i] == r.player {
 			a.size++
 			availablePosition++
 		} else if (*mask)[i] == TokenEmpty {
@@ -295,13 +255,13 @@ func (r *Rules) analyzeAlign(mask *[11]uint8, player uint8, b *[][]uint8, pX, pY
 		}
 	}
 	if (*mask)[lastIndex] == TokenEmpty ||
-		((*mask)[lastIndex] != player && (*mask)[lastIndex+1] == TokenEmpty) {
+		((*mask)[lastIndex] != r.player && (*mask)[lastIndex+1] == TokenEmpty) {
 		left = true
 	}
 
 	for i := 6; i <= 10; i++ {
 		lastIndex = i
-		if (*mask)[i] == player {
+		if (*mask)[i] == r.player {
 			a.size++
 			availablePosition++
 		} else if (*mask)[i] == TokenEmpty {
@@ -311,7 +271,7 @@ func (r *Rules) analyzeAlign(mask *[11]uint8, player uint8, b *[][]uint8, pX, pY
 		}
 	}
 	if (*mask)[lastIndex] == TokenEmpty ||
-		((*mask)[lastIndex] != player && (*mask)[lastIndex-1] == TokenEmpty) {
+		((*mask)[lastIndex] != r.player && (*mask)[lastIndex-1] == TokenEmpty) {
 		right = true
 	}
 
@@ -328,7 +288,7 @@ func (r *Rules) analyzeAlign(mask *[11]uint8, player uint8, b *[][]uint8, pX, pY
 		a.style |= alignHalf
 	}
 
-	if a.size == 5 && r.alignIsCapturable(b, mask, pX, pY, xi, yi, player) {
+	if a.size == 5 && r.alignIsCapturable(b, mask, dirY, dirX) {
 		a.capturable = true
 	}
 	r.aligns = append(r.aligns, a)
@@ -336,7 +296,8 @@ func (r *Rules) analyzeAlign(mask *[11]uint8, player uint8, b *[][]uint8, pX, pY
 
 func (r *Rules) analyzeMoveCondition() bool {
 	if r.NbThree >= 2 && r.NbCaps == 0 {
-		fmt.Println("Double tree")
+		r.IsMoved = false
+		r.MovedStr = "Double three"
 		return false
 	}
 
@@ -348,34 +309,25 @@ func (r *Rules) analyzeWinCondition(nbCaps uint8) {
 
 	if totalCaps >= 5 {
 		r.IsWin = true
-		r.MessageWin = "Great, win by capture: " + string(totalCaps)
+		r.MessageWin = "Great, win by capture: " + strconv.FormatUint(uint64(totalCaps), 10)
 	}
 
 	for _, align := range r.aligns {
 		if align.size >= 5 && !align.capturable {
 			r.IsWin = true
-			r.MessageWin = "Great, win by align: " + string(align.size)
+			r.MessageWin = "Great, win by align: " + strconv.FormatUint(uint64(align.size), 10)
 		}
 	}
 }
 
-func (r Rules) PrintMask(m *[11]uint8) {
-	for index, v := range *m {
-		fmt.Print("[ ", index, ": ", v, " ] ")
-	}
-	fmt.Println(" || ")
-}
-
 // CheckRules : check all rules (captures/doubleThree/win conditions ..), more details on following functions
-func (r *Rules) CheckRules(board *[][]uint8, pX, pY int8, player uint8, nbCaps uint8) {
+func (r *Rules) CheckRules(board *[19][19]uint8, pX, pY int8, player uint8, nbCaps uint8) {
 	var stop bool
 	var mask [11]uint8
 
-	if !r.isAvailablePosition(board, pX, pY) {
+	if !r.isAvailablePosition(board) {
 		return
 	}
-
-	//	fmt.Println("START NEW RULE")
 
 	//Check around posX/posY
 	for yi := int8(-1); yi <= 0; yi++ {
@@ -385,11 +337,10 @@ func (r *Rules) CheckRules(board *[][]uint8, pX, pY int8, player uint8, nbCaps u
 				break
 			}
 
-			r.getMaskFromBoard(board, pX, pY, xi, yi, &mask)
+			r.getMaskFromBoard(board, yi, xi, &mask)
 
-			//			r.PrintMask(&mask)
-			r.analyzeCapture(&mask, player, pX, pY, xi, yi)
-			r.analyzeAlign(&mask, player, board, pX, pY, xi, yi)
+			r.analyzeCapture(&mask, yi, xi)
+			r.analyzeAlign(&mask, board, yi, xi)
 		}
 
 		if stop == true {
@@ -421,300 +372,3 @@ func (r Rules) GetMaxAlign() uint8 {
 	}
 	return nbToken
 }
-
-// GetNbrCaptures : return the numbers of captured points (len of slice)
-/*
-func (r Rules) GetNbrCaptures() int32 {
-	return int32(len(r.caps))
-}
-*/
-// CheckCapture : Check a capture case in a line
-// board is actual board
-// posX and poxY are where player want to play position
-// xi and yi are steps of posX and posY respectively for the direction check
-// currentPlayer is the actual player token
-/*
-func (r *Rules) CheckCapture(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) {
-
-	x := posX + xi
-	y := posY + yi
-
-	//No check if same player
-	if (*board)[y][x] == currentPlayer {
-		return
-	}
-	//No check if part of a capture line is out of Board
-	if !isOnTheBoard(posX+(2*xi), posY+(2*yi)) || isEmpty(board, posX+(2*xi), posY+(2*yi)) {
-		return
-	}
-	if !isOnTheBoard(posX+(3*xi), posY+(3*yi)) || isEmpty(board, posX+(3*xi), posY+(3*yi)) {
-		return
-	}
-	//Capture check
-	if currentPlayer != (*board)[uint8(posY+(2*yi))][uint8(posX+(2*xi))] {
-		if currentPlayer == (*board)[uint8(posY+(3*yi))][uint8(posX+(3*xi))] {
-			r.IsCaptured = true
-			r.caps = append(r.caps, NewCapture(posX+xi, posY+yi))
-			r.caps = append(r.caps, NewCapture(posX+(xi*2), posY+(yi*2)))
-			r.NbCaps++
-			return
-		}
-	}
-	return
-}
-*/
-// IsThree : Check a "three case" in a line and record it
-// board is actual board
-// posX and poxY are where player want to play position
-// xi and yi are steps of posX and posY respectively for the direction check
-// currentPlayer is the actual player token
-/*
-func (r *Rules) IsThree(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) bool {
-	var nbMe uint8
-
-	r.PositionWin = nil
-	//Check line
-	for i := int8(-1); i <= 2; i++ {
-		x := posX + (xi * i)
-		y := posY + (yi * i)
-		if !isOnTheBoard(x, y) {
-			return false
-		}
-		if (*board)[y][x] == currentPlayer {
-			nbMe++
-			r.PositionWin = append(r.PositionWin, &Capture{X: x, Y: y})
-			if nbMe > 2 {
-				return false
-			}
-		} else if !isEmpty(board, x, y) {
-			return false
-		}
-	}
-
-	//Check Extremites
-	if nbMe == 2 {
-		if !isOnTheBoard(posX+(-2*xi), posY+(-2*yi)) {
-			if isEmpty(board, posX+(-1*xi), posY+(-1*yi)) {
-				return false
-			}
-		} else if !isEmpty(board, posX+(-2*xi), posY+(-2*yi)) {
-			return false
-		}
-		if !isOnTheBoard(posX+(3*xi), posY+(3*yi)) {
-			if isEmpty(board, posX+(2*xi), posY+(2*yi)) {
-				return false
-			}
-		} else if !isEmpty(board, posX+(3*xi), posY+(3*yi)) {
-			return false
-		}
-		return true
-	}
-	return false
-}
-*/
-// CheckDoubleThree : Call IsThree twice to record a "three" case
-// board is actual board
-// posX and poxY are where player want to play position
-// xi and yi are steps of posX and posY respectively for the direction check
-// currentPlayer is the actual player token
-/*
-func (r *Rules) CheckDoubleThree(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer uint8, maskThree *uint8) {
-	var flag bool
-
-	if yi == 1 && xi == 1 {
-		if *maskThree&threeDiagonalLeft != 0 {
-			return
-		}
-	} else if yi == 1 && xi == 0 {
-		if *maskThree&threeVertical != 0 {
-			return
-		}
-	} else if yi == 1 && xi == -1 {
-		if *maskThree&threeDiagonalRight != 0 {
-			return
-		}
-	} else if yi == 0 && xi == 1 {
-		if *maskThree&threeHorizontal != 0 {
-			return
-		}
-	}
-
-	if r.IsThree(board, posX, posY, xi, yi, currentPlayer) {
-		r.NbThree++
-		flag = true
-	} else if r.IsThree(board, posX+xi, posY+yi, xi, yi, currentPlayer) {
-		r.NbThree++
-		flag = true
-	}
-
-	if !flag {
-		return
-	}
-
-	r.PositionWin = append(r.PositionWin, &Capture{X: posX, Y: posY})
-	r.CheckCaptureAfterMove(board, posX, posY, currentPlayer)
-
-	if yi == -1 && xi == -1 {
-		*maskThree |= threeDiagonalLeft
-	} else if yi == -1 && xi == 0 {
-		*maskThree |= threeVertical
-	} else if yi == -1 && xi == 1 {
-		*maskThree |= threeDiagonalRight
-	} else if yi == 0 && xi == -1 {
-		*maskThree |= threeHorizontal
-	}
-}
-*/
-// isWin : Check if there is 5 current player token on board = win
-// board is actual board
-// posX and poxY are where player want to play position
-// xi and yi are steps of posX and posY respectively for the direction check
-// currentPlayer is the actual player token
-
-/*
-func (r *Rules) isWin(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) bool {
-	var nbMe uint8
-
-	r.PositionWin = nil
-	for i := int8(-4); i <= 4; i++ {
-		x := posX + (xi * i)
-		y := posY + (yi * i)
-		if !isOnTheBoard(x, y) {
-			continue
-		}
-		if (x == posX && y == posY) || (*board)[y][x] == currentPlayer {
-			nbMe++
-			r.PositionWin = append(r.PositionWin, &Capture{X: x, Y: y})
-			if nbMe == 5 {
-				return true
-			}
-		} else {
-			r.PositionWin = nil
-			nbMe = 0
-		}
-	}
-
-	return false
-}
-*/
-// CheckWinner : Call isWin for vertical, horizontal and diagonals lines around point
-// board is actual board
-// posX and poxY are where player want to play position
-// currentPlayer is the actual player token
-/*
-func (r *Rules) CheckWinner(board *[][]uint8, posX, posY int8, currentPlayer uint8) {
-
-	if r.isWin(board, posX, posY, 1, -1, currentPlayer) {
-		r.IsWin = true
-	} else if r.isWin(board, posX, posY, 1, 0, currentPlayer) {
-		r.IsWin = true
-	} else if r.isWin(board, posX, posY, 1, 1, currentPlayer) {
-		r.IsWin = true
-	} else if r.isWin(board, posX, posY, 0, 1, currentPlayer) {
-		r.IsWin = true
-	}
-
-	if r.IsWin {
-		r.MessageWin = "Win by align five token"
-		r.CapturableWin = nil
-		r.CheckCaptureAfterMove(board, posX, posY, currentPlayer)
-	}
-}
-*/
-/*
-func (r *Rules) CheckWinneable(board *[][]uint8, posX, posY int8, currentPlayer uint8) {
-	if nb := r.isWinneable(board, posX, posY, 1, -1, currentPlayer); nb >= r.NbToken {
-		if nb > r.NbToken {
-			r.NbToken = nb
-			r.NbLine = 1
-		} else {
-			r.NbLine++
-		}
-	}
-
-	if nb := r.isWinneable(board, posX, posY, 1, 0, currentPlayer); nb >= r.NbToken {
-		if nb > r.NbToken {
-			r.NbToken = nb
-			r.NbLine = 1
-		} else {
-			r.NbLine++
-		}
-	}
-
-	if nb := r.isWinneable(board, posX, posY, 1, 1, currentPlayer); nb >= r.NbToken {
-		if nb > r.NbToken {
-			r.NbToken = nb
-			r.NbLine = 1
-		} else {
-			r.NbLine++
-		}
-	}
-
-	if nb := r.isWinneable(board, posX, posY, 0, 1, currentPlayer); nb >= r.NbToken {
-		if nb > r.NbToken {
-			r.NbToken = nb
-			r.NbLine = 1
-		} else {
-			r.NbLine++
-		}
-	}
-}
-*/
-/*
-func (r *Rules) isWinneable(board *[][]uint8, posX, posY, xi, yi int8, currentPlayer uint8) uint8 {
-	var nbToken uint8
-	var nbAvailable uint8
-
-	for i := int8(-4); i <= 4; i++ {
-		x := posX + (xi * i)
-		y := posY + (yi * i)
-		if !isOnTheBoard(x, y) {
-			continue
-		}
-		if (x == posX && y == posY) || (*board)[y][x] == currentPlayer {
-			nbToken++
-			nbAvailable++
-		} else if (*board)[y][x] == TokenEmpty {
-			nbAvailable++
-		} else {
-			nbAvailable = 0
-			nbToken = 0
-		}
-
-		if nbAvailable >= 5 {
-			return nbToken
-		}
-	}
-
-	return 0
-}
-*/
-/*
-func (r *Rules) CheckCaptureAfterMove(board *[][]uint8, posX, posY int8, currentPlayer uint8) {
-	(*board)[uint8(posY)][uint8(posX)] = currentPlayer
-	player := uint8(TokenP1)
-	if currentPlayer == TokenP1 {
-		player = TokenP2
-	}
-	for _, cap := range r.PositionWin {
-		for yi := int8(-1); yi <= 1; yi++ {
-			for xi := int8(-1); xi <= 1; xi++ {
-				x := cap.X + xi
-				y := cap.Y + yi
-				if (xi == 0 && yi == 0) || !isOnTheBoard(x, y) {
-					continue
-				}
-				//Can we put in this posX/posY
-				if (*board)[y][x] == currentPlayer {
-					rFake := New()
-					rFake.CheckCapture(board, cap.X+2*xi, cap.Y+2*yi, -xi, -yi, player)
-					if rFake.IsCaptured == true {
-						r.CapturableWin = append(r.CapturableWin, &Capture{X: x, Y: y})
-					}
-				}
-			}
-		}
-	}
-	(*board)[uint8(posY)][uint8(posX)] = TokenEmpty
-}
-*/

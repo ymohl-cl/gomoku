@@ -23,7 +23,7 @@ const (
 // and a Rules instance
 type Game struct {
 	players   playersInfo
-	board     [][]uint8
+	board     [19][19]uint8
 	timerPlay time.Time
 	timerGame time.Time
 	rules     *ruler.Rules
@@ -72,13 +72,13 @@ func New(d *database.Data) (*Game, error) {
 	}
 
 	// init board
-	for y := 0; y < 19; y++ {
+	/*for y := 0; y < 19; y++ {
 		line := []uint8{}
 		for x := 0; x < 19; x++ {
 			line = append(line, uint8(0))
 		}
 		g.board = append(g.board, line)
-	}
+	}*/
 	g.data = d
 	return &g, nil
 }
@@ -131,7 +131,7 @@ func (g *Game) Move(x, y uint8) (bool, string, error) {
 
 	//CheckAllRules
 	g.rules.CheckRules(&g.board, int8(x), int8(y), valueToken, uint8(*nbCaps))
-	g.rules.Print()
+	//g.rules.Print()
 	//add Capture nb
 	*nbCaps += int32(g.rules.NbCaps)
 	//Verify Check
@@ -178,6 +178,6 @@ func (g Game) GetTimeGame() time.Duration {
 	return time.Since(g.timerGame)
 }
 
-func (g Game) GetBoard() *[][]uint8 {
+func (g Game) GetBoard() *[19][19]uint8 {
 	return &g.board
 }
