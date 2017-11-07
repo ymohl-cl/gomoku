@@ -222,7 +222,6 @@ func (r *Rules) analyzeCapture(mask *[11]uint8, player uint8, pX, pY, xi, yi int
 
 	if (*mask)[4] == cible && (*mask)[3] == cible && (*mask)[2] == player {
 		r.NbCaps++
-
 		r.caps = append(r.caps, NewCapture(pX+xi, pY+yi))
 		r.caps = append(r.caps, NewCapture(pX+(xi*2), pY+(yi*2)))
 	}
