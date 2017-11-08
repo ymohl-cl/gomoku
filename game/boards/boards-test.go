@@ -62,10 +62,7 @@ func GetBoardFilledRightP2() *[19][19]uint8 {
 }
 
 // GetCaptureBoardP1_1 : _
-// . o .
-// . x .
-// . x .
-// . . .
+// . o x x .
 func GetCaptureBoardP1_1() *[19][19]uint8 {
 	var b [19][19]uint8
 
@@ -73,7 +70,7 @@ func GetCaptureBoardP1_1() *[19][19]uint8 {
 	b[0][17] = 1
 	b[0][16] = 1
 
-	// set P1 on the board
+	// set P2 on the board
 	b[0][15] = 2
 	return &b
 }

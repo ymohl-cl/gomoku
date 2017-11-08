@@ -94,10 +94,10 @@ func (g *Game) AppliesMove(x, y uint8) {
 	s := stats.New(x, y, time.Since(g.timerPlay), false)
 
 	if g.players.currentPlayer == g.players.p1 {
-		g.board[y][x] = ruler.TokenP1
+		g.board[y][x] = ruler.Player1
 		g.players.statsP1 = append(g.players.statsP1, s)
 	} else {
-		g.board[y][x] = ruler.TokenP2
+		g.board[y][x] = ruler.Player2
 		g.players.statsP2 = append(g.players.statsP2, s)
 	}
 }
@@ -120,39 +120,41 @@ func (g *Game) Move(x, y uint8) (bool, string, error) {
 
 	// get current player with token value
 	if g.players.currentPlayer == g.players.p1 {
-		valueToken = ruler.TokenP1
+		valueToken = ruler.Player1
 		nbCaps = &g.data.Current.NbCaptureP1
 	} else {
-		valueToken = ruler.TokenP2
+		valueToken = ruler.Player2
 		nbCaps = &g.data.Current.NbCaptureP2
 	}
 
 	g.rules = ruler.New(valueToken, int8(y), int8(x))
 
 	//CheckAllRules
-	g.rules.CheckRules(&g.board, int8(x), int8(y), valueToken, uint8(*nbCaps))
+	g.rules.CheckRules(&g.board, uint8(*nbCaps))
 	//g.rules.Print()
 	//add Capture nb
-	*nbCaps += int32(g.rules.NbCaps)
+	*nbCaps += int32(g.rules.NumberCapture)
 	//Verify Check
 	fmt.Println(g.rules)
-	if g.rules.IsMoved == false {
-		return false, "", errors.New(g.rules.MovedStr)
+	if g.rules.Movable == false {
+		return false, "", errors.New(g.rules.Info)
 	}
-	if g.rules.IsCaptured == true {
-		for _, cap := range g.rules.GetCaptures() {
-			g.board[cap.Y][cap.X] = ruler.TokenEmpty
+	g.rules.ApplyMove(&g.board)
+	/*
+		if g.rules.IsCaptured == true {
+			for _, cap := range g.rules.GetCaptures() {
+				g.board[cap.Y][cap.X] = ruler.TokenEmpty
+			}
 		}
-	}
-
+	*/
 	g.AppliesMove(x, y)
 	g.SwitchPlayer()
 
-	return g.rules.IsWin, g.rules.MessageWin, nil
+	return g.rules.Win, g.rules.Info, nil
 }
 
 // GetCaptures : return a reference of slice of actual player captures
-func (g Game) GetCaptures() []*ruler.Capture {
+func (g Game) GetCaptures() []*ruler.Spot {
 	return g.rules.GetCaptures()
 }
 

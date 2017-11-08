@@ -3,13 +3,13 @@ package ruler
 import "fmt"
 
 func (r *Rules) printCaptures() {
-	for _, cap := range r.caps {
-		fmt.Println("(y - x): ", cap.Y, " - ", cap.X)
+	for _, capture := range r.captures {
+		fmt.Println("(y - x): ", capture.Y, " - ", capture.X)
 	}
 }
 
 func (r *Rules) printThrees() {
-	fmt.Println("nb threes ", r.NbThree)
+	fmt.Println("nb threes ", r.NumberThree)
 }
 
 func (r *Rules) printAlignments() {
@@ -25,8 +25,8 @@ func (r *Rules) printAlignments() {
 		} else {
 			fmt.Print(", style: not define")
 		}
-		if a.size >= 5 {
-			if a.capturable {
+		if a.iWin != nil {
+			if r.Win == false {
 				fmt.Print(", capturable")
 			} else {
 				fmt.Print(", no capturable")
@@ -34,24 +34,4 @@ func (r *Rules) printAlignments() {
 		}
 		fmt.Println("]")
 	}
-}
-
-func (r *Rules) print() {
-	if r.player == TokenP1 {
-		fmt.Println("Player: P1")
-	} else if r.player == TokenP2 {
-		fmt.Println("Player: P2")
-	} else {
-		fmt.Println("Player not define")
-	}
-
-	fmt.Println("Can move: ", r.IsMoved, " | details: ", r.MovedStr)
-
-	r.printCaptures()
-
-	fmt.Println("Number tree: ", r.NbThree)
-
-	fmt.Println("IsWin: ", r.IsWin, " - details: ", r.MessageWin)
-
-	r.printAlignments()
 }

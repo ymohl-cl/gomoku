@@ -125,10 +125,10 @@ func (s *State) addNode(n *Node) {
 }*/
 
 func (s State) switchPlayer() uint8 {
-	if s.player == ruler.TokenP1 {
-		return ruler.TokenP2
+	if s.player == ruler.Player1 {
+		return ruler.Player2
 	}
-	return ruler.TokenP1
+	return ruler.Player1
 }
 
 func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State) int8 {
@@ -137,7 +137,7 @@ func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State) int8 {
 	// Var Caps
 	var basicCurrent int8
 	var basicOther int8
-	if s.player == ruler.TokenP2 {
+	if s.player == ruler.Player2 {
 		basicCurrent = int8(s.nbCapsOther - base.nbCapsOther)
 		basicOther = int8(s.nbCapsCurrent - base.nbCapsCurrent)
 	} else {
@@ -146,7 +146,7 @@ func (a AI) eval(s *State, stape uint8, r *ruler.Rules, base *State) int8 {
 	}
 
 	//Win
-	if r.IsWin {
+	if r.Win {
 		if basicCurrent > 0 {
 			return -127 + int8(maxDepth-stape)
 		} else {
@@ -187,27 +187,33 @@ func (s *State) Search(n *Node) *Node {
 }
 
 func (a *AI) applyMove(b *[19][19]uint8, r *ruler.Rules, player uint8, x, y uint8) {
-	(*b)[y][x] = player
-	if r.IsCaptured == true {
-		for _, cap := range r.GetCaptures() {
-			(*b)[cap.Y][cap.X] = ruler.TokenEmpty
+	r.ApplyMove(b)
+	/*
+		(*b)[y][x] = player
+		if r.IsCaptured == true {
+			for _, cap := range r.GetCaptures() {
+				(*b)[cap.Y][cap.X] = ruler.TokenEmpty
+			}
 		}
-	}
+	*/
 }
 
 func (a *AI) restoreMove(b *[19][19]uint8, r *ruler.Rules, player uint8, x, y uint8) {
-	opponent := uint8(ruler.TokenP1)
+	r.RestoreMove(b)
+	/*
+		opponent := uint8(ruler.TokenP1)
 
-	if player == ruler.TokenP1 {
-		opponent = ruler.TokenP2
-	}
-
-	(*b)[y][x] = ruler.TokenEmpty
-	if r.IsCaptured == true {
-		for _, cap := range r.GetCaptures() {
-			(*b)[cap.Y][cap.X] = opponent
+		if player == ruler.TokenP1 {
+			opponent = ruler.TokenP2
 		}
-	}
+
+		(*b)[y][x] = ruler.TokenEmpty
+		if r.IsCaptured == true {
+			for _, cap := range r.GetCaptures() {
+				(*b)[cap.Y][cap.X] = opponent
+			}
+		}
+	*/
 }
 
 /*func getPointsOpti(b *[][]uint8) ([]int8, []int8) {
@@ -354,7 +360,7 @@ func (s *State) getNode(x, y uint8) *Node {
 
 func (a *AI) alphabeta_pvs(s *State, b *[19][19]uint8, alpha, beta int8, stape uint8, oldRule *ruler.Rules, base *State) int8 {
 
-	if stape == 0 || (oldRule != nil && oldRule.IsWin) { // || (oldRule.NbThree > 0 && len(oldRule.CapturableWin) == 0) {
+	if stape == 0 || (oldRule != nil && oldRule.Win) { // || (oldRule.NbThree > 0 && len(oldRule.CapturableWin) == 0) {
 		ret := a.eval(s, stape+1, oldRule, base)
 		return ret
 	}
@@ -366,16 +372,16 @@ func (a *AI) alphabeta_pvs(s *State, b *[19][19]uint8, alpha, beta int8, stape u
 			if node == nil {
 				node = a.newNode(x, y, s.player)
 				found = false
-				node.rule.CheckRules(b, int8(x), int8(y), s.player, uint8(s.nbCapsCurrent))
+				node.rule.CheckRules(b, uint8(s.nbCapsCurrent))
 			}
-			if node.rule.IsMoved {
+			if node.rule.Movable {
 				a.applyMove(b, &node.rule, s.player, x, y)
 				if found == false {
 					nbToken := node.rule.GetMaxAlign()
-					node.nextState.Set(s.nbCapsCurrent+int8(node.rule.NbCaps), s.nbCapsOther, s.nbTCurrent+int8(node.rule.NbThree), s.nbTOther, int8(nbToken), s.nbAlignOther, s.switchPlayer())
+					node.nextState.Set(s.nbCapsCurrent+int8(node.rule.NumberCapture), s.nbCapsOther, s.nbTCurrent+int8(node.rule.NumberThree), s.nbTOther, int8(nbToken), s.nbAlignOther, s.switchPlayer())
 				} else {
 					node.nextState.nbTCurrent = s.nbTOther
-					node.nextState.nbTOther = s.nbTCurrent + int8(node.rule.NbThree)
+					node.nextState.nbTOther = s.nbTCurrent + int8(node.rule.NumberThree)
 				}
 				if first == true {
 					node.weight = -a.alphabeta_pvs(&node.nextState, b, -beta, -alpha, stape-1, &node.rule, base)
@@ -463,7 +469,7 @@ func (a *AI) Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 
 	a.NbPlayed++
 	if a.s == nil || a.s.pq == nil {
-		a.s = a.newState(int8(s.NbCaptureP1), int8(s.NbCaptureP2), 0, 0, 0, 0, ruler.TokenP2)
+		a.s = a.newState(int8(s.NbCaptureP1), int8(s.NbCaptureP2), 0, 0, 0, 0, ruler.Player2)
 	}
 
 	//	save := a.s.pq

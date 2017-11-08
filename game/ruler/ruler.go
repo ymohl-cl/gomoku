@@ -1,12 +1,10 @@
 package ruler
 
-import "strconv"
-
-//Token values and size of board
+// outOfBoard is used on mask of raw (see CheckRules)
 const (
-	TokenEmpty = 0
-	TokenP1    = 1
-	TokenP2    = 2
+	empty      = 0
+	Player1    = 1
+	Player2    = 2
 	outOfBoard = 3
 
 	sizeY = 19
@@ -15,56 +13,137 @@ const (
 	alignFree    = 1 << 0
 	alignHalf    = 1 << 1
 	alignFlanked = 2 << 2
+
+	noNeighbourMessage     = "this spot don't have a neighbour token"
+	outOfBoardMessage      = "this spot is out of board"
+	doubleThreeMessage     = "this spot compose one double three"
+	spotAlreadyUsedMessage = "this spot is already used by other token"
+	winByCaptureMessage    = "congratulation, winner by capture"
+	winByAlignmentMessage  = "congratulation, winner by alignment"
 )
 
-// Capture struct is a couple (X, Y) of a captured point
-type Capture struct {
-	X int8
+// Spot on the board define by Y and X
+type Spot struct {
 	Y int8
+	X int8
 }
 
-// NewCapture : Return a new instance and set (X, Y) values of a captured point
-func NewCapture(posX, posY int8) *Capture {
-	return &Capture{X: posX, Y: posY}
+// InfoWin keep info of raw when a align size == 5.
+// Need to check if the win align is capturable or not
+type InfoWin struct {
+	mask [11]uint8
+	dirY int8
+	dirX int8
 }
 
+// Align describe the alignments to five available spot and size align > 2
 type Align struct {
-	size       uint8
-	style      uint8
-	capturable bool
+	size  uint8
+	style uint8
+	iWin  *InfoWin
 }
 
 // Rules struct contain all Rules checks informations
 type Rules struct {
-	player uint8
-	y      int8
-	x      int8
+	/* Private attribute */
+	player   uint8
+	y        int8
+	x        int8
+	captures []*Spot
+	aligns   []Align
 
-	//Move
-	IsMoved  bool
-	MovedStr string
-
-	//Capture
-	IsCaptured bool
-	caps       []*Capture
-	NbCaps     uint8
-
-	//Double-Three
-	NbThree uint8
-
-	//Win
-	IsWin bool
-	//	CapturableWin []*Capture
-	//	PositionWin   []*Capture
-	MessageWin string
-
-	// Winneable
-	//	NbToken uint8
-	//	NbLine  uint8
-	aligns []Align
+	/* Public attribute */
+	Info          string
+	NumberThree   uint8
+	NumberCapture uint8
+	Movable       bool
+	Win           bool
 }
 
-// New return a new instance and with player and one position (y, x)
+// getOtherPlayer provide the value of player's opponent provided on parameter
+func getOtherPlayer(p uint8) uint8 {
+	if p == Player1 {
+		return Player2
+	}
+	return Player1
+}
+
+// isOnTheBoard : check if the (y, x) point are inside the board
+func isOnTheBoard(y, x int8) bool {
+	if x < 0 || y < 0 || x >= 19 || y >= 19 {
+		return false
+	}
+	return true
+}
+
+// isEmpty : check if the (pX, pY) point are empty position
+func isEmpty(b *[19][19]uint8, y, x int8) bool {
+	if (*b)[uint8(y)][uint8(x)] == empty {
+		return true
+	}
+	return false
+}
+
+// positionIsCapturable : Check if spot defined by posY and posX is capturable
+func positionIsCapturable(b *[19][19]uint8, posY, posX int8, player uint8) bool {
+	opponent := getOtherPlayer(player)
+
+	for dirY := int8(-1); dirY <= 1; dirY++ {
+		for dirX := int8(-1); dirX <= 1; dirX++ {
+			if dirY == 0 && dirX == 0 {
+				continue
+			}
+
+			if !isOnTheBoard(posY+dirY, posX+dirX) || !isOnTheBoard(posY+dirY*2, posX+dirX*2) || !isOnTheBoard(posY+dirY*-1, posX+dirX*-1) {
+				continue
+			}
+
+			if (*b)[posY+dirY][posX+dirX] == player {
+				if ((*b)[posY+dirY*2][posX+dirX*2] == opponent && (*b)[posY+dirY*-1][posX+dirX*-1] == empty) ||
+					((*b)[posY+dirY*2][posX+dirX*2] == empty && (*b)[posY+dirY*-1][posX+dirX*-1] == opponent) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// newInfoWin : _
+func (a *Align) newInfoWin(mask *[11]uint8, dirY, dirX int8) {
+	a.iWin = new(InfoWin)
+	copy(a.iWin.mask[:], (*mask)[:])
+	a.iWin.dirY = dirY
+	a.iWin.dirX = dirX
+}
+
+// alignIsCapturable : browse all point of alignment and check if the spot is capturable
+func (a *Align) isCapturable(b *[19][19]uint8, player uint8, posY, posX int8) bool {
+	i := a.iWin
+	if i == nil {
+		return false
+	}
+
+	for index := 5; index >= 0 && i.mask[index] == player; index-- {
+		y := posY + i.dirY*int8(5-index)
+		x := posX + i.dirX*int8(5-index)
+		if positionIsCapturable(b, y, x, player) {
+			return true
+		}
+	}
+
+	for index := 6; index < 11 && i.mask[index] == player; index++ {
+		y := posY + i.dirY*int8(5-index)
+		x := posX + i.dirX*int8(5-index)
+		if positionIsCapturable(b, y, x, player) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// New return a new instance with one player and one position (y, x)
 func New(p uint8, y, x int8) *Rules {
 	return &Rules{
 		player: p,
@@ -80,39 +159,55 @@ func (r *Rules) Init(p uint8, y, x int8) {
 	r.x = x
 }
 
-// getOtherPlayer provide the value of player's opponent provided on parameter
-func getOtherPlayer(p uint8) uint8 {
-	if p == TokenP1 {
-		return TokenP2
+// ApplyMove write on the board the spot of move and delete captured spot
+func (r *Rules) ApplyMove(b *[19][19]uint8) {
+	(*b)[r.y][r.x] = r.player
+	for _, capture := range r.captures {
+		(*b)[capture.Y][capture.X] = empty
 	}
-	return TokenP1
 }
 
-// isOnTheBoard : check if the (y, x) point are inside the board
-func isOnTheBoard(y, x int8) bool {
-	if x < 0 || y < 0 || x >= 19 || y >= 19 {
-		return false
+// RestoreMove delete on the board the sport of move and restore deleted captured spot
+func (r *Rules) RestoreMove(b *[19][19]uint8) {
+	opponent := getOtherPlayer(r.player)
+
+	(*b)[r.y][r.x] = empty
+	for _, capture := range r.captures {
+		(*b)[capture.Y][capture.X] = opponent
 	}
-	return true
 }
 
-// isEmpty : check if the (pX, pY) point are empty position
-func isEmpty(b *[19][19]uint8, y, x int8) bool {
-	if (*b)[uint8(y)][uint8(x)] == TokenEmpty {
-		return true
-	}
-	return false
+// GetCaptures : return the slice of captured points
+func (r *Rules) GetCaptures() []*Spot {
+	return r.captures
 }
 
-// IsAvailablePosition : check if the position is available
+// GetMaxAlign return the most alignment
+func (r Rules) GetMaxAlign() uint8 {
+	nbToken := uint8(0)
+
+	for _, align := range r.aligns {
+		if align.size > nbToken {
+			nbToken = align.size
+		}
+	}
+	return nbToken
+}
+
+// addCapture : _
+func (r *Rules) addCapture(y, x int8) {
+	r.captures = append(r.captures, &Spot{Y: y, X: x})
+}
+
+// isAvailablePosition : check if the position is available
 func (r *Rules) isAvailablePosition(b *[19][19]uint8) bool {
 
 	if !isOnTheBoard(r.y, r.x) {
-		r.MovedStr = "Index out of board"
+		r.Info = outOfBoardMessage
 		return false
 	}
 	if !isEmpty(b, r.y, r.x) {
-		r.MovedStr = "Index already used"
+		r.Info = spotAlreadyUsedMessage
 		return false
 	}
 
@@ -128,115 +223,34 @@ func (r *Rules) isAvailablePosition(b *[19][19]uint8) bool {
 			}
 
 			if !isEmpty(b, y, x) {
-				r.IsMoved = true
+				r.Movable = true
 				return true
 			}
 		}
 	}
 
-	r.MovedStr = "Not neighborhood"
+	r.Info = noNeighbourMessage
 	return false
 }
 
-func (r *Rules) getMaskFromBoard(b *[19][19]uint8, dirY, dirX int8, mask *[11]uint8) {
-	tx := uint8(r.x + (dirX * 5))
-	ty := uint8(r.y + (dirY * 5))
-	otx := uint8(r.x + (dirX * -5))
-	oty := uint8(r.y + (dirY * -5))
-
-	(*mask)[5] = r.player
-
-	for i := int8(0); i < 5; i++ {
-
-		if isOnTheBoard(int8(ty), int8(tx)) {
-			(*mask)[i] = (*b)[ty][tx]
-		} else {
-			(*mask)[i] = outOfBoard
-		}
-
-		if isOnTheBoard(int8(oty), int8(otx)) {
-			(*mask)[10-i] = (*b)[oty][otx]
-		} else {
-			(*mask)[10-i] = outOfBoard
-		}
-
-		if dirY != 0 {
-			ty++
-			oty--
-		}
-		if dirX != 0 {
-			if dirX < 0 {
-				tx++
-				otx--
-
-			} else {
-				tx--
-				otx++
-			}
-		}
-	}
-}
-
+// analyzeCapture : Check and records captured spot
 func (r *Rules) analyzeCapture(mask *[11]uint8, dirY, dirX int8) {
 	cible := getOtherPlayer(r.player)
 
 	if (*mask)[4] == cible && (*mask)[3] == cible && (*mask)[2] == r.player {
-		r.NbCaps++
-		r.caps = append(r.caps, NewCapture(r.x+dirX, r.y+dirY))
-		r.caps = append(r.caps, NewCapture(r.x+(dirX*2), r.y+(dirY*2)))
+		r.NumberCapture++
+		r.addCapture(r.y+dirY, r.x+dirX)
+		r.addCapture(r.y+(dirY*2), r.x+(dirX*2))
 	}
 
 	if (*mask)[6] == cible && (*mask)[7] == cible && (*mask)[8] == r.player {
-		r.NbCaps++
-		r.caps = append(r.caps, NewCapture(r.x+(dirX*-1), r.y+(dirY*-1)))
-		r.caps = append(r.caps, NewCapture(r.x+(dirX*-2), r.y+(dirY*-2)))
+		r.NumberCapture++
+		r.addCapture(r.y+(dirY*-1), r.x+(dirX*-1))
+		r.addCapture(r.y+(dirY*-2), r.x+(dirX*-2))
 	}
 }
 
-func (r *Rules) positionIsCapturable(b *[19][19]uint8, posY, posX int8) bool {
-	opponent := getOtherPlayer(r.player)
-
-	for dirY := int8(-1); dirY <= 1; dirY++ {
-		for dirX := int8(-1); dirX <= 1; dirX++ {
-			if dirY == 0 && dirX == 0 {
-				continue
-			}
-
-			if !isOnTheBoard(posY+dirY, posX+dirX) || !isOnTheBoard(posY+dirY*2, posX+dirX*2) || !isOnTheBoard(posY+dirY*-1, posX+dirX*-1) {
-				continue
-			}
-
-			if (*b)[posY+dirY][posX+dirX] == r.player {
-				if ((*b)[posY+dirY*2][posX+dirX*2] == opponent && (*b)[posY+dirY*-1][posX+dirX*-1] == TokenEmpty) ||
-					((*b)[posY+dirY*2][posX+dirX*2] == TokenEmpty && (*b)[posY+dirY*-1][posX+dirX*-1] == opponent) {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-func (r *Rules) alignIsCapturable(b *[19][19]uint8, mask *[11]uint8, dirY, dirX int8) bool {
-	for index := 5; index >= 0 && (*mask)[index] == r.player; index-- {
-		y := r.y + dirY*int8(5-index)
-		x := r.x + dirX*int8(5-index)
-		if r.positionIsCapturable(b, y, x) {
-			return true
-		}
-	}
-
-	for index := 6; index < 11 && (*mask)[index] == r.player; index++ {
-		y := r.y + dirY*int8(5-index)
-		x := r.x + dirX*int8(5-index)
-		if r.positionIsCapturable(b, y, x) {
-			return true
-		}
-	}
-
-	return false
-}
-
+// analyzeAlign : Check alignment type and records when there are enought available spot
 func (r *Rules) analyzeAlign(mask *[11]uint8, b *[19][19]uint8, dirY, dirX int8) {
 	a := Align{size: 1}
 	availablePosition := 1
@@ -248,14 +262,14 @@ func (r *Rules) analyzeAlign(mask *[11]uint8, b *[19][19]uint8, dirY, dirX int8)
 		if (*mask)[i] == r.player {
 			a.size++
 			availablePosition++
-		} else if (*mask)[i] == TokenEmpty {
+		} else if (*mask)[i] == empty {
 			availablePosition++
 		} else {
 			break
 		}
 	}
-	if (*mask)[lastIndex] == TokenEmpty ||
-		((*mask)[lastIndex] != r.player && (*mask)[lastIndex+1] == TokenEmpty) {
+	if (*mask)[lastIndex] == empty ||
+		((*mask)[lastIndex] != r.player && (*mask)[lastIndex+1] == empty) {
 		left = true
 	}
 
@@ -264,14 +278,14 @@ func (r *Rules) analyzeAlign(mask *[11]uint8, b *[19][19]uint8, dirY, dirX int8)
 		if (*mask)[i] == r.player {
 			a.size++
 			availablePosition++
-		} else if (*mask)[i] == TokenEmpty {
+		} else if (*mask)[i] == empty {
 			availablePosition++
 		} else {
 			break
 		}
 	}
-	if (*mask)[lastIndex] == TokenEmpty ||
-		((*mask)[lastIndex] != r.player && (*mask)[lastIndex-1] == TokenEmpty) {
+	if (*mask)[lastIndex] == empty ||
+		((*mask)[lastIndex] != r.player && (*mask)[lastIndex-1] == empty) {
 		right = true
 	}
 
@@ -282,46 +296,82 @@ func (r *Rules) analyzeAlign(mask *[11]uint8, b *[19][19]uint8, dirY, dirX int8)
 	} else if left == true && right == true {
 		a.style |= alignFree
 		if a.size == 3 {
-			r.NbThree++
+			r.NumberThree++
 		}
 	} else {
 		a.style |= alignHalf
 	}
 
-	if a.size == 5 && r.alignIsCapturable(b, mask, dirY, dirX) {
-		a.capturable = true
+	if a.size == 5 {
+		a.newInfoWin(mask, dirY, dirX)
 	}
 	r.aligns = append(r.aligns, a)
 }
 
+// analyzeMoveCondition : Check conditions to accept the move
 func (r *Rules) analyzeMoveCondition() bool {
-	if r.NbThree >= 2 && r.NbCaps == 0 {
-		r.IsMoved = false
-		r.MovedStr = "Double three"
+	if r.NumberThree >= 2 && r.NumberCapture == 0 {
+		r.Movable = false
+		r.Info = doubleThreeMessage
 		return false
 	}
 
 	return true
 }
 
-func (r *Rules) analyzeWinCondition(nbCaps uint8) {
-	totalCaps := r.NbCaps + nbCaps
+// analyzeWinCondition : Check conditions to accept the win move
+func (r *Rules) analyzeWinCondition(b *[19][19]uint8, nbCaptured uint8) {
+	totalCaps := r.NumberCapture + nbCaptured
 
 	if totalCaps >= 5 {
-		r.IsWin = true
-		r.MessageWin = "Great, win by capture: " + strconv.FormatUint(uint64(totalCaps), 10)
+		r.Win = true
+		r.Info = winByCaptureMessage
 	}
 
 	for _, align := range r.aligns {
-		if align.size >= 5 && !align.capturable {
-			r.IsWin = true
-			r.MessageWin = "Great, win by align: " + strconv.FormatUint(uint64(align.size), 10)
+		if align.size >= 5 {
+			r.ApplyMove(b)
+			ret := align.isCapturable(b, r.player, r.y, r.x)
+			r.RestoreMove(b)
+
+			if ret == false {
+				r.Win = true
+				r.Info = winByAlignmentMessage
+			}
 		}
 	}
 }
 
-// CheckRules : check all rules (captures/doubleThree/win conditions ..), more details on following functions
-func (r *Rules) CheckRules(board *[19][19]uint8, pX, pY int8, player uint8, nbCaps uint8) {
+// getMaskFromBoard : provide one slice of 11 spots. index 5 is a spot of move
+// it's more simplest and fast to applies all rules.
+// example [3 0 1 1 0 2 2 0 0 0 0]
+//            < < < =| |= > > >
+func (r *Rules) getMaskFromBoard(b *[19][19]uint8, dirY, dirX int8, mask *[11]uint8) {
+	(*mask)[5] = r.player
+
+	for i := int8(1); i <= 5; i++ {
+		leftY := uint8(r.y + (dirY * i))
+		leftX := uint8(r.x + (dirX * i))
+		rightY := uint8(r.y + (dirY * -i))
+		rightX := uint8(r.x + (dirX * -i))
+
+		if isOnTheBoard(int8(leftY), int8(leftX)) {
+			(*mask)[5-i] = (*b)[leftY][leftX]
+		} else {
+			(*mask)[5-i] = outOfBoard
+		}
+
+		if isOnTheBoard(int8(rightY), int8(rightX)) {
+			(*mask)[5+i] = (*b)[rightY][rightX]
+		} else {
+			(*mask)[5+i] = outOfBoard
+		}
+	}
+}
+
+// CheckRules : check all rules (captures/doubleThree/win conditions ..)
+// create 4 masks to check all direction
+func (r *Rules) CheckRules(board *[19][19]uint8, nbCaps uint8) {
 	var stop bool
 	var mask [11]uint8
 
@@ -329,18 +379,22 @@ func (r *Rules) CheckRules(board *[19][19]uint8, pX, pY int8, player uint8, nbCa
 		return
 	}
 
-	//Check around posX/posY
-	for yi := int8(-1); yi <= 0; yi++ {
-		for xi := int8(-1); xi <= 1; xi++ {
-			if xi == 0 && yi == 0 {
+	// check around move position. y and x represent one direction
+	for y := int8(-1); y <= 0; y++ {
+		for x := int8(-1); x <= 1; x++ {
+			if x == 0 && y == 0 {
+				// all direction are checked so break
 				stop = true
 				break
 			}
 
-			r.getMaskFromBoard(board, yi, xi, &mask)
+			// create mask to the direction
+			r.getMaskFromBoard(board, y, x, &mask)
 
-			r.analyzeCapture(&mask, yi, xi)
-			r.analyzeAlign(&mask, board, yi, xi)
+			// record the capturable spots
+			r.analyzeCapture(&mask, y, x)
+			// record informations alinment
+			r.analyzeAlign(&mask, board, y, x)
 		}
 
 		if stop == true {
@@ -348,27 +402,12 @@ func (r *Rules) CheckRules(board *[19][19]uint8, pX, pY int8, player uint8, nbCa
 		}
 	}
 
+	// check condition to move
 	if !r.analyzeMoveCondition() {
 		return
 	}
 
-	r.analyzeWinCondition(nbCaps)
+	// check if win exist
+	r.analyzeWinCondition(board, nbCaps)
 	return
-}
-
-// GetCaptures : return the slice of captured points
-func (r *Rules) GetCaptures() []*Capture {
-	return r.caps
-}
-
-// GetMaxAlign return the most alignment
-func (r Rules) GetMaxAlign() uint8 {
-	nbToken := uint8(0)
-
-	for _, align := range r.aligns {
-		if align.size > nbToken {
-			nbToken = align.size
-		}
-	}
-	return nbToken
 }
