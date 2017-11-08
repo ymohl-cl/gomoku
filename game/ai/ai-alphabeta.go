@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"fmt"
 	"math"
 	"time"
 
@@ -387,6 +388,9 @@ func (a *AI) alphabeta_pvs(s *State, b *[19][19]uint8, alpha, beta int8, stape u
 					node.weight = -a.alphabeta_pvs(&node.nextState, b, -beta, -alpha, stape-1, &node.rule, base)
 					first = false
 				} else {
+					if (-alpha < 0 && -alpha-1 > 0) || (-alpha > 0 && -alpha-1 < 0) {
+						fmt.Println("-alpha: ", -alpha, " -alpha-1: ", -alpha-1)
+					}
 					node.weight = -a.alphabeta_pvs(&node.nextState, b, -alpha-1, -alpha, stape-1, &node.rule, base)
 					if alpha < node.weight && node.weight < beta {
 						node.weight = -a.alphabeta_pvs(&node.nextState, b, -beta, -node.weight, stape-1, &node.rule, base)

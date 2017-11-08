@@ -3,8 +3,8 @@ package ruler
 // outOfBoard is used on mask of raw (see CheckRules)
 const (
 	empty      = 0
-	Player1    = 1
-	Player2    = 2
+	Player1    = uint8(1)
+	Player2    = uint8(2)
 	outOfBoard = 3
 
 	sizeY = 19
@@ -61,7 +61,7 @@ type Rules struct {
 }
 
 // getOtherPlayer provide the value of player's opponent provided on parameter
-func getOtherPlayer(p uint8) uint8 {
+func GetOtherPlayer(p uint8) uint8 {
 	if p == Player1 {
 		return Player2
 	}
@@ -86,7 +86,7 @@ func isEmpty(b *[19][19]uint8, y, x int8) bool {
 
 // positionIsCapturable : Check if spot defined by posY and posX is capturable
 func positionIsCapturable(b *[19][19]uint8, posY, posX int8, player uint8) bool {
-	opponent := getOtherPlayer(player)
+	opponent := GetOtherPlayer(player)
 
 	for dirY := int8(-1); dirY <= 1; dirY++ {
 		for dirX := int8(-1); dirX <= 1; dirX++ {
@@ -169,7 +169,7 @@ func (r *Rules) ApplyMove(b *[19][19]uint8) {
 
 // RestoreMove delete on the board the sport of move and restore deleted captured spot
 func (r *Rules) RestoreMove(b *[19][19]uint8) {
-	opponent := getOtherPlayer(r.player)
+	opponent := GetOtherPlayer(r.player)
 
 	(*b)[r.y][r.x] = empty
 	for _, capture := range r.captures {
@@ -180,6 +180,15 @@ func (r *Rules) RestoreMove(b *[19][19]uint8) {
 // GetCaptures : return the slice of captured points
 func (r *Rules) GetCaptures() []*Spot {
 	return r.captures
+}
+
+// GetPlayer provide index of player
+func (r Rules) GetPlayer() uint8 {
+	return r.player
+}
+
+func (r Rules) GetPosition() (int8, int8) {
+	return r.y, r.x
 }
 
 // GetMaxAlign return the most alignment
@@ -235,7 +244,7 @@ func (r *Rules) isAvailablePosition(b *[19][19]uint8) bool {
 
 // analyzeCapture : Check and records captured spot
 func (r *Rules) analyzeCapture(mask *[11]uint8, dirY, dirX int8) {
-	cible := getOtherPlayer(r.player)
+	cible := GetOtherPlayer(r.player)
 
 	if (*mask)[4] == cible && (*mask)[3] == cible && (*mask)[2] == r.player {
 		r.NumberCapture++
