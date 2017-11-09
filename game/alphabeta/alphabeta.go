@@ -1,6 +1,7 @@
 package alphabeta
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/ymohl-cl/gomoku/database"
@@ -21,6 +22,7 @@ type State struct {
 	infoP1        InfoPlayer
 	infoP2        InfoPlayer
 	save          *Node
+	lst           *Node
 }
 
 type Node struct {
@@ -34,8 +36,8 @@ func New(b *[19][19]uint8, player uint8) *State {
 	return &State{board: b, currentPlayer: player}
 }
 
-func (s *State) getTotalCapture() uint8 {
-	if s.currentPlayer == ruler.Player1 {
+func (s *State) getTotalCapture(player uint8) uint8 {
+	if player == ruler.Player1 {
 		return s.infoP1.totalCapture
 	}
 	return s.infoP2.totalCapture
@@ -60,7 +62,7 @@ func (s *State) subTotalCapture(player uint8, number uint8) {
 func (s *State) newNode(y, x int8) *Node {
 	n := new(Node)
 	n.rule.Init(s.currentPlayer, y, x)
-	n.rule.CheckRules(s.board, s.getTotalCapture())
+	n.rule.CheckRules(s.board, s.getTotalCapture(s.currentPlayer))
 	if !n.rule.Movable {
 		n = nil
 	}
@@ -73,9 +75,6 @@ func (s *State) updateData(n *Node, prev *Node) {
 	s.addTotalCapture(n.rule.GetPlayer(), n.rule.NumberCapture)
 	s.currentPlayer = ruler.GetOtherPlayer(n.rule.GetPlayer())
 
-	if prev != nil {
-		prev.next = n
-	}
 	n.prev = prev
 }
 
@@ -85,15 +84,21 @@ func (s *State) restoreData(n *Node, prev *Node) {
 	s.subTotalCapture(n.rule.GetPlayer(), n.rule.NumberCapture)
 	s.currentPlayer = ruler.GetOtherPlayer(n.rule.GetPlayer())
 
-	if prev != nil {
-		prev.next = nil
-	}
 	n.prev = nil
+}
+
+func (s *State) addNode(n *Node) {
+	if s.lst == nil {
+		s.lst = n
+		return
+	}
+	n.next = s.lst
+	s.lst = n
 }
 
 func (s *State) alphabetaNegaScout(alpha, beta int8, depth uint8, n *Node) int8 {
 	if (n != nil && n.rule.Win) || depth == 0 {
-		return eval(n, depth)
+		return s.eval(n, depth)
 	}
 
 	first := true
@@ -119,8 +124,14 @@ func (s *State) alphabetaNegaScout(alpha, beta int8, depth uint8, n *Node) int8 
 			// restore move and restore data
 			s.restoreData(node, n)
 
-			if alpha < node.weight {
-				s.save = node
+			if alpha <= node.weight {
+				if depth == maxDepth {
+					s.addNode(node)
+					s.save = node
+				}
+				alpha = node.weight
+			} else if depth == maxDepth {
+				fmt.Println("node.weight not save: ", node.weight)
 			}
 
 			if alpha >= beta {
@@ -131,12 +142,18 @@ func (s *State) alphabetaNegaScout(alpha, beta int8, depth uint8, n *Node) int8 
 	return alpha
 }
 
+// Play start the alphabeta algorythm
 func Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 	state := New(b, ruler.Player2)
 	state.addTotalCapture(ruler.Player1, uint8(s.NbCaptureP1))
 	state.addTotalCapture(ruler.Player2, uint8(s.NbCaptureP2))
 
-	state.alphabetaNegaScout(math.MinInt8+1, math.MaxInt8, maxDepth, nil)
+	ret := state.alphabetaNegaScout(math.MinInt8+1, math.MaxInt8, maxDepth, nil)
+	fmt.Println("ret: ", ret, " - weight of saved node: ", state.save.weight)
+	for n := state.lst; n != nil; n = n.next {
+		y, x := n.rule.GetPosition()
+		fmt.Println("Node weight: ", n.weight, " y et x: ", y, " - ", x)
+	}
 
 	y, x := state.save.rule.GetPosition()
 	c <- uint8(y)

@@ -60,7 +60,7 @@ type Rules struct {
 	Win           bool
 }
 
-// getOtherPlayer provide the value of player's opponent provided on parameter
+// GetOtherPlayer provide the value of player's opponent provided on parameter
 func GetOtherPlayer(p uint8) uint8 {
 	if p == Player1 {
 		return Player2

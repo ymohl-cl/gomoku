@@ -48,39 +48,39 @@ func prepareAnalyzeAlign(b *[19][19]uint8, r *Rules) *Rules {
 func TestIsOnTheBoard(t *testing.T) {
 	var y, x int8
 
-	// test top left of the board
+	// test: 0 > top left of the board
 	y = 0
 	x = 0
 	if !isOnTheBoard(y, x) {
-		t.Error(t.Name() + " failed with y and x: " + string(y) + " - " + string(x))
+		t.Error(t.Name() + " > test: 0")
 	}
 
-	// test top right of the board
+	// test: 1 > top right of the board
 	y = 0
 	x = 18
 	if !isOnTheBoard(y, x) {
-		t.Error(t.Name() + " failed with y and x: " + string(y) + " - " + string(x))
+		t.Error(t.Name() + " > test: 1")
 	}
 
-	// test bot right of the board
+	// test: 2 > bot right of the board
 	y = 18
 	x = 18
 	if !isOnTheBoard(y, x) {
-		t.Error(t.Name() + " failed with y and x: " + string(y) + " - " + string(x))
+		t.Error(t.Name() + " > test: 2")
 	}
 
-	// test bot left of the board
+	// test: 3 > bot left of the board
 	y = 18
 	x = 0
 	if !isOnTheBoard(y, x) {
-		t.Error(t.Name() + " failed with y and x: " + string(y) + " - " + string(x))
+		t.Error(t.Name() + " > test: 3")
 	}
 
-	// test out of board
+	// test: 4 > out of board
 	y = 19
 	x = 0
 	if isOnTheBoard(y, x) {
-		t.Error(t.Name() + " failed with y and x: " + string(y) + " - " + string(x))
+		t.Error(t.Name() + " > test: 4")
 	}
 }
 
@@ -88,41 +88,42 @@ func TestIsAvailablePosition(t *testing.T) {
 	var b *[19][19]uint8
 	var r *Rules
 
-	b = boards.GetEmptyBoard()
+	b = boards.GetEmpty()
 	r = New(Player2, 9, 8)
+	// test: 0 > already used 1/2
 	if r.isAvailablePosition(b) {
-		t.Error(t.Name() + " failed with y and x: " + string(r.y) + " - " + string(r.x))
+		t.Error(t.Name() + " > test: 0")
 	}
 
-	b = boards.GetSimpleBoardP2()
+	b = boards.GetSimpleP2()
 	r = New(Player1, 9, 6)
+	// test: 1 > allowed position
 	if !r.isAvailablePosition(b) {
-		t.Error(t.Name() + " failed with y and x: " + string(r.y) + " - " + string(r.x))
+		t.Error(t.Name() + " > test: 1")
 	}
 
 	r = New(Player1, 9, 5)
+	// test: 2 > no neighbour 1/2
 	if r.isAvailablePosition(b) {
-		t.Error(t.Name() + " failed with y and x: " + string(r.y) + " - " + string(r.x))
+		t.Error(t.Name() + " > test: 2")
 	}
 
 	r = New(Player1, 9, 0)
+	// test: 3 > neighbour 2/2
 	if r.isAvailablePosition(b) {
-		t.Error(t.Name() + " failed with y and x: " + string(r.y) + " - " + string(r.x))
+		t.Error(t.Name() + " > test: 3")
 	}
 
 	r = New(Player1, 9, 9)
+	// test: 4 > already used 2/2
 	if r.isAvailablePosition(b) {
-		t.Error(t.Name() + " failed with y and x: " + string(r.y) + " - " + string(r.x))
-	}
-
-	r = New(Player1, 9, 9)
-	if r.isAvailablePosition(b) {
-		t.Error(t.Name() + " failed with y and x: " + string(r.y) + " - " + string(r.x))
+		t.Error(t.Name() + " > test: 4")
 	}
 
 	r = New(Player1, -1, 6)
+	// test: 5 > out of board
 	if r.isAvailablePosition(b) {
-		t.Error(t.Name() + " failed with y and x: " + string(r.y) + " - " + string(r.x))
+		t.Error(t.Name() + " > test: 5")
 	}
 }
 
@@ -130,7 +131,7 @@ func ExampleRules_ApplyMove() {
 	var b *[19][19]uint8
 	var r *Rules
 
-	b = boards.GetCaptureBoardP1_1()
+	b = boards.GetCaptureP1_1()
 	r = New(Player2, 0, 18)
 	r = prepareAnalyzeCapture(b, r)
 
@@ -146,12 +147,12 @@ func ExampleRules_ApplyMove() {
 	// [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 1 0]
 }
 
-func ExampleRules_getMaskFromBoard() {
+func ExampleRules_getMaskFrom() {
 	var b *[19][19]uint8
 	var r *Rules
 	var mask [11]uint8
 
-	b = boards.GetSimpleBoardP2()
+	b = boards.GetSimpleP2()
 
 	// simple test_part1
 	r = New(Player1, 9, 6)
@@ -182,7 +183,7 @@ func ExampleRules_getMaskFromBoard() {
 	fmt.Println(mask)
 
 	// test out of board
-	b = boards.GetBoardFilledRightP2()
+	b = boards.GetFilledRightP2()
 	r = New(Player1, 10, 18)
 	r.getMaskFromBoard(b, -1, -1, &mask)
 	fmt.Println(mask)
@@ -215,12 +216,12 @@ func ExampleRules_analyzeCapture() {
 	var b *[19][19]uint8
 	var r *Rules
 
-	b = boards.GetCaptureBoardP1_1()
+	b = boards.GetCaptureP1_1()
 	r = New(Player2, 0, 18)
 	r = prepareAnalyzeCapture(b, r)
 	r.printCaptures()
 
-	b = boards.GetCaptureBoardP2_1()
+	b = boards.GetCaptureP2_1()
 	r = New(Player1, 7, 9)
 	r = prepareAnalyzeCapture(b, r)
 	r.printCaptures()
@@ -250,12 +251,12 @@ func ExampleRules_analyzeAlign_noAlign() {
 	var b *[19][19]uint8
 	var r *Rules
 
-	b = boards.GetBoardNoAlignP2_1()
+	b = boards.GetNoAlignP2_1()
 	r = New(Player1, 2, 0)
 	r = prepareAnalyzeAlign(b, r)
 	r.printAlignments()
 
-	b = boards.GetBoardNoAlignP2_2()
+	b = boards.GetNoAlignP2_2()
 	r = New(Player1, 9, 10)
 	r = prepareAnalyzeAlign(b, r)
 	r.printAlignments()
@@ -269,17 +270,17 @@ func ExampleRules_analyzeAlign_moreAlign() {
 	var b *[19][19]uint8
 	var r *Rules
 
-	b = boards.GetBoardAlignFlankedP2()
+	b = boards.GetAlignFlankedP2()
 	r = New(Player1, 9, 11)
 	r = prepareAnalyzeAlign(b, r)
 	r.printAlignments()
 
-	b = boards.GetBoardAlignFreeP2()
+	b = boards.GetAlignFreeP2()
 	r = New(Player1, 10, 10)
 	r = prepareAnalyzeAlign(b, r)
 	r.printAlignments()
 
-	b = boards.GetBoardAlignHalfP2()
+	b = boards.GetAlignHalfP2()
 	r = New(Player1, 7, 7)
 	r = prepareAnalyzeAlign(b, r)
 	r.printAlignments()
@@ -297,19 +298,19 @@ func ExampleRules_analyzeAlign_tree() {
 	var b *[19][19]uint8
 	var r *Rules
 
-	b = boards.GetTreeBoardP1()
+	b = boards.GetTreeP1()
 	r = New(Player2, 7, 7)
 	r = prepareAnalyzeAlign(b, r)
 	r.printAlignments()
 	r.printThrees()
 
-	b = boards.GetTreeBoardP1()
+	b = boards.GetTreeP1()
 	r = New(Player2, 7, 13)
 	r = prepareAnalyzeAlign(b, r)
 	r.printAlignments()
 	r.printThrees()
 
-	b = boards.GetTreeBoardP1()
+	b = boards.GetTreeP1()
 	r = New(Player2, 8, 9)
 	r = prepareAnalyzeAlign(b, r)
 	r.printAlignments()
@@ -333,7 +334,7 @@ func ExampleRules_analyzeAlign_doubleTree() {
 	var b *[19][19]uint8
 	var r *Rules
 
-	b = boards.GetTreeBoardP1()
+	b = boards.GetTreeP1()
 	r = New(Player2, 10, 10)
 	r = prepareAnalyzeAlign(b, r)
 	r.printThrees()
@@ -349,7 +350,7 @@ func ExampleRules_analyzeAlign_winNoCapturable() {
 	var b *[19][19]uint8
 	var r *Rules
 
-	b = boards.GetWinNoCapturableBoardP2()
+	b = boards.GetWinNoCapturableP2()
 	r = New(Player1, 9, 11)
 	r = prepareAnalyzeAlign(b, r)
 	r.analyzeWinCondition(b, 0)
@@ -366,7 +367,7 @@ func ExampleRules_analyzeAlign_winCapturable() {
 	var b *[19][19]uint8
 	var r *Rules
 
-	b = boards.GetWinCapturableBoardP2()
+	b = boards.GetWinCapturableP2()
 	r = New(Player1, 9, 11)
 	r = prepareAnalyzeAlign(b, r)
 	r.analyzeWinCondition(b, 0)
@@ -383,7 +384,7 @@ func TestCheckRules(t *testing.T) {
 	var r *Rules
 
 	// test: 0 > simple invalid move
-	b = boards.GetSimpleBoardP2()
+	b = boards.GetSimpleP2()
 	r = New(Player1, 3, 3)
 	r.CheckRules(b, 3)
 	if r.Movable == true {
@@ -391,7 +392,7 @@ func TestCheckRules(t *testing.T) {
 	}
 
 	// test: 1 > invalid move by double three action
-	b = boards.GetTreeBoardP1()
+	b = boards.GetTreeP1()
 	r = New(Player2, 10, 10)
 	r.CheckRules(b, 3)
 	if r.Movable == true {
@@ -399,7 +400,7 @@ func TestCheckRules(t *testing.T) {
 	}
 
 	// test: 2 > win by capture
-	b = boards.GetCaptureBoardP1_1()
+	b = boards.GetCaptureP1_1()
 	r = New(Player2, 0, 18)
 	r.CheckRules(b, 4)
 	if r.Win == false {
@@ -407,7 +408,7 @@ func TestCheckRules(t *testing.T) {
 	}
 
 	// test: 3 > align five token but align is capturable
-	b = boards.GetWinCapturableBoardP2()
+	b = boards.GetWinCapturableP2()
 	r = New(Player1, 9, 11)
 	r.CheckRules(b, 3)
 	if r.Win == true {
@@ -415,7 +416,7 @@ func TestCheckRules(t *testing.T) {
 	}
 
 	// test: 4 > win by align five token
-	b = boards.GetWinNoCapturableBoardP2()
+	b = boards.GetWinNoCapturableP2()
 	r = New(Player1, 9, 11)
 	r.CheckRules(b, 3)
 	if r.Win == false {

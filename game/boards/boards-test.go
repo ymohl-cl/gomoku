@@ -6,18 +6,18 @@ package boards
 	 x == p1 && o == p2 && . == token empty
 */
 
-// GetEmptyBoard : _
-func GetEmptyBoard() *[19][19]uint8 {
+// GetEmpty : _
+func GetEmpty() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	return &b
 }
 
-// GetSimpleBoardP2 : _
+// GetSimpleP2 : _
 // . . . . o
 // . x x o .
 // . . o . .
-func GetSimpleBoardP2() *[19][19]uint8 {
+func GetSimpleP2() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board
@@ -31,11 +31,11 @@ func GetSimpleBoardP2() *[19][19]uint8 {
 	return &b
 }
 
-// GetBoardFilledRightP2 : _
+// GetFilledRightP2 : _
 // . . . . o . . . . . . o x
 // . x x o . x o x o x o x o
 // . . o . . . . . . . o x .
-func GetBoardFilledRightP2() *[19][19]uint8 {
+func GetFilledRightP2() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board
@@ -61,9 +61,9 @@ func GetBoardFilledRightP2() *[19][19]uint8 {
 	return &b
 }
 
-// GetCaptureBoardP1_1 : _
+// GetCaptureP1_1 : _
 // . o x x .
-func GetCaptureBoardP1_1() *[19][19]uint8 {
+func GetCaptureP1_1() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board
@@ -75,7 +75,7 @@ func GetCaptureBoardP1_1() *[19][19]uint8 {
 	return &b
 }
 
-// GetCaptureBoardP2_1 : _
+// GetCaptureP2_1 : _
 // . . x . . x . . x .
 // . . . o x o x o . .
 // . . . x o o o x . .
@@ -84,7 +84,7 @@ func GetCaptureBoardP1_1() *[19][19]uint8 {
 // . . . o . o x o x .
 // . . x . . x . . x .
 // . . . . . . . . . o
-func GetCaptureBoardP2_1() *[19][19]uint8 {
+func GetCaptureP2_1() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board
@@ -127,9 +127,9 @@ func GetCaptureBoardP2_1() *[19][19]uint8 {
 	return &b
 }
 
-// GetBoardNoAlignP2_1 : _
+// GetNoAlignP2_1 : _
 // . . . o x o . . .
-func GetBoardNoAlignP2_1() *[19][19]uint8 {
+func GetNoAlignP2_1() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board
@@ -141,7 +141,7 @@ func GetBoardNoAlignP2_1() *[19][19]uint8 {
 	return &b
 }
 
-// GetBoardNoAlignP2_2 : _
+// GetNoAlignP2_2 : _
 // . . x . . . . . . .
 // . x . . . . . . . .
 // . . . x . . . . . .
@@ -152,7 +152,7 @@ func GetBoardNoAlignP2_1() *[19][19]uint8 {
 // . . . . . . . o . .
 // . . . . . . . . x .
 // . . . . . . . . . o
-func GetBoardNoAlignP2_2() *[19][19]uint8 {
+func GetNoAlignP2_2() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board
@@ -172,11 +172,11 @@ func GetBoardNoAlignP2_2() *[19][19]uint8 {
 	return &b
 }
 
-// GetBoardAlignFlankedP2 : _
+// GetAlignFlankedP2 : _
 // . . . . . x .
 // o x x . x . o
 // . . . o . o .
-func GetBoardAlignFlankedP2() *[19][19]uint8 {
+func GetAlignFlankedP2() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board
@@ -193,11 +193,11 @@ func GetBoardAlignFlankedP2() *[19][19]uint8 {
 	return &b
 }
 
-// GetBoardAlignFreeP2 : _
+// GetAlignFreeP2 : _
 // . x . .
 // . o x .
 // . o . .
-func GetBoardAlignFreeP2() *[19][19]uint8 {
+func GetAlignFreeP2() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board
@@ -210,13 +210,13 @@ func GetBoardAlignFreeP2() *[19][19]uint8 {
 	return &b
 }
 
-// GetBoardAlignHalfP2 : _
+// GetAlignHalfP2 : _
 // . . . . .
 // . x . . .
 // . o x . .
 // . o . x .
 // . . . . o
-func GetBoardAlignHalfP2() *[19][19]uint8 {
+func GetAlignHalfP2() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board
@@ -231,13 +231,13 @@ func GetBoardAlignHalfP2() *[19][19]uint8 {
 	return &b
 }
 
-// GetTreeBoardP1 : _
+// GetTreeP1 : _
 // . . . . . . . . .
 // . x . . . . . . .
 // . . o o . . x o .
 // . . . x o x o x .
 // . . . . . . . . .
-func GetTreeBoardP1() *[19][19]uint8 {
+func GetTreeP1() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board
@@ -256,12 +256,12 @@ func GetTreeBoardP1() *[19][19]uint8 {
 	return &b
 }
 
-// GetWinCapturableBoardP2 : _
+// GetWinCapturableP2 : _
 // . . . . . . .
 // . . . . . x .
 // o x x . x x o
 // . . . o o o .
-func GetWinCapturableBoardP2() *[19][19]uint8 {
+func GetWinCapturableP2() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board
@@ -280,11 +280,11 @@ func GetWinCapturableBoardP2() *[19][19]uint8 {
 	return &b
 }
 
-// GetWinNoCapturableBoardP2 : _
+// GetWinNoCapturableP2 : _
 // . . . . . . .
 // o x x . x x o
 // . . . o . o .
-func GetWinNoCapturableBoardP2() *[19][19]uint8 {
+func GetWinNoCapturableP2() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board
@@ -298,5 +298,19 @@ func GetWinNoCapturableBoardP2() *[19][19]uint8 {
 	b[10][11] = 2
 	b[10][13] = 2
 	b[9][14] = 2
+	return &b
+}
+
+// GetStartP1 : _
+// . . . x o . . .
+func GetStartP1() *[19][19]uint8 {
+	var b [19][19]uint8
+
+	// set P1 on the board
+	b[9][8] = 1
+
+	// set P2 on the board
+	b[9][9] = 2
+
 	return &b
 }
