@@ -378,7 +378,7 @@ func (a *AI) alphabeta_pvs(s *State, b *[19][19]uint8, alpha, beta int8, stape u
 			if node.rule.Movable {
 				a.applyMove(b, &node.rule, s.player, x, y)
 				if found == false {
-					nbToken := node.rule.GetMaxAlign()
+					nbToken := node.rule.GetSizeMaxAlignment()
 					node.nextState.Set(s.nbCapsCurrent+int8(node.rule.NumberCapture), s.nbCapsOther, s.nbTCurrent+int8(node.rule.NumberThree), s.nbTOther, int8(nbToken), s.nbAlignOther, s.switchPlayer())
 				} else {
 					node.nextState.nbTCurrent = s.nbTOther

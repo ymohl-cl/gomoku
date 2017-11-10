@@ -10,9 +10,9 @@ const (
 	sizeY = 19
 	sizeX = 19
 
-	alignFree    = 1 << 0
-	alignHalf    = 1 << 1
-	alignFlanked = 2 << 2
+	AlignFree    = 1 << 0
+	AlignHalf    = 1 << 1
+	AlignFlanked = 2 << 2
 
 	noNeighbourMessage     = "this spot don't have a neighbour token"
 	outOfBoardMessage      = "this spot is out of board"
@@ -50,7 +50,7 @@ type Rules struct {
 	y        int8
 	x        int8
 	captures []*Spot
-	aligns   []Align
+	aligns   []*Align
 
 	/* Public attribute */
 	Info          string
@@ -143,6 +143,19 @@ func (a *Align) isCapturable(b *[19][19]uint8, player uint8, posY, posX int8) bo
 	return false
 }
 
+// GetSize : _
+func (a *Align) GetSize() int8 {
+	return int8(a.size)
+}
+
+// IsStyle : _
+func (a *Align) IsStyle(style uint8) bool {
+	if a.style&style != 0 {
+		return true
+	}
+	return false
+}
+
 // New return a new instance with one player and one position (y, x)
 func New(p uint8, y, x int8) *Rules {
 	return &Rules{
@@ -187,12 +200,13 @@ func (r Rules) GetPlayer() uint8 {
 	return r.player
 }
 
+// GetPosition : _
 func (r Rules) GetPosition() (int8, int8) {
 	return r.y, r.x
 }
 
-// GetMaxAlign return the most alignment
-func (r Rules) GetMaxAlign() uint8 {
+// GetSizeMaxAlignment return size of the most alignment
+func (r Rules) GetSizeMaxAlignment() uint8 {
 	nbToken := uint8(0)
 
 	for _, align := range r.aligns {
@@ -201,6 +215,28 @@ func (r Rules) GetMaxAlign() uint8 {
 		}
 	}
 	return nbToken
+}
+
+// GetMaxAlignment return the most alignment
+func (r Rules) GetMaxAlignment() *Align {
+	var save *Align
+	nbToken := uint8(0)
+
+	for _, align := range r.aligns {
+		//		fmt.Println("align: ", align.size)
+		if align.size > nbToken {
+			//			fmt.Println("save")
+			save = align
+			nbToken = align.size
+		}
+	}
+	//	fmt.Println("Return: ", save.size)
+	return save
+}
+
+// GetNumberAlignment return the number of alignement
+func (r Rules) GetNumberAlignment() int8 {
+	return int8(len(r.aligns))
 }
 
 // addCapture : _
@@ -247,12 +283,20 @@ func (r *Rules) analyzeCapture(mask *[11]uint8, dirY, dirX int8) {
 	cible := GetOtherPlayer(r.player)
 
 	if (*mask)[4] == cible && (*mask)[3] == cible && (*mask)[2] == r.player {
+		// simulate capture to the check alignment
+		(*mask)[4] = empty
+		(*mask)[3] = empty
+
 		r.NumberCapture++
 		r.addCapture(r.y+dirY, r.x+dirX)
 		r.addCapture(r.y+(dirY*2), r.x+(dirX*2))
 	}
 
 	if (*mask)[6] == cible && (*mask)[7] == cible && (*mask)[8] == r.player {
+		// simulate capture to the check alignment
+		(*mask)[6] = empty
+		(*mask)[7] = empty
+
 		r.NumberCapture++
 		r.addCapture(r.y+(dirY*-1), r.x+(dirX*-1))
 		r.addCapture(r.y+(dirY*-2), r.x+(dirX*-2))
@@ -261,11 +305,14 @@ func (r *Rules) analyzeCapture(mask *[11]uint8, dirY, dirX int8) {
 
 // analyzeAlign : Check alignment type and records when there are enought available spot
 func (r *Rules) analyzeAlign(mask *[11]uint8, b *[19][19]uint8, dirY, dirX int8) {
-	a := Align{size: 1}
+	a := &Align{size: 1}
 	availablePosition := 1
 	var lastIndex int
 	var left, right bool
 
+	//	if dirX == 0 && dirY == -1 {
+	//		fmt.Println("mask: ", (*mask))
+	//	}
 	for i := 4; i >= 0; i-- {
 		lastIndex = i
 		if (*mask)[i] == r.player {
@@ -298,22 +345,27 @@ func (r *Rules) analyzeAlign(mask *[11]uint8, b *[19][19]uint8, dirY, dirX int8)
 		right = true
 	}
 
+	//	fmt.Print("availablePosition: ", availablePosition, " - a.size: ", a.size, " - : ")
 	if availablePosition < 5 || a.size == 1 {
+		//		fmt.Println("not add")
 		return
-	} else if availablePosition == 5 {
-		a.style |= alignFlanked
+	}
+
+	if availablePosition == 5 {
+		a.style |= AlignFlanked
 	} else if left == true && right == true {
-		a.style |= alignFree
+		a.style |= AlignFree
 		if a.size == 3 {
 			r.NumberThree++
 		}
 	} else {
-		a.style |= alignHalf
+		a.style |= AlignHalf
 	}
 
 	if a.size == 5 {
 		a.newInfoWin(mask, dirY, dirX)
 	}
+	//	fmt.Println("add")
 	r.aligns = append(r.aligns, a)
 }
 

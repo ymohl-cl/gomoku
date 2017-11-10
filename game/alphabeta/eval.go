@@ -3,12 +3,26 @@ package alphabeta
 import "github.com/ymohl-cl/gomoku/game/ruler"
 
 const (
-	// maxScoreCapture is return when scoreLimitCapture is found. it's a buff of situation
-	maxScoreCapture = 25
+	// scoreFirst is a bonus to the first player which play to differ the equal score
+	scoreFirst = 1
+	// maxScore is return when a win situation is detectable. it's a buff of situation
+	scoreMax = 25
+
+	/* Score Captures */
 	// score for each captures
 	scoreByCapture = 5
 	// scoreLimitCapture is set when the player make the first capture of eval and has 4 captures
 	scoreLimitCapture = 21
+
+	/* Score Alignments */
+	// scoreHalf is the weight by spot on half-free alignment
+	scoreHalf = 6
+	// scoreFlanked is the weight by spot on flanked alignment
+	scoreFlanked = 4
+	// scoreFree is the weight by spot on free alignment
+	scoreFree = 5
+	// scoreAlign is a bonus to the additional alignments
+	scoreByAlign = 1
 )
 
 func maxWeight(v1, v2 int8) int8 {
@@ -18,9 +32,63 @@ func maxWeight(v1, v2 int8) int8 {
 	return v2
 }
 
+func (s *State) scoreAlignment(n *Node) int8 {
+	var coef int8
+	var size int8
+	var number int8
+	var a *ruler.Align
+
+	number = n.rule.GetNumberAlignment()
+	if number == 0 {
+		return 0
+	}
+
+	a = n.rule.GetMaxAlignment()
+	size = a.GetSize()
+	//	fmt.Println("size: ", size)
+
+	if size == 4 {
+		return scoreMax
+	} else if size == 3 && a.IsStyle(ruler.AlignFree) {
+		return scoreMax - 1
+	}
+
+	if a.IsStyle(ruler.AlignHalf) {
+		coef = scoreHalf
+	} else if a.IsStyle(ruler.AlignFree) {
+		coef = scoreFree
+	} else {
+		coef = scoreFlanked
+	}
+	//	fmt.Println("coef: ", coef)
+	//	fmt.Println("number align: ", number)
+
+	ret := size * coef
+	ret += (number - 1) * scoreByAlign
+	//	fmt.Println("ret: ", ret)
+	return ret
+}
+
 // evalAlignment return score to alignment parameter on this evaluation
 func (s *State) evalAlignment(n *Node) int8 {
-	return 0
+	var scoreCurrent int8
+	var scoreOpponent int8
+
+	//	fmt.Println("testCurrent")
+	scoreCurrent = s.scoreAlignment(n)
+	if scoreCurrent >= (scoreMax - 1) {
+		return scoreCurrent
+	}
+
+	//	fmt.Println("testOpponent")
+	if n.prev != nil {
+		scoreOpponent = s.scoreAlignment(n.prev)
+		if scoreOpponent >= (scoreMax - 1) {
+			return -scoreOpponent
+		}
+	}
+
+	return scoreCurrent - scoreOpponent
 }
 
 // evalCapture return the score to the captures parameter on this evaluation
@@ -43,27 +111,63 @@ func (s *State) evalCapture(n *Node, current, opponent uint8) int8 {
 	}
 
 	if first == current {
-		scoreCurrent++
+		scoreCurrent += scoreFirst
 	} else if first == opponent {
-		scoreOpponent++
+		scoreOpponent += scoreFirst
 	}
 
 	if flagCurrent == true {
 		scoreCurrent += int8(s.getTotalCapture(current)) * scoreByCapture
 
 		if scoreCurrent == scoreLimitCapture {
-			return maxScoreCapture
+			return scoreMax
 		}
 	}
 	if flagOpponent == true {
 		scoreOpponent += int8(s.getTotalCapture(opponent)) * scoreByCapture
 
 		if scoreOpponent == scoreLimitCapture {
-			return -maxScoreCapture
+			return -scoreMax
 		}
 	}
 
 	return scoreCurrent - scoreOpponent
+}
+
+// analyzeScoreCapture return true if win condition detected and adapt the score
+func (s *State) analyzeScoreCapture(score *int8, depth uint8) bool {
+	if *score == scoreMax {
+		*score = 127 - (int8(maxDepth-depth) + 2)
+		return true
+	}
+
+	if *score == -scoreMax {
+		*score = -127 + (int8(maxDepth-depth) + 2)
+		return true
+	}
+
+	return false
+}
+
+// analyzeScoreAlignment return true if win condition is detected and adapt the score
+func (s *State) analyzeScoreAlignment(score *int8, depth uint8) bool {
+	if *score == scoreMax {
+		*score = 127 - (int8(maxDepth-depth) + 2)
+		return true
+	} else if *score == scoreMax-1 {
+		*score = 127 - (int8(maxDepth-depth) + 4)
+		return true
+	}
+
+	if *score == -scoreMax {
+		*score = -127 + (int8(maxDepth-depth) + 2)
+		return true
+	} else if *score == -(scoreMax - 1) {
+		*score = -127 + (int8(maxDepth-depth) + 4)
+		return true
+	}
+
+	return false
 }
 
 // eval function define the weight to the last node
@@ -73,6 +177,7 @@ func (s *State) evalCapture(n *Node, current, opponent uint8) int8 {
 // ret += (totalScoreCurrent - totalScoreOpponent). Certify positive score
 // between 100 and 0 value
 func (s *State) eval(n *Node, depth uint8) int8 {
+	var score int8
 	var ret int8
 
 	current := n.rule.GetPlayer()
@@ -86,8 +191,17 @@ func (s *State) eval(n *Node, depth uint8) int8 {
 	// init score
 	ret = 50
 
-	ret += s.evalCapture(n, current, opponent)
-	ret += s.evalAlignment(n)
+	score = s.evalCapture(n, current, opponent)
+	if s.analyzeScoreCapture(&score, depth) {
+		return score
+	}
+	ret += score
+
+	score = s.evalAlignment(n)
+	if s.analyzeScoreAlignment(&score, depth) {
+		return score
+	}
+	ret += score
 
 	if current == ruler.Player1 {
 		return -ret

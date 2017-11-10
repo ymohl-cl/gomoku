@@ -219,12 +219,12 @@ func ExampleRules_analyzeCapture() {
 	b = boards.GetCaptureP1_1()
 	r = New(Player2, 0, 18)
 	r = prepareAnalyzeCapture(b, r)
-	r.printCaptures()
+	r.PrintCaptures()
 
 	b = boards.GetCaptureP2_1()
 	r = New(Player1, 7, 9)
 	r = prepareAnalyzeCapture(b, r)
-	r.printCaptures()
+	r.PrintCaptures()
 
 	// Unordered output:
 	// (y - x):  9  -  9
@@ -254,12 +254,12 @@ func ExampleRules_analyzeAlign_noAlign() {
 	b = boards.GetNoAlignP2_1()
 	r = New(Player1, 2, 0)
 	r = prepareAnalyzeAlign(b, r)
-	r.printAlignments()
+	r.PrintAlignments()
 
 	b = boards.GetNoAlignP2_2()
 	r = New(Player1, 9, 10)
 	r = prepareAnalyzeAlign(b, r)
-	r.printAlignments()
+	r.PrintAlignments()
 
 	// Output:
 	// nb alignment  0
@@ -273,17 +273,22 @@ func ExampleRules_analyzeAlign_moreAlign() {
 	b = boards.GetAlignFlankedP2()
 	r = New(Player1, 9, 11)
 	r = prepareAnalyzeAlign(b, r)
-	r.printAlignments()
+	r.PrintAlignments()
 
 	b = boards.GetAlignFreeP2()
 	r = New(Player1, 10, 10)
 	r = prepareAnalyzeAlign(b, r)
-	r.printAlignments()
+	r.PrintAlignments()
 
 	b = boards.GetAlignHalfP2()
 	r = New(Player1, 7, 7)
 	r = prepareAnalyzeAlign(b, r)
-	r.printAlignments()
+	r.PrintAlignments()
+
+	b = boards.GetDoubleAlignmentP2()
+	r = New(Player1, 7, 10)
+	r = prepareAnalyzeAlign(b, r)
+	r.PrintAlignments()
 
 	// Output:
 	// nb alignment  1
@@ -292,6 +297,9 @@ func ExampleRules_analyzeAlign_moreAlign() {
 	// [size: 3, style: free]
 	// nb alignment  1
 	// [size: 4, style: half]
+	// nb alignment  2
+	// [size: 2, style: free]
+	// [size: 2, style: free]
 }
 
 func ExampleRules_analyzeAlign_tree() {
@@ -301,20 +309,20 @@ func ExampleRules_analyzeAlign_tree() {
 	b = boards.GetTreeP1()
 	r = New(Player2, 7, 7)
 	r = prepareAnalyzeAlign(b, r)
-	r.printAlignments()
-	r.printThrees()
+	r.PrintAlignments()
+	r.PrintThrees()
 
 	b = boards.GetTreeP1()
 	r = New(Player2, 7, 13)
 	r = prepareAnalyzeAlign(b, r)
-	r.printAlignments()
-	r.printThrees()
+	r.PrintAlignments()
+	r.PrintThrees()
 
 	b = boards.GetTreeP1()
 	r = New(Player2, 8, 9)
 	r = prepareAnalyzeAlign(b, r)
-	r.printAlignments()
-	r.printThrees()
+	r.PrintAlignments()
+	r.PrintThrees()
 
 	// Output:
 	// nb alignment  2
@@ -337,7 +345,7 @@ func ExampleRules_analyzeAlign_doubleTree() {
 	b = boards.GetTreeP1()
 	r = New(Player2, 10, 10)
 	r = prepareAnalyzeAlign(b, r)
-	r.printThrees()
+	r.PrintThrees()
 	r.analyzeMoveCondition()
 	fmt.Println(r.Info)
 
@@ -354,7 +362,7 @@ func ExampleRules_analyzeAlign_winNoCapturable() {
 	r = New(Player1, 9, 11)
 	r = prepareAnalyzeAlign(b, r)
 	r.analyzeWinCondition(b, 0)
-	r.printAlignments()
+	r.PrintAlignments()
 	fmt.Println(r.Info)
 
 	// Output:
@@ -371,7 +379,7 @@ func ExampleRules_analyzeAlign_winCapturable() {
 	r = New(Player1, 9, 11)
 	r = prepareAnalyzeAlign(b, r)
 	r.analyzeWinCondition(b, 0)
-	r.printAlignments()
+	r.PrintAlignments()
 	fmt.Println(r.Info)
 
 	// Output:
