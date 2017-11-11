@@ -239,6 +239,14 @@ func (r Rules) GetNumberAlignment() int8 {
 	return int8(len(r.aligns))
 }
 
+// IsMyPosition check the position on the board is equal at player on the rule
+func (r Rules) IsMyPosition(b *[19][19]uint8) bool {
+	if (*b)[r.y][r.x] == r.player {
+		return true
+	}
+	return false
+}
+
 // addCapture : _
 func (r *Rules) addCapture(y, x int8) {
 	r.captures = append(r.captures, &Spot{Y: y, X: x})
@@ -426,6 +434,34 @@ func (r *Rules) getMaskFromBoard(b *[19][19]uint8, dirY, dirX int8, mask *[11]ui
 			(*mask)[5+i] = (*b)[rightY][rightX]
 		} else {
 			(*mask)[5+i] = outOfBoard
+		}
+	}
+}
+
+// UpdateAlignment define aligns with a new state baord
+func (r *Rules) UpdateAlignment(board *[19][19]uint8) {
+	var stop bool
+	var mask [11]uint8
+
+	r.aligns = nil
+	// check around move position. y and x represent one direction
+	for y := int8(-1); y <= 0; y++ {
+		for x := int8(-1); x <= 1; x++ {
+			if x == 0 && y == 0 {
+				// all direction are checked so break
+				stop = true
+				break
+			}
+
+			// create mask to the direction
+			r.getMaskFromBoard(board, y, x, &mask)
+
+			// record informations alinment
+			r.analyzeAlign(&mask, board, y, x)
+		}
+
+		if stop == true {
+			break
 		}
 	}
 }

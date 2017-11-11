@@ -74,18 +74,23 @@ func (s *State) evalAlignment(n *Node) int8 {
 	var scoreCurrent int8
 	var scoreOpponent int8
 
-	//	fmt.Println("testCurrent")
+	// check first alignment opponent because he it played on first
+	if n.prev != nil {
+		if !n.prev.rule.IsMyPosition(s.board) {
+			scoreOpponent = 0
+		} else {
+			n.prev.rule.UpdateAlignment(s.board)
+			scoreOpponent = s.scoreAlignment(n.prev)
+			if scoreOpponent >= (scoreMax - 1) {
+				return -scoreOpponent
+			}
+		}
+	}
+
+	// check score alignment for the last move
 	scoreCurrent = s.scoreAlignment(n)
 	if scoreCurrent >= (scoreMax - 1) {
 		return scoreCurrent
-	}
-
-	//	fmt.Println("testOpponent")
-	if n.prev != nil {
-		scoreOpponent = s.scoreAlignment(n.prev)
-		if scoreOpponent >= (scoreMax - 1) {
-			return -scoreOpponent
-		}
 	}
 
 	return scoreCurrent - scoreOpponent
@@ -137,12 +142,12 @@ func (s *State) evalCapture(n *Node, current, opponent uint8) int8 {
 // analyzeScoreCapture return true if win condition detected and adapt the score
 func (s *State) analyzeScoreCapture(score *int8, depth uint8) bool {
 	if *score == scoreMax {
-		*score = 127 - (int8(maxDepth-depth) + 2)
+		*score = -127 + (int8(maxDepth-depth) + 2)
 		return true
 	}
 
 	if *score == -scoreMax {
-		*score = -127 + (int8(maxDepth-depth) + 2)
+		*score = 127 - (int8(maxDepth-depth) + 2)
 		return true
 	}
 
@@ -151,19 +156,20 @@ func (s *State) analyzeScoreCapture(score *int8, depth uint8) bool {
 
 // analyzeScoreAlignment return true if win condition is detected and adapt the score
 func (s *State) analyzeScoreAlignment(score *int8, depth uint8) bool {
+	// Need to invert sign
 	if *score == scoreMax {
-		*score = 127 - (int8(maxDepth-depth) + 2)
+		*score = -127 + (int8(maxDepth-depth) + 2)
 		return true
 	} else if *score == scoreMax-1 {
-		*score = 127 - (int8(maxDepth-depth) + 4)
+		*score = -127 + (int8(maxDepth-depth) + 4)
 		return true
 	}
 
 	if *score == -scoreMax {
-		*score = -127 + (int8(maxDepth-depth) + 2)
+		*score = 127 - (int8(maxDepth-depth) + 2)
 		return true
 	} else if *score == -(scoreMax - 1) {
-		*score = -127 + (int8(maxDepth-depth) + 4)
+		*score = 127 - (int8(maxDepth-depth) + 4)
 		return true
 	}
 
