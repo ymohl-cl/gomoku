@@ -576,3 +576,47 @@ func TestEval_noWin(t *testing.T) {
 	//   . . . . o . . o o . x x . . . . . . .
 	//   . . . . . . . . . . . . . o . . . . .
 }
+
+func TestEval_win(t *testing.T) {
+	var b *[19][19]uint8
+	var state *State
+
+	b = boards.GetWinNoCapturableP2()
+
+	// move ai
+	state = New(b, ruler.Player2)
+	n0 := state.newNode(8, 7)
+	state.updateData(n0, nil)
+	// move player
+	n1 := state.newNode(9, 15)
+	state.updateData(n1, n0)
+	// move ai
+	n2 := state.newNode(7, 6)
+	state.updateData(n2, n1)
+	// move player
+	n3 := state.newNode(9, 11)
+	state.updateData(n3, n1)
+
+	// test: 0 > check all nodes exists
+	if n0 == nil || n1 == nil || n2 == nil || n3 == nil {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 1 > check rule
+	if !n3.rule.Win {
+		t.Error(t.Name() + " > test: 1")
+	}
+
+	ret := state.eval(n3, 0)
+	// test: 2 > check value of eval to align P1
+	if ret != -123 {
+		t.Error(t.Name()+" > test: 2 > resultat: ", ret)
+	}
+
+	// State board
+	//   . . . . . . . . . . . . . . . . . . .
+	//   . . . . . . o . . . . . . . . . . . .
+	// - . . . . . . . o x x x x x o x . . . .
+	//   . . . . . . . . . . o . o . . . . . .
+	//   . . . . . . . . . . . . . . . . . . .
+}

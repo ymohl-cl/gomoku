@@ -399,14 +399,18 @@ func (r *Rules) analyzeWinCondition(b *[19][19]uint8, nbCaptured uint8) {
 
 	for _, align := range r.aligns {
 		if align.size >= 5 {
-			r.ApplyMove(b)
-			ret := align.isCapturable(b, r.player, r.y, r.x)
-			r.RestoreMove(b)
+			r.Win = true
+			r.Info = winByAlignmentMessage
+			/*
+				r.ApplyMove(b)
+				ret := align.isCapturable(b, r.player, r.y, r.x)
+				r.RestoreMove(b)
 
-			if ret == false {
-				r.Win = true
-				r.Info = winByAlignmentMessage
-			}
+				if ret == false {
+					r.Win = true
+					r.Info = winByAlignmentMessage
+				}
+			*/
 		}
 	}
 }

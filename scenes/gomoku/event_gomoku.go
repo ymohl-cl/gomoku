@@ -106,7 +106,7 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 			c := make(chan uint8)
 			go alphabeta.Play(g.game.GetBoard(), g.data.Current, c)
 			yi, xi := <-c, <-c
-			fmt.Println("AI play on x ", xi, " - y: ", yi)
+			fmt.Println("AI play on y ", yi, " - x: ", xi)
 			go g.selectToken(yi, xi)
 		}()
 	} else {

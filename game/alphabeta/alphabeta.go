@@ -124,15 +124,11 @@ func (s *State) alphabetaNegaScout(alpha, beta int8, depth uint8, n *Node) int8 
 			// restore move and restore data
 			s.restoreData(node, n)
 
-			if alpha <= node.weight {
-				if depth == maxDepth {
-					s.addNode(node)
-					s.save = node
-				}
-				alpha = node.weight
-			} else if depth == maxDepth {
-				fmt.Println("node.weight not save: ", node.weight)
+			if depth == maxDepth {
+				s.addNode(node)
 			}
+
+			alpha = maxWeight(alpha, node.weight)
 
 			if alpha >= beta {
 				return alpha
@@ -149,8 +145,14 @@ func Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 	state.addTotalCapture(ruler.Player2, uint8(s.NbCaptureP2))
 
 	ret := state.alphabetaNegaScout(math.MinInt8+1, math.MaxInt8, maxDepth, nil)
-	fmt.Println("ret: ", ret, " - weight of saved node: ", state.save.weight)
+	fmt.Println("ret: ", ret)
+
+	tmp := int8(math.MinInt8)
 	for n := state.lst; n != nil; n = n.next {
+		if tmp < n.weight {
+			tmp = n.weight
+			state.save = n
+		}
 		y, x := n.rule.GetPosition()
 		fmt.Println("Node weight: ", n.weight, " y et x: ", y, " - ", x)
 	}

@@ -1,6 +1,10 @@
 package alphabeta
 
-import "github.com/ymohl-cl/gomoku/game/ruler"
+import (
+	"fmt"
+
+	"github.com/ymohl-cl/gomoku/game/ruler"
+)
 
 const (
 	// scoreFirst is a bonus to the first player which play to differ the equal score
@@ -30,6 +34,18 @@ func maxWeight(v1, v2 int8) int8 {
 		return v1
 	}
 	return v2
+}
+
+func (s *State) printEval(n *Node, depth uint8, score int8) {
+	fmt.Println("Score eval: ", score, " - depth: ", depth)
+
+	depthNode := maxDepth - depth
+	for node := n; node != nil; node = node.prev {
+		y, x := node.rule.GetPosition()
+		fmt.Println("move ", depthNode, " on y: ", y, " - x: ", x)
+		depthNode--
+	}
+
 }
 
 func (s *State) scoreAlignment(n *Node) int8 {
@@ -186,33 +202,45 @@ func (s *State) eval(n *Node, depth uint8) int8 {
 	var score int8
 	var ret int8
 
+	//fmt.Println(" ||||||||||||||||||| EVAL ||||||||||||||||||| ")
 	current := n.rule.GetPlayer()
 	opponent := ruler.GetOtherPlayer(current)
 
 	if n.rule.Win {
 		// wins situations
-		return -127 + int8(maxDepth-depth)
+		ret = -127 + int8(maxDepth-depth)
+	} else {
+		// init score
+		ret = 50
+
+		score = s.evalCapture(n, current, opponent)
+		//fmt.Println("score capture: ", score)
+		if s.analyzeScoreCapture(&score, depth) {
+			//fmt.Println("return capture")
+			return score
+		}
+		ret += score
+
+		score = s.evalAlignment(n)
+		//fmt.Println("score alignement: ", score)
+		if s.analyzeScoreAlignment(&score, depth) {
+			//fmt.Println("return align")
+			return score
+		}
+		ret += score
+
+		ret = -ret
 	}
 
-	// init score
-	ret = 50
-
-	score = s.evalCapture(n, current, opponent)
-	if s.analyzeScoreCapture(&score, depth) {
-		return score
-	}
-	ret += score
-
-	score = s.evalAlignment(n)
-	if s.analyzeScoreAlignment(&score, depth) {
-		return score
-	}
-	ret += score
-
-	if current == ruler.Player1 {
-		return -ret
-	}
+	// debug
+	//s.printEval(n, depth, ret)
 	return ret
+	/*
+		if current == ruler.Player1 {
+			return -ret
+		}
+		return ret
+	*/
 }
 
 /*func eval(s *State, stape uint8, r *ruler.Rules, base *State, maxDepth uint8) int8 {
