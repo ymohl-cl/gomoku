@@ -140,16 +140,16 @@ func (s *State) evalCapture(n *Node, current, opponent uint8) int8 {
 	if flagCurrent == true {
 		scoreCurrent += int8(s.getTotalCapture(current)) * scoreByCapture
 
-		if scoreCurrent == scoreLimitCapture {
-			return scoreMax
-		}
+		//if scoreCurrent == scoreLimitCapture {
+		//return scoreMax
+		//}
 	}
 	if flagOpponent == true {
 		scoreOpponent += int8(s.getTotalCapture(opponent)) * scoreByCapture
 
-		if scoreOpponent == scoreLimitCapture {
-			return -scoreMax
-		}
+		//if scoreOpponent == scoreLimitCapture {
+		//return -scoreMax
+		//}
 	}
 
 	return scoreCurrent - scoreOpponent
