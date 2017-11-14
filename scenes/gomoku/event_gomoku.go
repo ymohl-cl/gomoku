@@ -92,7 +92,7 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 	if end == true {
 		g.setNotice("WINNER YEAH BRAVO ! VOILA | " + mess)
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(15 * time.Second)
 		g.switcher(conf.SMenu, true)
 		return
 	}
