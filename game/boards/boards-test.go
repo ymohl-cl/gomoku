@@ -333,6 +333,21 @@ func GetStartP1() *[19][19]uint8 {
 	return &b
 }
 
+// GetStartP2_1 : _
+// . . . . . . . o o x . . . . . . . .
+func GetStartP2_1() *[19][19]uint8 {
+	var b [19][19]uint8
+
+	// set P1 on the board
+	b[9][10] = 1
+
+	// set P2 on the board
+	b[9][9] = 2
+	b[9][8] = 2
+
+	return &b
+}
+
 // GetDoubleAlignmentP2 : _
 // p1 must played on 7 10 to make a double alignment
 //                       |

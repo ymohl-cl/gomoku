@@ -614,9 +614,41 @@ func TestEval_win(t *testing.T) {
 	}
 
 	// State board
-	//   . . . . . . . . . . . . . . . . . . .
+	//   . . . . . o . . . . . . . . . . . . .
 	//   . . . . . . o . . . . . . . . . . . .
 	// - . . . . . . . o x x x x x o x . . . .
 	//   . . . . . . . . . . o . o . . . . . .
 	//   . . . . . . . . . . . . . . . . . . .
+}
+
+func TestEval_situation1(t *testing.T) {
+	var b *[19][19]uint8
+	var state *State
+
+	b = boards.GetStartP2_1()
+
+	// move ai
+	state = New(b, ruler.Player1)
+	n0 := state.newNode(9, 7)
+	state.updateData(n0, nil)
+	// move player
+	n1 := state.newNode(8, 9)
+	state.updateData(n1, n0)
+	// move ai
+	n2 := state.newNode(10, 11)
+	state.updateData(n2, n1)
+	// move player
+	n3 := state.newNode(11, 11)
+	state.updateData(n3, n1)
+
+	// test: 0 > check all nodes exists
+	if n0 == nil || n1 == nil || n2 == nil || n3 == nil {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	ret := state.eval(n3, 0)
+	// test: 1 > check value of eval to align P1
+	if ret != -44 {
+		t.Error(t.Name()+" > test: 1 > resultat: ", ret)
+	}
 }

@@ -20,11 +20,11 @@ const (
 
 	/* Score Alignments */
 	// scoreHalf is the weight by spot on half-free alignment
-	scoreHalf = 6
+	scoreHalf = 5
 	// scoreFlanked is the weight by spot on flanked alignment
 	scoreFlanked = 4
 	// scoreFree is the weight by spot on free alignment
-	scoreFree = 5
+	scoreFree = 6
 	// scoreAlign is a bonus to the additional alignments
 	scoreByAlign = 1
 )
@@ -39,7 +39,7 @@ func maxWeight(v1, v2 int8) int8 {
 func (s *State) printEval(n *Node, depth uint8, score int8) {
 	fmt.Println("Score eval: ", score, " - depth: ", depth)
 
-	depthNode := maxDepth - depth
+	depthNode := s.maxDepth - depth
 	for node := n; node != nil; node = node.prev {
 		y, x := node.rule.GetPosition()
 		fmt.Println("move ", depthNode, " on y: ", y, " - x: ", x)
@@ -158,12 +158,12 @@ func (s *State) evalCapture(n *Node, current, opponent uint8) int8 {
 // analyzeScoreCapture return true if win condition detected and adapt the score
 func (s *State) analyzeScoreCapture(score *int8, depth uint8) bool {
 	if *score == scoreMax {
-		*score = -127 + (int8(maxDepth-depth) + 2)
+		*score = -127 + (int8(s.maxDepth-depth) + 2)
 		return true
 	}
 
 	if *score == -scoreMax {
-		*score = 127 - (int8(maxDepth-depth) + 2)
+		*score = 127 - (int8(s.maxDepth-depth) + 2)
 		return true
 	}
 
@@ -174,18 +174,18 @@ func (s *State) analyzeScoreCapture(score *int8, depth uint8) bool {
 func (s *State) analyzeScoreAlignment(score *int8, depth uint8) bool {
 	// Need to invert sign
 	if *score == scoreMax {
-		*score = -127 + (int8(maxDepth-depth) + 2)
+		*score = -127 + (int8(s.maxDepth-depth) + 2)
 		return true
 	} else if *score == scoreMax-1 {
-		*score = -127 + (int8(maxDepth-depth) + 4)
+		*score = -127 + (int8(s.maxDepth-depth) + 4)
 		return true
 	}
 
 	if *score == -scoreMax {
-		*score = 127 - (int8(maxDepth-depth) + 2)
+		*score = 127 - (int8(s.maxDepth-depth) + 2)
 		return true
 	} else if *score == -(scoreMax - 1) {
-		*score = 127 - (int8(maxDepth-depth) + 4)
+		*score = 127 - (int8(s.maxDepth-depth) + 4)
 		return true
 	}
 
@@ -208,17 +208,17 @@ func (s *State) eval(n *Node, depth uint8) int8 {
 
 	if n.rule.Win {
 		// wins situations
-		ret = -127 + int8(maxDepth-depth)
+		ret = -127 + int8(s.maxDepth-depth)
 	} else {
 		// init score
 		ret = 50
 
 		score = s.evalCapture(n, current, opponent)
 		//fmt.Println("score capture: ", score)
-		if s.analyzeScoreCapture(&score, depth) {
-			//fmt.Println("return capture")
-			return score
-		}
+		//if s.analyzeScoreCapture(&score, depth) {
+		//fmt.Println("return capture")
+		//return score
+		//}
 		ret += score
 
 		score = s.evalAlignment(n)
@@ -242,49 +242,3 @@ func (s *State) eval(n *Node, depth uint8) int8 {
 		return ret
 	*/
 }
-
-/*func eval(s *State, stape uint8, r *ruler.Rules, base *State, maxDepth uint8) int8 {
-	ret := int8(63)
-
-	// Var Caps
-	var basicCurrent int8
-	var basicOther int8
-	if s.player == ruler.Player2 {
-		basicCurrent = int8(s.nbCapsOther - base.nbCapsOther)
-		basicOther = int8(s.nbCapsCurrent - base.nbCapsCurrent)
-	} else {
-		basicCurrent = int8(s.nbCapsOther - base.nbCapsCurrent)
-		basicOther = int8(s.nbCapsCurrent - base.nbCapsOther)
-	}
-
-	//Win
-	if r.Win {
-		if basicCurrent > 0 {
-			return -127 + int8(maxDepth-stape)
-		} else {
-			return -117 + int8(maxDepth-stape)
-		}
-
-	}
-
-	//Caps
-	ret += (basicCurrent*7 - basicOther*6)
-
-	//Three
-	treeCurrent := s.nbTOther
-	treeOther := s.nbTCurrent
-
-	//	if len(r.CapturableWin) > 0 {
-	//		ret += int8(treeCurrent - treeOther*3)
-	//	} else {
-	ret += int8(treeCurrent*3 - treeOther)
-	//	}
-
-	//Align
-	AlignCurrent := s.nbAlignOther
-	AlignOther := s.nbAlignCurrent
-
-	ret += int8(AlignCurrent*4 - AlignOther)
-
-	return -ret
-}*/

@@ -1,15 +1,10 @@
 package alphabeta
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/ymohl-cl/gomoku/database"
 	"github.com/ymohl-cl/gomoku/game/ruler"
-)
-
-const (
-	maxDepth = 4
 )
 
 type InfoPlayer struct {
@@ -17,6 +12,7 @@ type InfoPlayer struct {
 }
 
 type State struct {
+	maxDepth      uint8
 	board         *[19][19]uint8
 	currentPlayer uint8
 	infoP1        InfoPlayer
@@ -33,7 +29,7 @@ type Node struct {
 }
 
 func New(b *[19][19]uint8, player uint8) *State {
-	return &State{board: b, currentPlayer: player}
+	return &State{maxDepth: 4, board: b, currentPlayer: player}
 }
 
 func (s *State) getTotalCapture(player uint8) uint8 {
@@ -82,7 +78,7 @@ func (s *State) restoreData(n *Node, prev *Node) {
 	n.rule.RestoreMove(s.board)
 
 	s.subTotalCapture(n.rule.GetPlayer(), n.rule.NumberCapture)
-	s.currentPlayer = ruler.GetOtherPlayer(n.rule.GetPlayer())
+	s.currentPlayer = ruler.GetOtherPlayer(s.currentPlayer)
 
 	n.prev = nil
 }
@@ -121,10 +117,14 @@ func (s *State) alphabetaNegaScout(alpha, beta int8, depth uint8, n *Node) int8 
 				}
 			}
 
+			//fmt.Print("Depth: ", depth, " - node y && x: ", y, " - ", x)
+			//fmt.Print(" - weight: ", node.weight)
+			//fmt.Println(" | Alpha: ", alpha, " Beta: ", beta)
+
 			// restore move and restore data
 			s.restoreData(node, n)
 
-			if depth == maxDepth {
+			if depth == s.maxDepth {
 				s.addNode(node)
 			}
 
@@ -144,17 +144,19 @@ func Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 	state.addTotalCapture(ruler.Player1, uint8(s.NbCaptureP1))
 	state.addTotalCapture(ruler.Player2, uint8(s.NbCaptureP2))
 
-	ret := state.alphabetaNegaScout(math.MinInt8+1, math.MaxInt8, maxDepth, nil)
-	fmt.Println("ret: ", ret)
+	//ret := state.alphabetaNegaScout(math.MinInt8+1, math.MaxInt8, state.maxDepth, nil)
+	state.alphabetaNegaScout(math.MinInt8+1, math.MaxInt8, state.maxDepth, nil)
+	//fmt.Println("ret: ", ret)
 
 	tmp := int8(math.MinInt8)
+
 	for n := state.lst; n != nil; n = n.next {
-		if tmp < n.weight {
+		if tmp <= n.weight {
 			tmp = n.weight
 			state.save = n
 		}
-		y, x := n.rule.GetPosition()
-		fmt.Println("Node weight: ", n.weight, " y et x: ", y, " - ", x)
+		//		y, x := n.rule.GetPosition()
+		//fmt.Println("Node weight: ", n.weight, " y et x: ", y, " - ", x)
 	}
 
 	y, x := state.save.rule.GetPosition()
