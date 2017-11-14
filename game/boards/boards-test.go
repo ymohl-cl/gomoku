@@ -319,6 +319,27 @@ func GetWinNoCapturableP2() *[19][19]uint8 {
 	return &b
 }
 
+// GetWinSituationP2 : _
+// . . . . . . .
+// o x x x x . .
+// . . . o . o .
+func GetWinSituationP2() *[19][19]uint8 {
+	var b [19][19]uint8
+
+	// set P1 on the board
+	b[9][9] = 1
+	b[9][10] = 1
+	b[9][11] = 1
+	b[9][12] = 1
+
+	// set P2 on the board
+	b[9][8] = 2
+	b[10][11] = 2
+	b[10][13] = 2
+	b[8][14] = 2
+	return &b
+}
+
 // GetStartP1 : _
 // . . . x o . . .
 func GetStartP1() *[19][19]uint8 {

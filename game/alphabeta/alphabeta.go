@@ -1,6 +1,7 @@
 package alphabeta
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/ymohl-cl/gomoku/database"
@@ -151,12 +152,12 @@ func Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 	tmp := int8(math.MinInt8)
 
 	for n := state.lst; n != nil; n = n.next {
+		y, x := n.rule.GetPosition()
+		fmt.Println("Node weight: ", n.weight, " y et x: ", y, " - ", x)
 		if tmp <= n.weight {
 			tmp = n.weight
 			state.save = n
 		}
-		//		y, x := n.rule.GetPosition()
-		//fmt.Println("Node weight: ", n.weight, " y et x: ", y, " - ", x)
 	}
 
 	y, x := state.save.rule.GetPosition()

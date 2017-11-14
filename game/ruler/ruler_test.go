@@ -31,16 +31,16 @@ func prepareAnalyzeAlign(b *[19][19]uint8, r *Rules) *Rules {
 	var mask [11]uint8
 
 	r.getMaskFromBoard(b, -1, -1, &mask)
-	r.analyzeAlign(&mask, b, -1, -1)
+	r.analyzeAlign(&mask, -1, -1)
 
 	r.getMaskFromBoard(b, -1, 0, &mask)
-	r.analyzeAlign(&mask, b, -1, 0)
+	r.analyzeAlign(&mask, -1, 0)
 
 	r.getMaskFromBoard(b, -1, 1, &mask)
-	r.analyzeAlign(&mask, b, -1, 1)
+	r.analyzeAlign(&mask, -1, 1)
 
 	r.getMaskFromBoard(b, 0, -1, &mask)
-	r.analyzeAlign(&mask, b, 0, -1)
+	r.analyzeAlign(&mask, 0, -1)
 
 	return r
 }
@@ -428,6 +428,14 @@ func TestCheckRules(t *testing.T) {
 	r = New(Player1, 9, 11)
 	r.CheckRules(b, 3)
 	if r.Win == false {
+		t.Error(t.Name() + " > test: 4")
+	}
+
+	// test: 5 > no win but align five token (not consecutive)
+	b = boards.GetWinSituationP2()
+	r = New(Player1, 9, 14)
+	r.CheckRules(b, 3)
+	if r.Win == true {
 		t.Error(t.Name() + " > test: 4")
 	}
 }

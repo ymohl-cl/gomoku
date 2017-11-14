@@ -157,12 +157,12 @@ func (s *State) evalCapture(n *Node, current, opponent uint8) int8 {
 
 // analyzeScoreCapture return true if win condition detected and adapt the score
 func (s *State) analyzeScoreCapture(score *int8, depth uint8) bool {
-	if *score == scoreMax {
+	if *score == scoreLimitCapture {
 		*score = -127 + (int8(s.maxDepth-depth) + 2)
 		return true
 	}
 
-	if *score == -scoreMax {
+	if *score == -scoreLimitCapture {
 		*score = 127 - (int8(s.maxDepth-depth) + 2)
 		return true
 	}
@@ -199,7 +199,8 @@ func (s *State) analyzeScoreAlignment(score *int8, depth uint8) bool {
 // ret += (totalScoreCurrent - totalScoreOpponent). Certify positive score
 // between 100 and 0 value
 func (s *State) eval(n *Node, depth uint8) int8 {
-	var score int8
+	var scoreCapture int8
+	var scoreAlignment int8
 	var ret int8
 
 	//fmt.Println(" ||||||||||||||||||| EVAL ||||||||||||||||||| ")
@@ -213,21 +214,33 @@ func (s *State) eval(n *Node, depth uint8) int8 {
 		// init score
 		ret = 50
 
-		score = s.evalCapture(n, current, opponent)
+		scoreCapture = s.evalCapture(n, current, opponent)
 		//fmt.Println("score capture: ", score)
 		//if s.analyzeScoreCapture(&score, depth) {
 		//fmt.Println("return capture")
 		//return score
 		//}
-		ret += score
 
-		score = s.evalAlignment(n)
+		scoreAlignment = s.evalAlignment(n)
 		//fmt.Println("score alignement: ", score)
-		if s.analyzeScoreAlignment(&score, depth) {
+		if s.analyzeScoreAlignment(&scoreAlignment, depth) {
 			//fmt.Println("return align")
-			return score
+			if (scoreAlignment < 0 && scoreCapture < 0) || (scoreAlignment > 0 && scoreCapture > 0) {
+				return scoreAlignment - scoreCapture
+			}
+
+			return scoreAlignment
 		}
-		ret += score
+
+		if s.analyzeScoreCapture(&scoreCapture, depth) {
+			if (scoreAlignment < 0 && scoreCapture < 0) || (scoreAlignment > 0 && scoreCapture > 0) {
+				return scoreCapture - scoreAlignment
+			}
+			return scoreCapture
+		}
+
+		ret += scoreCapture
+		ret += scoreAlignment
 
 		ret = -ret
 	}

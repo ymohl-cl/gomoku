@@ -311,16 +311,12 @@ func (r *Rules) analyzeCapture(mask *[11]uint8, dirY, dirX int8) {
 	}
 }
 
-// analyzeAlign : Check alignment type and records when there are enought available spot
-func (r *Rules) analyzeAlign(mask *[11]uint8, b *[19][19]uint8, dirY, dirX int8) {
+func (r *Rules) analyzeLenAlignement(mask *[11]uint8, dirY, dirX int8) *Align {
 	a := &Align{size: 1}
 	availablePosition := 1
 	var lastIndex int
 	var left, right bool
 
-	//	if dirX == 0 && dirY == -1 {
-	//		fmt.Println("mask: ", (*mask))
-	//	}
 	for i := 4; i >= 0; i-- {
 		lastIndex = i
 		if (*mask)[i] == r.player {
@@ -332,6 +328,7 @@ func (r *Rules) analyzeAlign(mask *[11]uint8, b *[19][19]uint8, dirY, dirX int8)
 			break
 		}
 	}
+
 	if (*mask)[lastIndex] == empty ||
 		((*mask)[lastIndex] != r.player && (*mask)[lastIndex+1] == empty) {
 		left = true
@@ -353,28 +350,152 @@ func (r *Rules) analyzeAlign(mask *[11]uint8, b *[19][19]uint8, dirY, dirX int8)
 		right = true
 	}
 
-	//	fmt.Print("availablePosition: ", availablePosition, " - a.size: ", a.size, " - : ")
 	if availablePosition < 5 || a.size == 1 {
-		//		fmt.Println("not add")
-		return
+		return nil
 	}
 
 	if availablePosition == 5 {
 		a.style |= AlignFlanked
 	} else if left == true && right == true {
 		a.style |= AlignFree
-		if a.size == 3 {
-			r.NumberThree++
-		}
 	} else {
 		a.style |= AlignHalf
 	}
+	return a
+}
 
-	if a.size == 5 {
+func (r *Rules) analyzeThree(mask *[11]uint8) bool {
+	indexMove := 5
+
+	leftMove := mask[indexMove-1]
+	rightMove := mask[indexMove+1]
+	if leftMove == mask[indexMove] && leftMove == rightMove {
+		return true
+	} else if leftMove == empty && mask[indexMove-2] == mask[indexMove] && rightMove == mask[indexMove] {
+		return true
+	} else if rightMove == empty && mask[indexMove+2] == mask[indexMove] && leftMove == mask[indexMove] {
+		return true
+	}
+	return false
+}
+
+func (r *Rules) analyzeConsecutiveAlignment(mask *[11]uint8) uint8 {
+	var size uint8
+
+	for i := 4; i >= 0; i-- {
+		if (*mask)[i] == r.player {
+			size++
+		} else {
+			break
+		}
+	}
+
+	for i := 5; i <= 10; i++ {
+		if (*mask)[i] == r.player {
+			size++
+		} else {
+			break
+		}
+	}
+	return size
+}
+
+// analyzeAlign : Check alignment type and records when there are enought available spot
+func (r *Rules) analyzeAlign(mask *[11]uint8, dirY, dirX int8) {
+	var a *Align
+
+	a = r.analyzeLenAlignement(mask, dirY, dirX)
+	if a == nil {
+		return
+	}
+
+	if a.size == 3 && r.analyzeThree(mask) {
+		r.NumberThree++
+	}
+
+	if a.size >= 5 && r.analyzeConsecutiveAlignment(mask) >= 5 {
 		a.newInfoWin(mask, dirY, dirX)
 	}
-	//	fmt.Println("add")
+
 	r.aligns = append(r.aligns, a)
+	return
+
+	/*
+		a := &Align{size: 1}
+		availablePosition := 1
+		var lastIndex int
+		var left, right, flagConsecutive bool
+		nbConsecutive := 1
+
+		flagConsecutive = true
+		//	if dirX == 0 && dirY == -1 {
+		//		fmt.Println("mask: ", (*mask))
+		//	}
+		for i := 4; i >= 0; i-- {
+			lastIndex = i
+			if (*mask)[i] == r.player {
+				a.size++
+				availablePosition++
+				if flagConsecutive {
+					nbConsecutive++
+				}
+			} else if (*mask)[i] == empty {
+				availablePosition++
+				flagConsecutive = false
+			} else {
+				break
+			}
+		}
+		if (*mask)[lastIndex] == empty ||
+			((*mask)[lastIndex] != r.player && (*mask)[lastIndex+1] == empty) {
+			left = true
+		}
+
+		flagConsecutive = true
+		for i := 6; i <= 10; i++ {
+			lastIndex = i
+			if (*mask)[i] == r.player {
+				a.size++
+				availablePosition++
+				if flagConsecutive {
+					nbConsecutive++
+				}
+			} else if (*mask)[i] == empty {
+				availablePosition++
+				flagConsecutive = false
+			} else {
+				break
+			}
+		}
+		if (*mask)[lastIndex] == empty ||
+			((*mask)[lastIndex] != r.player && (*mask)[lastIndex-1] == empty) {
+			right = true
+		}
+
+		//	fmt.Print("availablePosition: ", availablePosition, " - a.size: ", a.size, " - : ")
+		if availablePosition < 5 || a.size == 1 {
+			//		fmt.Println("not add")
+			return
+		}
+
+		if availablePosition == 5 {
+			a.style |= AlignFlanked
+		} else if left == true && right == true {
+			a.style |= AlignFree
+			if a.size == 3 {
+				r.NumberThree++
+			}
+		} else {
+			a.style |= AlignHalf
+		}
+
+		if nbConsecutive >= 5 {
+			a.newInfoWin(mask, dirY, dirX)
+		}
+		//	fmt.Println("add")
+		r.aligns = append(r.aligns, a)
+	*/
+	return
 }
 
 // analyzeMoveCondition : Check conditions to accept the move
@@ -398,7 +519,7 @@ func (r *Rules) analyzeWinCondition(b *[19][19]uint8, nbCaptured uint8) {
 	}
 
 	for _, align := range r.aligns {
-		if align.size >= 5 {
+		if align.iWin != nil {
 			r.Win = true
 			r.Info = winByAlignmentMessage
 			/*
@@ -461,7 +582,7 @@ func (r *Rules) UpdateAlignment(board *[19][19]uint8) {
 			r.getMaskFromBoard(board, y, x, &mask)
 
 			// record informations alinment
-			r.analyzeAlign(&mask, board, y, x)
+			r.analyzeAlign(&mask, y, x)
 		}
 
 		if stop == true {
@@ -494,8 +615,8 @@ func (r *Rules) CheckRules(board *[19][19]uint8, nbCaps uint8) {
 
 			// record the capturable spots
 			r.analyzeCapture(&mask, y, x)
-			// record informations alinment
-			r.analyzeAlign(&mask, board, y, x)
+			// record informations alignment
+			r.analyzeAlign(&mask, y, x)
 		}
 
 		if stop == true {
