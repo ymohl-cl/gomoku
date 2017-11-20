@@ -441,12 +441,190 @@ func TestCheckRules(t *testing.T) {
 
 	// test: 6 > invalid move by double three action #2
 	b = boards.GetTreeP1_2()
-	boards.Print(b)
-	r = New(Player1, 8, 9)
-	r.CheckRules(b, 3)
-	fmt.Println("------------------")
+	r = New(Player1, 9, 8)
+	r.CheckRules(b, 0)
 	if r.Movable == true {
-		t.Error(t.Name() + " > test: 6")
+		t.Error(t.Name() + " > test: 6 ")
+	}
+
+}
+
+func TestLenAlignment_P1Only(t *testing.T) {
+	// Player1 rules neutral instance
+	r := New(Player1, 0, 0)
+
+	// test: 1 > 2 token aligned consecutively
+	mask1 := [11]uint8{0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask1); a == nil || a.size != 2 {
+		t.Error(t.Name()+" > test: 1 / alignment struct : ", a)
+	}
+
+	// test: 2 > 2 token aligned not consecutively
+	mask2 := [11]uint8{0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask2); a == nil || a.size != 2 {
+		t.Error(t.Name()+" > test: 2 / alignment struct : ", a)
+	}
+
+	// test: 3 > 3 token aligned consecutively
+	mask3 := [11]uint8{0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask3); a == nil || a.size != 3 {
+		t.Error(t.Name()+" > test: 3 / alignment struct : ", a)
+	}
+
+	// test: 4 > 3 token aligned not consecutively
+	mask4 := [11]uint8{0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask4); a == nil || a.size != 3 {
+		t.Error(t.Name()+" > test: 4 / alignment struct : ", a)
+	}
+
+	// test: 5 > 3 token aligned not consecutively
+	mask5 := [11]uint8{0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask5); a == nil || a.size != 3 {
+		t.Error(t.Name()+" > test: 5 / alignment struct : ", a)
+	}
+
+	// test: 6 > 3 token aligned not consecutively
+	mask6 := [11]uint8{0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask6); a == nil || a.size != 4 {
+		t.Error(t.Name()+" > test: 6 / alignment struct : ", a)
+	}
+
+	// test: 7 > 4 token aligned consecutively
+	mask7 := [11]uint8{0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask7); a == nil || a.size != 4 {
+		t.Error(t.Name()+" > test: 7 / alignment struct : ", a)
+	}
+
+	// test: 8 > 4 token aligned not consecutively
+	mask8 := [11]uint8{0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask8); a == nil || a.size != 4 {
+		t.Error(t.Name()+" > test: 8 / alignment struct : ", a)
+	}
+
+	// test: 9 > 4 token aligned not consecutively
+	mask9 := [11]uint8{0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask9); a == nil || a.size != 4 {
+		t.Error(t.Name()+" > test: 9 / alignment struct : ", a)
+	}
+
+}
+
+func TestLenAlignmentP1_P2(t *testing.T) {
+	// Player1 rules neutral instance
+	r := New(Player1, 0, 0)
+
+	// test: 1 > 2 token aligned consecutively
+	mask1 := [11]uint8{0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask1); a == nil || a.size != 2 {
+		t.Error(t.Name()+" > test: 1 / alignment struct : ", a)
+	}
+
+	// test: 2 > 2 token aligned not consecutively
+	mask2 := [11]uint8{0, 0, 2, 0, 2, 1, 0, 1, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask2); a == nil || a.size != 2 {
+		t.Error(t.Name()+" > test: 2 / alignment struct : ", a)
+	}
+
+	// test: 3 > 3 token aligned consecutively
+	mask3 := [11]uint8{0, 0, 0, 0, 2, 1, 1, 1, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask3); a == nil || a.size != 3 {
+		t.Error(t.Name()+" > test: 3 / alignment struct : ", a)
+	}
+
+	// test: 4 > 3 token aligned not consecutively
+	mask4 := [11]uint8{0, 2, 0, 1, 0, 1, 1, 2, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask4); a == nil || a.size != 3 {
+		t.Error(t.Name()+" > test: 4 / alignment struct : ", a)
+	}
+
+	// test: 5 > 3 token aligned not consecutively
+	mask5 := [11]uint8{0, 2, 1, 0, 0, 1, 1, 2, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask5); a == nil || a.size != 3 {
+		t.Error(t.Name()+" > test: 5 / alignment struct : ", a)
+	}
+
+	// test: 6 > 3 token aligned not consecutively
+	mask6 := [11]uint8{0, 0, 1, 0, 0, 1, 1, 1, 2, 0, 0}
+	if a := r.analyzeLenAlignment(&mask6); a == nil || a.size != 4 {
+		t.Error(t.Name()+" > test: 6 / alignment struct : ", a)
+	}
+
+	// test: 7 > 4 token aligned consecutively
+	mask7 := [11]uint8{0, 0, 0, 1, 1, 1, 1, 2, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask7); a == nil || a.size != 4 {
+		t.Error(t.Name()+" > test: 7 / alignment struct : ", a)
+	}
+
+	// test: 8 > 4 token aligned not consecutively
+	mask8 := [11]uint8{0, 2, 1, 1, 0, 1, 1, 0, 0, 2, 0}
+	if a := r.analyzeLenAlignment(&mask8); a == nil || a.size != 4 {
+		t.Error(t.Name()+" > test: 8 / alignment struct : ", a)
+	}
+
+	// test: 9 > 4 token aligned not consecutively
+	mask9 := [11]uint8{0, 1, 1, 0, 0, 1, 1, 2, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask9); a == nil || a.size != 4 {
+		t.Error(t.Name()+" > test: 9 / alignment struct : ", a)
+	}
+
+}
+
+func TestLenAlignment(t *testing.T) {
+	// Player1 rules neutral instance
+	r := New(Player1, 0, 0)
+
+	// test: 1 > 2 token aligned consecutively
+	mask1 := [11]uint8{3, 3, 3, 3, 2, 1, 1, 0, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask1); a == nil || a.size != 2 {
+		t.Error(t.Name()+" > test: 1 / alignment struct : ", a)
+	}
+
+	// test: 2 > 2 token aligned not consecutively
+	mask2 := [11]uint8{3, 3, 2, 0, 2, 1, 0, 1, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask2); a == nil || a.size != 2 {
+		t.Error(t.Name()+" > test: 2 / alignment struct : ", a)
+	}
+
+	// test: 3 > 3 token aligned consecutively
+	mask3 := [11]uint8{0, 0, 0, 0, 1, 1, 1, 0, 3, 3, 3}
+	if a := r.analyzeLenAlignment(&mask3); a == nil || a.size != 3 {
+		t.Error(t.Name()+" > test: 3 / alignment struct : ", a)
+	}
+
+	// test: 4 > 3 token aligned not consecutively
+	mask4 := [11]uint8{0, 2, 0, 1, 0, 1, 1, 2, 3, 3, 3}
+	if a := r.analyzeLenAlignment(&mask4); a == nil || a.size != 3 {
+		t.Error(t.Name()+" > test: 4 / alignment struct : ", a)
+	}
+
+	// test: 5 > 3 token aligned not consecutively
+	mask5 := [11]uint8{0, 2, 1, 0, 0, 1, 1, 2, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask5); a == nil || a.size != 3 {
+		t.Error(t.Name()+" > test: 5 / alignment struct : ", a)
+	}
+
+	// test: 6 > 3 token aligned not consecutively
+	mask6 := [11]uint8{0, 0, 1, 0, 0, 1, 1, 1, 2, 0, 0}
+	if a := r.analyzeLenAlignment(&mask6); a == nil || a.size != 4 {
+		t.Error(t.Name()+" > test: 6 / alignment struct : ", a)
+	}
+
+	// test: 7 > 4 token aligned consecutively
+	mask7 := [11]uint8{3, 3, 0, 1, 1, 1, 1, 2, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask7); a == nil || a.size != 4 {
+		t.Error(t.Name()+" > test: 7 / alignment struct : ", a)
+	}
+
+	// test: 8 > 4 token aligned not consecutively
+	mask8 := [11]uint8{0, 2, 1, 1, 0, 1, 1, 0, 0, 2, 0}
+	if a := r.analyzeLenAlignment(&mask8); a == nil || a.size != 4 {
+		t.Error(t.Name()+" > test: 8 / alignment struct : ", a)
+	}
+
+	// test: 9 > 4 token aligned not consecutively
+	mask9 := [11]uint8{3, 1, 1, 0, 0, 1, 1, 2, 0, 0, 0}
+	if a := r.analyzeLenAlignment(&mask9); a == nil || a.size != 4 {
+		t.Error(t.Name()+" > test: 9 / alignment struct : ", a)
 	}
 
 }
