@@ -1,8 +1,6 @@
 package alphabeta
 
 import (
-	"fmt"
-
 	"github.com/ymohl-cl/gomoku/game/ruler"
 )
 
@@ -36,18 +34,6 @@ func maxWeight(v1, v2 int8) int8 {
 	return v2
 }
 
-func (s *State) printEval(n *Node, depth uint8, score int8) {
-	fmt.Println("Score eval: ", score, " - depth: ", depth)
-
-	depthNode := s.maxDepth - depth
-	for node := n; node != nil; node = node.prev {
-		y, x := node.rule.GetPosition()
-		fmt.Println("move ", depthNode, " on y: ", y, " - x: ", x)
-		depthNode--
-	}
-
-}
-
 func (s *State) scoreAlignment(n *Node) int8 {
 	var coef int8
 	var size int8
@@ -61,7 +47,6 @@ func (s *State) scoreAlignment(n *Node) int8 {
 
 	a = n.rule.GetMaxAlignment()
 	size = a.GetSize()
-	//	fmt.Println("size: ", size)
 
 	if size == 4 {
 		return scoreMax
@@ -76,12 +61,9 @@ func (s *State) scoreAlignment(n *Node) int8 {
 	} else {
 		coef = scoreFlanked
 	}
-	//	fmt.Println("coef: ", coef)
-	//	fmt.Println("number align: ", number)
 
 	ret := size * coef
 	ret += (number - 1) * scoreByAlign
-	//	fmt.Println("ret: ", ret)
 	return ret
 }
 
@@ -131,32 +113,31 @@ func (s *State) evalCapture(n *Node, current, opponent uint8) int8 {
 		}
 	}
 
-	if first == current {
-		scoreCurrent += scoreFirst
-	} else if first == opponent {
-		scoreOpponent += scoreFirst
-	}
-
 	if flagCurrent == true {
 		scoreCurrent += int8(s.getTotalCapture(current)) * scoreByCapture
-
-		//if scoreCurrent == scoreLimitCapture {
-		//return scoreMax
-		//}
+		if first == current {
+			scoreCurrent += scoreFirst
+		}
+		if scoreCurrent == scoreLimitCapture {
+			return scoreMax
+		}
 	}
 	if flagOpponent == true {
 		scoreOpponent += int8(s.getTotalCapture(opponent)) * scoreByCapture
 
-		//if scoreOpponent == scoreLimitCapture {
-		//return -scoreMax
-		//}
+		if first == opponent {
+			scoreOpponent += scoreFirst
+		}
+		if scoreOpponent == scoreLimitCapture {
+			return -scoreMax
+		}
 	}
 
 	return scoreCurrent - scoreOpponent
 }
 
 // analyzeScoreCapture return true if win condition detected and adapt the score
-func (s *State) analyzeScoreCapture(score *int8, depth uint8) bool {
+/*func (s *State) analyzeScoreCapture(score *int8, depth uint8) bool {
 	if *score == scoreLimitCapture {
 		*score = -127 + (int8(s.maxDepth-depth) + 2)
 		return true
@@ -168,7 +149,7 @@ func (s *State) analyzeScoreCapture(score *int8, depth uint8) bool {
 	}
 
 	return false
-}
+}*/
 
 // analyzeScoreAlignment return true if win condition is detected and adapt the score
 func (s *State) analyzeScoreAlignment(score *int8, depth uint8) bool {
@@ -203,7 +184,6 @@ func (s *State) eval(n *Node, depth uint8) int8 {
 	var scoreAlignment int8
 	var ret int8
 
-	//fmt.Println(" ||||||||||||||||||| EVAL ||||||||||||||||||| ")
 	current := n.rule.GetPlayer()
 	opponent := ruler.GetOtherPlayer(current)
 
@@ -215,28 +195,12 @@ func (s *State) eval(n *Node, depth uint8) int8 {
 		ret = 50
 
 		scoreCapture = s.evalCapture(n, current, opponent)
-		//fmt.Println("score capture: ", score)
-		//if s.analyzeScoreCapture(&score, depth) {
-		//fmt.Println("return capture")
-		//return score
-		//}
 
 		scoreAlignment = s.evalAlignment(n)
-		//fmt.Println("score alignement: ", score)
 		if s.analyzeScoreAlignment(&scoreAlignment, depth) {
-			//fmt.Println("return align")
 			if (scoreAlignment < 0 && scoreCapture < 0) || (scoreAlignment > 0 && scoreCapture > 0) {
-				return scoreAlignment - scoreCapture
+				return scoreAlignment
 			}
-
-			return scoreAlignment
-		}
-
-		if s.analyzeScoreCapture(&scoreCapture, depth) {
-			if (scoreAlignment < 0 && scoreCapture < 0) || (scoreAlignment > 0 && scoreCapture > 0) {
-				return scoreCapture - scoreAlignment
-			}
-			return scoreCapture
 		}
 
 		ret += scoreCapture
@@ -245,13 +209,5 @@ func (s *State) eval(n *Node, depth uint8) int8 {
 		ret = -ret
 	}
 
-	// debug
-	//s.printEval(n, depth, ret)
 	return ret
-	/*
-		if current == ruler.Player1 {
-			return -ret
-		}
-		return ret
-	*/
 }
