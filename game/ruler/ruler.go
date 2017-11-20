@@ -311,7 +311,7 @@ func (r *Rules) analyzeCapture(mask *[11]uint8, dirY, dirX int8) {
 	}
 }
 
-func (r *Rules) analyzeLenAlignement(mask *[11]uint8, dirY, dirX int8) *Align {
+func (r *Rules) analyzeLenAlignment(mask *[11]uint8, dirY, dirX int8) *Align {
 	a := &Align{size: 1}
 	availablePosition := 1
 	var lastIndex int
@@ -408,7 +408,7 @@ func (r *Rules) analyzeConsecutiveAlignment(mask *[11]uint8) uint8 {
 func (r *Rules) analyzeAlign(mask *[11]uint8, dirY, dirX int8) {
 	var a *Align
 
-	a = r.analyzeLenAlignement(mask, dirY, dirX)
+	a = r.analyzeLenAlignment(mask, dirY, dirX)
 	if a == nil {
 		return
 	}

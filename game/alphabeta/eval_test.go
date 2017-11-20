@@ -248,7 +248,7 @@ func TestEvalAlignment(t *testing.T) {
 
 	ret = state.evalAlignment(n3)
 	// test: 3 > check value of eval
-	if ret != 11 {
+	if ret != 13 {
 		t.Error(t.Name()+" > test: 3 > resultat: ", ret)
 	}
 
