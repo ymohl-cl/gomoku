@@ -255,7 +255,7 @@ func GetAlignHalfP2() *[19][19]uint8 {
 // . . o o . . x o .
 // . . . x o x o x .
 // . . . . . . . . .
-func GetTreeP1() *[19][19]uint8 {
+func GetTreeP1_1() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board
@@ -270,6 +270,37 @@ func GetTreeP1() *[19][19]uint8 {
 	b[8][8] = 2
 	b[9][11] = 2
 	b[8][12] = 2
+	b[8][7] = 2
+	return &b
+}
+
+// GetTreeP2 : _
+// . . . . . . . . .
+// . o . . . . . . .
+// . . x . . . o . .
+// . . o x . x . . .
+// . . . . x x . . .
+// . x x x o . . . .
+// . o . . . . . . .
+// . . . . . . . . .
+func GetTreeP1_2() *[19][19]uint8 {
+	var b [19][19]uint8
+
+	// set P1 on the board
+	b[9][9] = 1
+	b[9][10] = 1
+	b[8][10] = 1
+	b[8][8] = 1
+	b[7][7] = 1
+	b[10][6] = 1
+	b[10][7] = 1
+	b[10][8] = 1
+
+	// set P2 on the board
+	b[6][6] = 2
+	b[7][11] = 2
+	b[10][9] = 2
+	b[11][6] = 2
 	b[8][7] = 2
 	return &b
 }
