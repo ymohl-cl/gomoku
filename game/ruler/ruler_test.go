@@ -306,19 +306,19 @@ func ExampleRules_analyzeAlign_tree() {
 	var b *[19][19]uint8
 	var r *Rules
 
-	b = boards.GetTreeP1()
+	b = boards.GetTreeP1_1()
 	r = New(Player2, 7, 7)
 	r = prepareAnalyzeAlign(b, r)
 	r.PrintAlignments()
 	r.PrintThrees()
 
-	b = boards.GetTreeP1()
+	b = boards.GetTreeP1_1()
 	r = New(Player2, 7, 13)
 	r = prepareAnalyzeAlign(b, r)
 	r.PrintAlignments()
 	r.PrintThrees()
 
-	b = boards.GetTreeP1()
+	b = boards.GetTreeP1_1()
 	r = New(Player2, 8, 9)
 	r = prepareAnalyzeAlign(b, r)
 	r.PrintAlignments()
@@ -342,7 +342,7 @@ func ExampleRules_analyzeAlign_doubleTree() {
 	var b *[19][19]uint8
 	var r *Rules
 
-	b = boards.GetTreeP1()
+	b = boards.GetTreeP1_1()
 	r = New(Player2, 10, 10)
 	r = prepareAnalyzeAlign(b, r)
 	r.PrintThrees()
@@ -400,7 +400,7 @@ func TestCheckRules(t *testing.T) {
 	}
 
 	// test: 1 > invalid move by double three action
-	b = boards.GetTreeP1()
+	b = boards.GetTreeP1_1()
 	r = New(Player2, 10, 10)
 	r.CheckRules(b, 3)
 	if r.Movable == true {
@@ -436,6 +436,17 @@ func TestCheckRules(t *testing.T) {
 	r = New(Player1, 9, 14)
 	r.CheckRules(b, 3)
 	if r.Win == true {
-		t.Error(t.Name() + " > test: 4")
+		t.Error(t.Name() + " > test: 5")
 	}
+
+	// test: 6 > invalid move by double three action #2
+	b = boards.GetTreeP1_2()
+	boards.Print(b)
+	r = New(Player1, 8, 9)
+	r.CheckRules(b, 3)
+	fmt.Println("------------------")
+	if r.Movable == true {
+		t.Error(t.Name() + " > test: 6")
+	}
+
 }
