@@ -341,7 +341,7 @@ func GetWinSituationP2() *[19][19]uint8 {
 }
 
 // GetStartP1 : _
-// . . . x o . . .
+// - . . . . . . . . x o . . . . . . . . .
 func GetStartP1() *[19][19]uint8 {
 	var b [19][19]uint8
 

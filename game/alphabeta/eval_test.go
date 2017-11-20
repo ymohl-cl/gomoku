@@ -280,7 +280,7 @@ func TestEvalAlignment(t *testing.T) {
 
 	ret = state.evalAlignment(n3)
 	// test: 5 > check value of eval
-	if ret != 11 {
+	if ret != 13 {
 		t.Error(t.Name()+" > test: 5 > resultat: ", ret)
 	}
 
@@ -390,6 +390,9 @@ func TestEval_noWin(t *testing.T) {
 
 	b = boards.GetStartP1()
 
+	// State board
+	// - . . . . . . . . x o . . . . . . . . .
+
 	// move ai
 	state = New(b, ruler.Player2)
 	n0 := state.newNode(9, 10)
@@ -409,9 +412,14 @@ func TestEval_noWin(t *testing.T) {
 		t.Error(t.Name() + " > test: 0")
 	}
 
+	// p1 capture: 1
+	// p1 alignment: 1 | max: 3 free
+	// p2 capture: 0
+	// p2 alignment: 0 | max: 0
+
 	ret := state.eval(n3, 0)
-	// test: 1 > check value of eval to align P1
-	if ret != -119 {
+	// test: 1 > check value of eval
+	if ret != -100 {
 		t.Error(t.Name()+" > test: 1 > resultat: ", ret)
 	}
 
@@ -419,6 +427,7 @@ func TestEval_noWin(t *testing.T) {
 	//   . . . . . . . . . . . . . . . . . . .
 	//   . . . . . . . . . . o . . . . . . . .
 	// - . . . . . . . . x . . x x . . . . . .
+	//   . . . . . . . . . . . . . . . . . . .
 	//   . . . . . . . . . . . . . . . . . . .
 
 	// move ai
@@ -439,19 +448,24 @@ func TestEval_noWin(t *testing.T) {
 		t.Error(t.Name() + " > test: 2")
 	}
 
+	// p1 capture: 2
+	// p1 alignment: 2 | max: 2 free
+	// p2 capture: 1
+	// p2 alignment: 0 | max: 0
+
 	ret = state.eval(n3, 0)
 	// test: 3 > check value of eval to advantage P1 Caps and align
-	if ret != -65 {
+	if ret != -67 {
 		t.Error(t.Name()+" > test: 3 > resultat: ", ret)
 	}
 
 	// State board
 	//                     |
-	//   . . . . . . . . . . . . . . . . . . .
 	//   . . . . . . . . . . x . . . . . . . .
 	//   . . . . . . . . . . . . . . . . . . .
 	// - . . . . . . . . x . . . . o . . . . .
 	//   . . . . . . . . . . x . . . . . . . .
+	//   . . . . . . . . . . . . . . . . . . .
 
 	// move ai
 	n0 = state.newNode(8, 13)
@@ -471,17 +485,24 @@ func TestEval_noWin(t *testing.T) {
 		t.Error(t.Name() + " > test: 4")
 	}
 
+	// p1 capture: 3
+	// p1 alignment: 2 | max: 2 free
+	// p2 capture: 1
+	// p2 alignment: 0 | max: 0
+
 	ret = state.eval(n3, 0)
 	// test: 5 > check value of eval to advantage P1 Caps and align
-	if ret != -77 {
+	if ret != -79 {
 		t.Error(t.Name()+" > test: 5 > resultat: ", ret)
 	}
 
 	// State board
+	//                     |
 	//   . . . . . . . . . . x . . x . . . . .
 	//   . . . . . . . . . . . . . . . . . . .
 	// - . . . . . . . . x . . . . . . . . . .
 	//   . . . . . . . . . . x o . x . . . . .
+	//   . . . . . . . . . . . . . . . . . . .
 
 	// move ai
 	n0 = state.newNode(10, 12)
@@ -493,7 +514,6 @@ func TestEval_noWin(t *testing.T) {
 	n2 = state.newNode(10, 8)
 	state.updateData(n2, n1)
 	// move player
-	//	boards.Print(state.board)
 	n3 = state.newNode(9, 13)
 	state.updateData(n3, n2)
 
@@ -502,17 +522,24 @@ func TestEval_noWin(t *testing.T) {
 		t.Error(t.Name() + " > test: 6")
 	}
 
+	// p1 capture: 3
+	// p1 alignment: 2 | max: 2 free
+	// p2 capture: 2
+	// p2 alignment: 0 | max: 0
+
 	ret = state.eval(n3, 0)
-	// test: 7 > check value of eval to score align P1 == 24
-	if ret != -119 {
+	// test: 7 > check value of eval
+	if ret != -83 {
 		t.Error(t.Name()+" > test: 7 > resultat: ", ret)
 	}
 
 	// State board
+	//                     |
 	//   . . . . . . . . . . x . . x . . . . .
 	//   . . . . . . . . . . . . . . . . . . .
 	// - . . . . . . . . x . . . . x . . . . .
 	//   . . . . . . . . o . . o o x . . . . .
+	//   . . . . . . . . . . . . . . . . . . .
 
 	// move ai
 	n0 = state.newNode(8, 13)
@@ -532,13 +559,19 @@ func TestEval_noWin(t *testing.T) {
 		t.Error(t.Name() + " > test: 8")
 	}
 
+	// p1 capture: 4
+	// p1 alignment: 2 | max: 2 free
+	// p2 capture: 2
+	// p2 alignment: 0 | max: 0
+
 	ret = state.eval(n3, 0)
-	// test: 9 > check value of eval to score capture P1 == 24
-	if ret != -121 {
+	// test: 9 > check value of eval
+	if ret != -75 {
 		t.Error(t.Name()+" > test: 9 > resultat: ", ret)
 	}
 
 	// State board
+	//                     |
 	//   . . . . . . . . . . x . . x . . . . .
 	//   . . . . . . . . . . . . . o . . . . .
 	// - . . . . . . . . x . . . . x . . . . .
@@ -563,13 +596,19 @@ func TestEval_noWin(t *testing.T) {
 		t.Error(t.Name() + " > test: 10")
 	}
 
+	// p1 capture: 4
+	// p1 alignment: 2 | max: 2 free
+	// p2 capture: 4
+	// p2 alignment: 0 | max: 0
+
 	ret = state.eval(n3, 0)
 	// test: 11 > check value of eval to score capture P2 == -25 and align == -24
-	if ret != 121 {
+	if ret != 120 {
 		t.Error(t.Name()+" > test: 11 > resultat: ", ret)
 	}
 
 	// State board
+	//                     |
 	//   . . . . . . . . . . x . . x . . . . .
 	//   . . . . . . . . . . . . . o . . . . .
 	// - . . . . . . . . x . . . . . . . . . .

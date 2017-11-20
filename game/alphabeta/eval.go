@@ -161,8 +161,12 @@ func (s *State) analyzeScoreAlignment(score *int8, depth uint8) bool {
 		*score = -127 + (int8(s.maxDepth-depth) + 2)
 		return true
 	} else*/
+
+	// delete score capture to add on next stape and delete depth to win.
+	ret := 127 - (scoreMax + (int8(s.maxDepth-depth) + 4))
+
 	if *score == scoreMax-1 {
-		*score = -127 + (int8(s.maxDepth-depth) + 4)
+		*score = -ret
 		return true
 	}
 
@@ -171,7 +175,8 @@ func (s *State) analyzeScoreAlignment(score *int8, depth uint8) bool {
 		return true
 	} else*/
 	if *score == -(scoreMax - 1) {
-		*score = 127 - (int8(s.maxDepth-depth) + 4)
+		// add 1 to one more depth
+		*score = ret + 1
 		return true
 	}
 
@@ -200,12 +205,9 @@ func (s *State) eval(n *Node, depth uint8) int8 {
 		ret = 50
 
 		scoreCapture = s.evalCapture(n, current, opponent)
-
 		scoreAlignment = s.evalAlignment(n)
 		if s.analyzeScoreAlignment(&scoreAlignment, depth) {
-			if (scoreAlignment < 0 && scoreCapture < 0) || (scoreAlignment > 0 && scoreCapture > 0) {
-				return scoreAlignment
-			}
+			return scoreAlignment - scoreCapture
 		}
 
 		ret += scoreCapture
