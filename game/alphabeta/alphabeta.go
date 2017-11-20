@@ -118,15 +118,15 @@ func (s *State) alphabetaNegaScout(alpha, beta int8, depth uint8, n *Node) int8 
 				}
 			}
 
-			//fmt.Print("Depth: ", depth, " - node y && x: ", y, " - ", x)
-			//fmt.Print(" - weight: ", node.weight)
-			//fmt.Println(" | Alpha: ", alpha, " Beta: ", beta)
-
 			// restore move and restore data
 			s.restoreData(node, n)
 
 			if depth == s.maxDepth {
 				s.addNode(node)
+
+				if alpha < node.weight {
+					s.save = node
+				}
 			}
 
 			alpha = maxWeight(alpha, node.weight)
@@ -150,6 +150,9 @@ func Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 	//fmt.Println("ret: ", ret)
 
 	tmp := int8(math.MinInt8)
+
+	yi, xi := state.save.rule.GetPosition()
+	fmt.Println("save weight: ", state.save.weight, " y et x: ", yi, " - ", xi)
 
 	for n := state.lst; n != nil; n = n.next {
 		y, x := n.rule.GetPosition()

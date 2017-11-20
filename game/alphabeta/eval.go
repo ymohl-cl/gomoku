@@ -48,10 +48,13 @@ func (s *State) scoreAlignment(n *Node) int8 {
 	a = n.rule.GetMaxAlignment()
 	size = a.GetSize()
 
-	if size == 4 {
-		return scoreMax
-	} else if size == 3 && a.IsStyle(ruler.AlignFree) {
+	//	if size == 4 {
+	//		return scoreMax
+	//	} else
+	if size >= 3 && a.IsStyle(ruler.AlignFree) {
 		return scoreMax - 1
+	} else if size == 4 {
+		return scoreMax
 	}
 
 	if a.IsStyle(ruler.AlignHalf) {
@@ -154,18 +157,20 @@ func (s *State) evalCapture(n *Node, current, opponent uint8) int8 {
 // analyzeScoreAlignment return true if win condition is detected and adapt the score
 func (s *State) analyzeScoreAlignment(score *int8, depth uint8) bool {
 	// Need to invert sign
-	if *score == scoreMax {
+	/*if *score == scoreMax {
 		*score = -127 + (int8(s.maxDepth-depth) + 2)
 		return true
-	} else if *score == scoreMax-1 {
+	} else*/
+	if *score == scoreMax-1 {
 		*score = -127 + (int8(s.maxDepth-depth) + 4)
 		return true
 	}
 
-	if *score == -scoreMax {
+	/*if *score == -scoreMax {
 		*score = 127 - (int8(s.maxDepth-depth) + 2)
 		return true
-	} else if *score == -(scoreMax - 1) {
+	} else*/
+	if *score == -(scoreMax - 1) {
 		*score = 127 - (int8(s.maxDepth-depth) + 4)
 		return true
 	}

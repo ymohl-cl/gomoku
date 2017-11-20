@@ -375,6 +375,10 @@ func (r *Rules) analyzeThree(mask *[11]uint8) bool {
 		return true
 	} else if rightMove == empty && mask[indexMove+2] == mask[indexMove] && leftMove == mask[indexMove] {
 		return true
+	} else if leftMove == empty && rightMove == mask[indexMove] && mask[indexMove+2] == mask[indexMove] {
+		return true
+	} else if rightMove == empty && leftMove == mask[indexMove] && mask[indexMove-2] == mask[indexMove] {
+		return true
 	}
 	return false
 }
