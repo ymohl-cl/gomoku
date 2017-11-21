@@ -447,6 +447,13 @@ func TestCheckRules(t *testing.T) {
 		t.Error(t.Name() + " > test: 6 ")
 	}
 
+	// test: 7 > invalid move by double three action #2
+	b = boards.GetTreeP1_3()
+	r = New(Player1, 9, 10)
+	r.CheckRules(b, 0)
+	if r.Movable == false {
+		t.Error(t.Name() + " > test: 7 ")
+	}
 }
 
 func TestLenAlignment_P1Only(t *testing.T) {
