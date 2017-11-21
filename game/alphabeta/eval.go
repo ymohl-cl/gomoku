@@ -34,7 +34,7 @@ func maxWeight(v1, v2 int8) int8 {
 	return v2
 }
 
-func (s *State) scoreAlignment(n *Node) int8 {
+func (s *State) scoreAlignment(n *Node, depth uint8) int8 {
 	var coef int8
 	var size int8
 	var number int8
@@ -48,13 +48,10 @@ func (s *State) scoreAlignment(n *Node) int8 {
 	a = n.rule.GetMaxAlignment()
 	size = a.GetSize()
 
-	//	if size == 4 {
-	//		return scoreMax
-	//	} else
 	if size >= 3 && a.IsStyle(ruler.AlignFree) {
-		return scoreMax - 1
+		return scoreMax + int8(depth)
 	} else if size == 4 {
-		return scoreMax
+		return scoreMax - 1
 	}
 
 	if a.IsStyle(ruler.AlignHalf) {
@@ -70,31 +67,65 @@ func (s *State) scoreAlignment(n *Node) int8 {
 	return ret
 }
 
+func (s *State) updateScoreAlignment(current, opponent *int8, flag *bool, score int8) {
+	if *flag == false && score > *current {
+		*current = score
+	} else if *flag == true && score > *opponent {
+		*opponent = score
+	}
+
+	*flag = !(*flag)
+}
+
 // evalAlignment return score to alignment parameter on this evaluation
-func (s *State) evalAlignment(n *Node) int8 {
+func (s *State) evalAlignment(n *Node, depth uint8) int8 {
+	var flagOpponent bool
 	var scoreCurrent int8
 	var scoreOpponent int8
 
-	// check first alignment opponent because he it played on first
-	if n.prev != nil {
-		if !n.prev.rule.IsMyPosition(s.board) {
-			scoreOpponent = 0
+	for node := n; node != nil; node = node.prev {
+		if node != n && node.rule.IsMyPosition(s.board) {
+			s.updateScoreAlignment(&scoreCurrent, &scoreOpponent, &flagOpponent, 0)
 		} else {
-			n.prev.rule.UpdateAlignment(s.board)
-			scoreOpponent = s.scoreAlignment(n.prev)
-			if scoreOpponent >= (scoreMax - 1) {
-				return -scoreOpponent
+			if node != n {
+				node.rule.UpdateAlignment(s.board)
 			}
+			score := s.scoreAlignment(node, depth)
+			s.updateScoreAlignment(&scoreCurrent, &scoreOpponent, &flagOpponent, score)
 		}
+		depth++
 	}
 
-	// check score alignment for the last move
-	scoreCurrent = s.scoreAlignment(n)
-	if scoreCurrent >= (scoreMax - 1) {
+	if scoreOpponent >= (scoreMax) {
+		return -scoreOpponent
+	} else if scoreCurrent >= (scoreMax) {
 		return scoreCurrent
 	}
 
 	return scoreCurrent - scoreOpponent
+
+	// check first alignment opponent because he it played on first
+	/*
+		if n.prev != nil {
+			if !n.prev.rule.IsMyPosition(s.board) {
+				scoreOpponent = 0
+			} else {
+				n.prev.rule.UpdateAlignment(s.board)
+				scoreOpponent = s.scoreAlignment(n.prev)
+				if scoreOpponent >= (scoreMax - 1) {
+					return -scoreOpponent
+				}
+			}
+		}
+
+		// check score alignment for the last move
+		scoreCurrent = s.scoreAlignment(n)
+		if scoreCurrent >= (scoreMax - 1) {
+			return scoreCurrent
+		}
+
+		return scoreCurrent - scoreOpponent
+	*/
 }
 
 // evalCapture return the score to the captures parameter on this evaluation
@@ -157,26 +188,18 @@ func (s *State) evalCapture(n *Node, current, opponent uint8) int8 {
 // analyzeScoreAlignment return true if win condition is detected and adapt the score
 func (s *State) analyzeScoreAlignment(score *int8, depth uint8) bool {
 	// Need to invert sign
-	/*if *score == scoreMax {
-		*score = -127 + (int8(s.maxDepth-depth) + 2)
-		return true
-	} else*/
 
 	// delete score capture to add on next stape and delete depth to win.
 	ret := 127 - (scoreMax + (int8(s.maxDepth-depth) + 4))
 
-	if *score == scoreMax-1 {
-		*score = -ret
+	if *score >= scoreMax {
+		*score = -ret - (*score - scoreMax)
 		return true
 	}
 
-	/*if *score == -scoreMax {
-		*score = 127 - (int8(s.maxDepth-depth) + 2)
-		return true
-	} else*/
-	if *score == -(scoreMax - 1) {
+	if *score == -scoreMax {
 		// add 1 to one more depth
-		*score = ret + 1
+		*score = ret + (*score - scoreMax)
 		return true
 	}
 
@@ -205,7 +228,7 @@ func (s *State) eval(n *Node, depth uint8) int8 {
 		ret = 50
 
 		scoreCapture = s.evalCapture(n, current, opponent)
-		scoreAlignment = s.evalAlignment(n)
+		scoreAlignment = s.evalAlignment(n, depth)
 		if s.analyzeScoreAlignment(&scoreAlignment, depth) {
 			return scoreAlignment - scoreCapture
 		}

@@ -191,6 +191,65 @@ func TestEvalCapture(t *testing.T) {
 
 }
 
+func TestUpdateScoreAlignment(t *testing.T) {
+	var b *[19][19]uint8
+	var state *State
+	var scoreCurrent int8
+	var scoreOpponent int8
+
+	b = boards.GetEmpty()
+	state = New(b, ruler.Player2)
+
+	flag := false
+	scoreCurrent = 12
+	scoreOpponent = 10
+
+	saveCurrent := scoreCurrent
+	saveOpponent := scoreOpponent
+
+	// score current
+	state.updateScoreAlignment(&scoreCurrent, &scoreOpponent, &flag, 7)
+	if saveCurrent != scoreCurrent {
+		t.Error(t.Name() + " > test: 1")
+	} else if saveOpponent != scoreOpponent {
+		t.Error(t.Name() + " > test: 2")
+	} else if flag == false {
+		t.Error(t.Name() + " > test: 3")
+	}
+
+	// score opponent
+	state.updateScoreAlignment(&scoreCurrent, &scoreOpponent, &flag, 15)
+	if saveCurrent != scoreCurrent {
+		t.Error(t.Name() + " > test: 4")
+	} else if scoreOpponent != 15 {
+		t.Error(t.Name()+" > test: 5 > ret: ", scoreOpponent)
+	} else if flag == true {
+		t.Error(t.Name() + " > test: 6")
+	}
+
+	// score current
+	saveOpponent = scoreOpponent
+	state.updateScoreAlignment(&scoreCurrent, &scoreOpponent, &flag, 0)
+	if saveCurrent != scoreCurrent {
+		t.Error(t.Name() + " > test: 7")
+	} else if saveOpponent != scoreOpponent {
+		t.Error(t.Name() + " > test: 8")
+	} else if flag == false {
+		t.Error(t.Name() + " > test: 9")
+	}
+
+	// score opponent
+	flag = !flag
+	state.updateScoreAlignment(&scoreCurrent, &scoreOpponent, &flag, 22)
+	if scoreCurrent != 22 {
+		t.Error(t.Name()+" > test: 10 > ret: ", scoreCurrent)
+	} else if saveOpponent != scoreOpponent {
+		t.Error(t.Name() + " > test: 11")
+	} else if flag == false {
+		t.Error(t.Name() + " > test: 12")
+	}
+}
+
 func TestEvalAlignment(t *testing.T) {
 	var b *[19][19]uint8
 	var state *State
@@ -216,7 +275,7 @@ func TestEvalAlignment(t *testing.T) {
 		t.Error(t.Name() + " > test: 0")
 	}
 
-	ret := state.evalAlignment(n3)
+	ret := state.evalAlignment(n3, 0)
 	// test: 1 > check value of eval
 	if ret != 24 {
 		t.Error(t.Name()+" > test: 1 > resultat: ", ret)
@@ -246,7 +305,7 @@ func TestEvalAlignment(t *testing.T) {
 		t.Error(t.Name() + " > test: 2")
 	}
 
-	ret = state.evalAlignment(n3)
+	ret = state.evalAlignment(n3, 0)
 	// test: 3 > check value of eval
 	if ret != 13 {
 		t.Error(t.Name()+" > test: 3 > resultat: ", ret)
@@ -278,7 +337,7 @@ func TestEvalAlignment(t *testing.T) {
 		t.Error(t.Name() + " > test: 4")
 	}
 
-	ret = state.evalAlignment(n3)
+	ret = state.evalAlignment(n3, 0)
 	// test: 5 > check value of eval
 	if ret != 13 {
 		t.Error(t.Name()+" > test: 5 > resultat: ", ret)
@@ -309,7 +368,7 @@ func TestEvalAlignment(t *testing.T) {
 		t.Error(t.Name() + " > test: 6")
 	}
 
-	ret = state.evalAlignment(n3)
+	ret = state.evalAlignment(n3, 0)
 	// test: 7 > check value of eval
 	if ret != 24 {
 		t.Error(t.Name()+" > test: 7 > resultat: ", ret)
@@ -339,7 +398,7 @@ func TestEvalAlignment(t *testing.T) {
 		t.Error(t.Name() + " > test: 8")
 	}
 
-	ret = state.evalAlignment(n3)
+	ret = state.evalAlignment(n3, 0)
 	// test: 9 > check value of eval
 	if ret != 0 {
 		t.Error(t.Name()+" > test: 9 > resultat: ", ret)
@@ -370,7 +429,7 @@ func TestEvalAlignment(t *testing.T) {
 		t.Error(t.Name() + " > test: 10")
 	}
 
-	ret = state.evalAlignment(n3)
+	ret = state.evalAlignment(n3, 0)
 	// test: 11 > check value of eval
 	if ret != -24 {
 		t.Error(t.Name()+" > test: 11 > resultat: ", ret)
