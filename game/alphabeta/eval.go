@@ -84,7 +84,7 @@ func (s *State) evalAlignment(n *Node, depth uint8) int8 {
 	var scoreOpponent int8
 
 	for node := n; node != nil; node = node.prev {
-		if node != n && node.rule.IsMyPosition(s.board) {
+		if node != n && !node.rule.IsMyPosition(s.board) {
 			s.updateScoreAlignment(&scoreCurrent, &scoreOpponent, &flagOpponent, 0)
 		} else {
 			if node != n {

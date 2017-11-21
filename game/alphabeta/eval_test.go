@@ -254,6 +254,8 @@ func TestEvalAlignment(t *testing.T) {
 	var b *[19][19]uint8
 	var state *State
 
+	// State board
+	// - . . . . . . . . x o . . . . . . . . .
 	b = boards.GetStartP1()
 
 	// move ai
@@ -275,13 +277,17 @@ func TestEvalAlignment(t *testing.T) {
 		t.Error(t.Name() + " > test: 0")
 	}
 
+	// p1 capture: 1
+	// p2 capture: 0
+
 	ret := state.evalAlignment(n3, 0)
 	// test: 1 > check value of eval
-	if ret != 24 {
+	if ret != 25 {
 		t.Error(t.Name()+" > test: 1 > resultat: ", ret)
 	}
 
 	// State board
+	//                     |
 	//   . . . . . . . . . . . . . . . . . . .
 	//   . . . . . . . . . . o . . . . . . . .
 	// - . . . . . . . . x . . x x . . . . . .
