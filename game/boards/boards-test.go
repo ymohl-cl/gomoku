@@ -403,7 +403,7 @@ func GetWinSituationP2() *[19][19]uint8 {
 
 // GetStartP1 : _
 // - . . . . . . . . x o . . . . . . . . .
-func GetStartP1() *[19][19]uint8 {
+func GetStartP1_1() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board
@@ -416,7 +416,8 @@ func GetStartP1() *[19][19]uint8 {
 }
 
 // GetStartP2_1 : _
-// . . . . . . . o o x . . . . . . . .
+//                     |
+// - . . . . . . . . o o x . . . . . . . .
 func GetStartP2_1() *[19][19]uint8 {
 	var b [19][19]uint8
 
@@ -425,6 +426,29 @@ func GetStartP2_1() *[19][19]uint8 {
 
 	// set P2 on the board
 	b[9][9] = 2
+	b[9][8] = 2
+
+	return &b
+}
+
+// GetStartP2_2 : _
+//                     |
+//   . . . . . . . . . . . . . . . . . . .
+//   . . . . . . . . . . . . . . . . . . .
+//   . . . . . . . x . . . . . . . . . . .
+// - . . . . . . . . o x . . . . . . . . .
+//   . . . . . . . x . o . . . . . . . . .
+//   . . . . . . . . . . . . . . . . . . .
+func GetStartP2_2() *[19][19]uint8 {
+	var b [19][19]uint8
+
+	// set P1 on the board
+	b[8][7] = 1
+	b[10][7] = 1
+	b[9][9] = 1
+
+	// set P2 on the board
+	b[10][9] = 2
 	b[9][8] = 2
 
 	return &b

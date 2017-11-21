@@ -1,6 +1,8 @@
 package alphabeta
 
 import (
+	"fmt"
+
 	"github.com/ymohl-cl/gomoku/game/ruler"
 )
 
@@ -77,18 +79,43 @@ func (s *State) updateScoreAlignment(current, opponent *int8, flag *bool, score 
 	*flag = !(*flag)
 }
 
+func (s State) getTokensPlayer(current, opponent *[]*Node, flag bool) *[]*Node {
+	if flag == false {
+		return current
+	}
+	return opponent
+}
+
+func (s *State) addTokensPlayer(current, opponent *[]*Node, n *Node, flag bool) {
+	var nodes *[]*Node
+
+	if flag == false {
+		nodes = current
+	} else {
+		nodes = opponent
+	}
+
+	*nodes = append(*nodes, n)
+}
+
 // evalAlignment return score to alignment parameter on this evaluation
 func (s *State) evalAlignment(n *Node, depth uint8) int8 {
 	var flagOpponent bool
 	var scoreCurrent int8
 	var scoreOpponent int8
+	var sCurrent []*Node
+	var sOpponent []*Node
 
 	for node := n; node != nil; node = node.prev {
 		if node != n && !node.rule.IsMyPosition(s.board) {
 			s.updateScoreAlignment(&scoreCurrent, &scoreOpponent, &flagOpponent, 0)
 		} else {
+			s.addTokensPlayer(&sCurrent, &sOpponent, node, flagOpponent)
 			if node != n {
+				positionsPlayer := s.getTokensPlayer(&sCurrent, &sOpponent, flagOpponent)
+				s.updateTokenPlayer(positionsPlayer)
 				node.rule.UpdateAlignment(s.board)
+				s.restoreTokenPlayer(positionsPlayer)
 			}
 			score := s.scoreAlignment(node, depth)
 			s.updateScoreAlignment(&scoreCurrent, &scoreOpponent, &flagOpponent, score)
@@ -198,7 +225,6 @@ func (s *State) analyzeScoreAlignment(score *int8, depth uint8) bool {
 	}
 
 	if *score == -scoreMax {
-		// add 1 to one more depth
 		*score = ret + (*score - scoreMax)
 		return true
 	}
@@ -230,6 +256,7 @@ func (s *State) eval(n *Node, depth uint8) int8 {
 		scoreCapture = s.evalCapture(n, current, opponent)
 		scoreAlignment = s.evalAlignment(n, depth)
 		if s.analyzeScoreAlignment(&scoreAlignment, depth) {
+			printerDebug(n, scoreAlignment-scoreCapture)
 			return scoreAlignment - scoreCapture
 		}
 
@@ -239,5 +266,23 @@ func (s *State) eval(n *Node, depth uint8) int8 {
 		ret = -ret
 	}
 
+	printerDebug(n, ret)
 	return ret
+}
+
+func printerDebug(n *Node, ret int8) {
+	last := n
+	for node := n; node != nil; node = node.prev {
+		last = node
+	}
+	y, x := last.rule.GetPosition()
+	if y == 11 && x == 10 && ret < -50 {
+		fmt.Println("----------------------")
+		fmt.Println("ret : ", ret)
+		defer fmt.Println("----------------------")
+		for node := n; node != nil; node = node.prev {
+			yp, xp := node.rule.GetPosition()
+			defer fmt.Println("x : ", xp, " / y : ", yp)
+		}
+	}
 }

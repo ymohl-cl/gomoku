@@ -109,7 +109,7 @@ func TestNewNode(t *testing.T) {
 	var state *State
 	var n *Node
 
-	b = boards.GetStartP1()
+	b = boards.GetStartP1_1()
 	state = New(b, ruler.Player2)
 
 	// test: 0 > simple invalid move

@@ -66,6 +66,20 @@ func (s *State) newNode(y, x int8) *Node {
 	return n
 }
 
+func (s *State) updateTokenPlayer(nodes *[]*Node) {
+	for _, n := range *nodes {
+		y, x := n.rule.GetPosition()
+		(*s.board)[y][x] = ruler.Empty
+	}
+}
+
+func (s *State) restoreTokenPlayer(nodes *[]*Node) {
+	for _, n := range *nodes {
+		y, x := n.rule.GetPosition()
+		(*s.board)[y][x] = n.rule.GetPlayer()
+	}
+}
+
 func (s *State) updateData(n *Node, prev *Node) {
 	n.rule.ApplyMove(s.board)
 
@@ -108,6 +122,8 @@ func (s *State) alphabetaNegaScout(alpha, beta int8, depth uint8, n *Node) int8 
 			// apply move and update data
 			s.updateData(node, n)
 
+			node.weight = -s.alphabetaNegaScout(-beta, -alpha, depth-1, node)
+
 			if first == true {
 				first = false
 				node.weight = -s.alphabetaNegaScout(-beta, -alpha, depth-1, node)
@@ -132,6 +148,9 @@ func (s *State) alphabetaNegaScout(alpha, beta int8, depth uint8, n *Node) int8 
 			alpha = maxWeight(alpha, node.weight)
 
 			if alpha >= beta {
+				if depth == 4 {
+					fmt.Println("alpha: ", alpha, " - beta: ", beta)
+				}
 				return alpha
 			}
 		}

@@ -2,7 +2,7 @@ package ruler
 
 // outOfBoard is used on mask of raw (see CheckRules)
 const (
-	empty      = 0
+	Empty      = 0
 	Player1    = uint8(1)
 	Player2    = uint8(2)
 	outOfBoard = 3
@@ -76,9 +76,9 @@ func isOnTheBoard(y, x int8) bool {
 	return true
 }
 
-// isEmpty : check if the (pX, pY) point are empty position
+// isEmpty : check if the (pX, pY) point are Empty position
 func isEmpty(b *[19][19]uint8, y, x int8) bool {
-	if (*b)[uint8(y)][uint8(x)] == empty {
+	if (*b)[uint8(y)][uint8(x)] == Empty {
 		return true
 	}
 	return false
@@ -99,8 +99,8 @@ func positionIsCapturable(b *[19][19]uint8, posY, posX int8, player uint8) bool 
 			}
 
 			if (*b)[posY+dirY][posX+dirX] == player {
-				if ((*b)[posY+dirY*2][posX+dirX*2] == opponent && (*b)[posY+dirY*-1][posX+dirX*-1] == empty) ||
-					((*b)[posY+dirY*2][posX+dirX*2] == empty && (*b)[posY+dirY*-1][posX+dirX*-1] == opponent) {
+				if ((*b)[posY+dirY*2][posX+dirX*2] == opponent && (*b)[posY+dirY*-1][posX+dirX*-1] == Empty) ||
+					((*b)[posY+dirY*2][posX+dirX*2] == Empty && (*b)[posY+dirY*-1][posX+dirX*-1] == opponent) {
 					return true
 				}
 			}
@@ -176,7 +176,7 @@ func (r *Rules) Init(p uint8, y, x int8) {
 func (r *Rules) ApplyMove(b *[19][19]uint8) {
 	(*b)[r.y][r.x] = r.player
 	for _, capture := range r.captures {
-		(*b)[capture.Y][capture.X] = empty
+		(*b)[capture.Y][capture.X] = Empty
 	}
 }
 
@@ -184,7 +184,7 @@ func (r *Rules) ApplyMove(b *[19][19]uint8) {
 func (r *Rules) RestoreMove(b *[19][19]uint8) {
 	opponent := GetOtherPlayer(r.player)
 
-	(*b)[r.y][r.x] = empty
+	(*b)[r.y][r.x] = Empty
 	for _, capture := range r.captures {
 		(*b)[capture.Y][capture.X] = opponent
 	}
@@ -292,8 +292,8 @@ func (r *Rules) analyzeCapture(mask *[11]uint8, dirY, dirX int8) {
 
 	if (*mask)[4] == cible && (*mask)[3] == cible && (*mask)[2] == r.player {
 		// simulate capture to the check alignment
-		(*mask)[4] = empty
-		(*mask)[3] = empty
+		(*mask)[4] = Empty
+		(*mask)[3] = Empty
 
 		r.NumberCapture++
 		r.addCapture(r.y+dirY, r.x+dirX)
@@ -302,8 +302,8 @@ func (r *Rules) analyzeCapture(mask *[11]uint8, dirY, dirX int8) {
 
 	if (*mask)[6] == cible && (*mask)[7] == cible && (*mask)[8] == r.player {
 		// simulate capture to the check alignment
-		(*mask)[6] = empty
-		(*mask)[7] = empty
+		(*mask)[6] = Empty
+		(*mask)[7] = Empty
 
 		r.NumberCapture++
 		r.addCapture(r.y+(dirY*-1), r.x+(dirX*-1))
@@ -322,15 +322,15 @@ func (r *Rules) analyzeLenAlignment(mask *[11]uint8) *Align {
 		if (*mask)[i] == r.player {
 			a.size++
 			availablePosition++
-		} else if (*mask)[i] == empty {
+		} else if (*mask)[i] == Empty {
 			availablePosition++
 		} else {
 			break
 		}
 	}
 
-	if (*mask)[lastIndex] == empty ||
-		((*mask)[lastIndex] != r.player && (*mask)[lastIndex+1] == empty) {
+	if (*mask)[lastIndex] == Empty ||
+		((*mask)[lastIndex] != r.player && (*mask)[lastIndex+1] == Empty) {
 		left = true
 	}
 
@@ -339,18 +339,18 @@ func (r *Rules) analyzeLenAlignment(mask *[11]uint8) *Align {
 		if (*mask)[i] == r.player {
 			a.size++
 			availablePosition++
-		} else if (*mask)[i] == empty {
+		} else if (*mask)[i] == Empty {
 			availablePosition++
 		} else {
 			break
 		}
 	}
-	if (*mask)[lastIndex] == empty ||
-		((*mask)[lastIndex] != r.player && (*mask)[lastIndex-1] == empty) {
+	if (*mask)[lastIndex] == Empty ||
+		((*mask)[lastIndex] != r.player && (*mask)[lastIndex-1] == Empty) {
 		right = true
 	}
 
-	if availablePosition < 5 || a.size == 1 {
+	if availablePosition < 5 || a.size <= 1 {
 		return nil
 	}
 
@@ -371,13 +371,13 @@ func (r *Rules) analyzeThree(mask *[11]uint8) bool {
 	rightMove := mask[indexMove+1]
 	if leftMove == mask[indexMove] && leftMove == rightMove {
 		return true
-	} else if leftMove == empty && mask[indexMove-2] == mask[indexMove] && rightMove == mask[indexMove] {
+	} else if leftMove == Empty && mask[indexMove-2] == mask[indexMove] && rightMove == mask[indexMove] {
 		return true
-	} else if rightMove == empty && mask[indexMove+2] == mask[indexMove] && leftMove == mask[indexMove] {
+	} else if rightMove == Empty && mask[indexMove+2] == mask[indexMove] && leftMove == mask[indexMove] {
 		return true
-	} else if leftMove == empty && rightMove == mask[indexMove] && mask[indexMove+2] == mask[indexMove] {
+	} else if leftMove == Empty && rightMove == mask[indexMove] && mask[indexMove+2] == mask[indexMove] {
 		return true
-	} else if rightMove == empty && leftMove == mask[indexMove] && mask[indexMove-2] == mask[indexMove] {
+	} else if rightMove == Empty && leftMove == mask[indexMove] && mask[indexMove-2] == mask[indexMove] {
 		return true
 	}
 	return false
