@@ -413,7 +413,7 @@ func (r *Rules) analyzeAlign(mask *[11]uint8, dirY, dirX int8) {
 		return
 	}
 
-	if a.size == 3 && r.analyzeThree(mask) {
+	if a.size == 3 && a.style == AlignFree && r.analyzeThree(mask) {
 		r.NumberThree++
 	}
 

@@ -311,6 +311,9 @@ func TestEvalAlignment(t *testing.T) {
 		t.Error(t.Name() + " > test: 2")
 	}
 
+	// p1 capture: 2
+	// p2 capture: 1
+
 	ret = state.evalAlignment(n3, 0)
 	// test: 3 > check value of eval
 	if ret != 13 {
@@ -343,6 +346,9 @@ func TestEvalAlignment(t *testing.T) {
 		t.Error(t.Name() + " > test: 4")
 	}
 
+	// p1 capture: 3
+	// p2 capture: 1
+
 	ret = state.evalAlignment(n3, 0)
 	// test: 5 > check value of eval
 	if ret != 13 {
@@ -350,6 +356,7 @@ func TestEvalAlignment(t *testing.T) {
 	}
 
 	// State board
+	//                     |
 	//   . . . . . . . . . . x . . x . . . . .
 	//   . . . . . . . . . . . . . . . . . . .
 	// - . . . . . . . . x . . . . . . . . . .
@@ -374,6 +381,9 @@ func TestEvalAlignment(t *testing.T) {
 		t.Error(t.Name() + " > test: 6")
 	}
 
+	// p1 capture: 3
+	// p2 capture: 2
+
 	ret = state.evalAlignment(n3, 0)
 	// test: 7 > check value of eval
 	if ret != 24 {
@@ -381,6 +391,7 @@ func TestEvalAlignment(t *testing.T) {
 	}
 
 	// State board
+	//                     |
 	//   . . . . . . . . . . x . . x . . . . .
 	//   . . . . . . . . . . . . . . . . . . .
 	// - . . . . . . . . x . . . . x . . . . .
@@ -404,6 +415,9 @@ func TestEvalAlignment(t *testing.T) {
 		t.Error(t.Name() + " > test: 8")
 	}
 
+	// p1 capture: 4
+	// p2 capture: 2
+
 	ret = state.evalAlignment(n3, 0)
 	// test: 9 > check value of eval
 	if ret != 0 {
@@ -411,6 +425,7 @@ func TestEvalAlignment(t *testing.T) {
 	}
 
 	// State board
+	//                     |
 	//   . . . . . . . . . . x . . x . . . . .
 	//   . . . . . . . . . . . . . o . . . . .
 	// - . . . . . . . . x . . . . x . . . . .
@@ -434,6 +449,9 @@ func TestEvalAlignment(t *testing.T) {
 	if n0 == nil || n1 == nil || n2 == nil || n3 == nil {
 		t.Error(t.Name() + " > test: 10")
 	}
+
+	// p1 capture: 4
+	// p2 capture: 4
 
 	ret = state.evalAlignment(n3, 0)
 	// test: 11 > check value of eval
