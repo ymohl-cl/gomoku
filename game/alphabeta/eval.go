@@ -65,6 +65,7 @@ func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8) {
 	size = a.GetSize()
 
 	// check wins situations
+
 	if size >= 3 && a.IsStyle(ruler.AlignFree) {
 		if sc.alignment < scoreWinDetection {
 			sc.alignment = scoreWinDetection + int16(n.rule.GetNumberAlignment())
@@ -173,7 +174,25 @@ func (s *State) evalCapture(n *Node, current, opponent *Score) {
 
 // analyzeScore return the final weight
 func (s *State) analyzeScore(current, opponent *Score) int16 {
-	return 0 // score
+	var score int16
+
+	if opponent.alignment > scoreWinDetection {
+		score = opponent.alignment + int16(opponent.depthAlignment)
+		score += opponent.capture
+		score -= (current.alignment + int16(current.depthAlignment))
+		score -= current.capture
+	} else if current.alignment > scoreWinDetection {
+		score = current.alignment + int16(current.depthAlignment)
+		score += current.capture
+		score -= (opponent.alignment + int16(opponent.depthAlignment))
+		score -= opponent.capture
+	} else {
+		score = scoreNeutral
+		score += current.alignment - opponent.alignment
+		score += current.capture - current.capture
+	}
+
+	return score
 }
 
 // eval function define the weight to the evaluation
