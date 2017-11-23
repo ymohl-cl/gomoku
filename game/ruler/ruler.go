@@ -221,13 +221,15 @@ func (r Rules) GetSizeMaxAlignment() uint8 {
 func (r Rules) GetMaxAlignment() *Align {
 	var save *Align
 	nbToken := uint8(0)
+	styleToken := uint8(0)
 
 	for _, align := range r.aligns {
 		//		fmt.Println("align: ", align.size)
-		if align.size > nbToken {
+		if align.size > nbToken || (align.size == nbToken && align.style < styleToken) {
 			//			fmt.Println("save")
 			save = align
 			nbToken = align.size
+			styleToken = align.style
 		}
 	}
 	//	fmt.Println("Return: ", save.size)

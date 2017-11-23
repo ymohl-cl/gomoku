@@ -635,3 +635,74 @@ func TestLenAlignment(t *testing.T) {
 	}
 
 }
+
+func TestGetMaxAlignment(t *testing.T) {
+	// Player1 rules neutral instance
+	r := New(Player1, 0, 0)
+	//3 align similar with diffrents styles
+	align1 := &Align{size: 3, style: AlignFree}
+	r.aligns = append(r.aligns, align1)
+	align2 := &Align{size: 3, style: AlignHalf}
+	r.aligns = append(r.aligns, align2)
+	align3 := &Align{size: 3, style: AlignFlanked}
+	r.aligns = append(r.aligns, align3)
+
+	// test: 1 > We want the best style -> AlignFree
+	if a := r.GetMaxAlignment(); a == nil || (a.size != 3 && a.style != AlignFree) {
+		t.Error(t.Name()+" > test: 1 / alignment struct : ", a)
+	}
+
+	// Player1 rules neutral instance
+	r = New(Player1, 0, 0)
+	//3 align not similar
+	align1 = &Align{size: 2, style: AlignFree}
+	r.aligns = append(r.aligns, align1)
+	align2 = &Align{size: 2, style: AlignHalf}
+	r.aligns = append(r.aligns, align2)
+	align3 = &Align{size: 3, style: AlignFlanked}
+	r.aligns = append(r.aligns, align3)
+
+	// test: 2 > we want the bigger size -> 3
+	if a := r.GetMaxAlignment(); a == nil || a.size != 3 {
+		t.Error(t.Name()+" > test: 2 / alignment struct : ", a)
+	}
+
+	// Player1 rules neutral instance
+	r = New(Player1, 0, 0)
+	//2 align not similar
+	align1 = &Align{size: 2, style: AlignFree}
+	r.aligns = append(r.aligns, align1)
+	align2 = &Align{size: 2, style: AlignHalf}
+	r.aligns = append(r.aligns, align2)
+
+	// test: 3 > we want the but style -> AlignFree
+	if a := r.GetMaxAlignment(); a == nil || (a.size != 3 && a.style != AlignFree) {
+		t.Error(t.Name()+" > test: 3 / alignment struct : ", a)
+	}
+
+	// Player1 rules neutral instance
+	r = New(Player1, 0, 0)
+	//2 align not similar
+	align1 = &Align{size: 2, style: AlignFree}
+	r.aligns = append(r.aligns, align1)
+	align2 = &Align{size: 2, style: AlignFlanked}
+	r.aligns = append(r.aligns, align2)
+
+	// test: 4 > we want the but style -> AlignFree
+	if a := r.GetMaxAlignment(); a == nil || (a.size != 3 && a.style != AlignFree) {
+		t.Error(t.Name()+" > test: 4 / alignment struct : ", a)
+	}
+
+	// Player1 rules neutral instance
+	r = New(Player1, 0, 0)
+	//2 align not similar
+	align1 = &Align{size: 2, style: AlignHalf}
+	r.aligns = append(r.aligns, align1)
+	align2 = &Align{size: 2, style: AlignFlanked}
+	r.aligns = append(r.aligns, align2)
+
+	// test: 5 > we want the but style -> AlignHalf
+	if a := r.GetMaxAlignment(); a == nil || (a.size != 3 && a.style != AlignHalf) {
+		t.Error(t.Name()+" > test: 5 / alignment struct : ", a)
+	}
+}
