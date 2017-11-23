@@ -24,7 +24,7 @@ type State struct {
 
 type Node struct {
 	rule   ruler.Rules
-	weight int8
+	weight int16
 	next   *Node
 	prev   *Node
 }
@@ -107,7 +107,7 @@ func (s *State) addNode(n *Node) {
 	s.lst = n
 }
 
-func (s *State) alphabetaNegaScout(alpha, beta int8, depth uint8, n *Node) int8 {
+func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint8, n *Node) int16 {
 	if (n != nil && n.rule.Win) || depth == 0 {
 		return s.eval(n, depth)
 	}
@@ -165,10 +165,10 @@ func Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 	state.addTotalCapture(ruler.Player2, uint8(s.NbCaptureP2))
 
 	//ret := state.alphabetaNegaScout(math.MinInt8+1, math.MaxInt8, state.maxDepth, nil)
-	state.alphabetaNegaScout(math.MinInt8+1, math.MaxInt8, state.maxDepth, nil)
+	state.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, state.maxDepth, nil)
 	//fmt.Println("ret: ", ret)
 
-	tmp := int8(math.MinInt8)
+	tmp := int16(math.MinInt16)
 
 	yi, xi := state.save.rule.GetPosition()
 	fmt.Println("save weight: ", state.save.weight, " y et x: ", yi, " - ", xi)
