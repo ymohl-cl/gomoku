@@ -313,6 +313,45 @@ func (r *Rules) analyzeCapture(mask *[11]uint8, dirY, dirX int8) {
 	}
 }
 
+func (r *Rules) analyzeTestLenAlignment(mask *[11]uint8) int8 {
+	var maxSize int8
+	//	var style uint8
+	//	a := &Align{size: 1}
+
+	for i := 1; i <= 5; i++ {
+		size := int8(0)
+		available := int8(0)
+		for c := 0; c < 5; c++ {
+			value := (*mask)[i+c]
+			if value == r.player {
+				size++
+			} else if value == Empty {
+				available++
+			} else {
+				break
+			}
+		}
+		if available+size == 5 && size > maxSize {
+			/*
+				left := false
+				right := false
+				if mask(*mask)[(i+0)-1] == Empty || mask(*mask)[(i+0)-1] == r.player {
+					left = true
+				}
+				if mask(*mask)[(i+4)+1] == Empty || mask(*mask)[(i+4)+1] == r.player {
+					right = true
+				}
+				if left
+				// check size >= maxSize {
+				// check type alignement
+				//}
+			*/
+			maxSize = size
+		}
+	}
+	return maxSize
+}
+
 func (r *Rules) analyzeLenAlignment(mask *[11]uint8) *Align {
 	a := &Align{size: 1}
 	availablePosition := 1
