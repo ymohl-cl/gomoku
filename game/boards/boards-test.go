@@ -283,7 +283,7 @@ func GetTreeP1_1() *[19][19]uint8 {
 // . x x x o . . . .
 // . o . . . . . . .
 // . . . . . . . . .
-func GetTreeP1_2() *[19][19]uint8 {
+func GetThreeP1_2() *[19][19]uint8 {
 	var b [19][19]uint8
 
 	// set P1 on the board

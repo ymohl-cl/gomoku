@@ -29,17 +29,16 @@ const (
 	scoreFlanked = int16(4)
 
 	// depthOutEvalToFreeThree is a the additional depths to make a win from a free tree.
-	depthOutEvalToFreeThree = uint8(4)
+	depthOutEvalToFreeThree = int16(4)
 	// depthOutEvalToFourSpots is a the additional depths to make a win from a four spot alignment.
-	depthOutEvalToFourSpots = uint8(2)
+	depthOutEvalToFourSpots = int16(2)
 )
 
 type Score struct {
-	idPlayer       uint8
-	capturable     bool
-	capture        int16
-	alignment      int16
-	depthAlignment uint8
+	idPlayer   uint8
+	capturable bool
+	capture    int16
+	alignment  int16
 }
 
 func maxWeight(v1, v2 int16) int16 {
@@ -54,29 +53,35 @@ func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8) {
 	var coef int16
 	var size int8
 	var a *ruler.Align
+	var nbr int8
 
 	// get number align to the spot
-	if nbr := n.rule.GetNumberAlignment(); nbr == 0 {
+	if nbr = n.rule.GetNumberAlignment(); nbr == 0 {
 		return
 	}
+	nbr -= 1
 
 	// get max alignment creted by this spot
 	a = n.rule.GetMaxAlignment()
 	size = a.GetSize()
 
 	// check wins situations
-
-	if size >= 3 && a.IsStyle(ruler.AlignFree) {
-		if sc.alignment < scoreWinDetection {
-			sc.alignment = scoreWinDetection + int16(n.rule.GetNumberAlignment())
-			sc.depthAlignment = depthOutEvalToFreeThree + depth
+	if size >= 4 {
+		score := scoreWinDetection - int16(nbr) + (depthOutEvalToFourSpots - int16(depth))
+		if sc.alignment > score {
+			sc.alignment = score
 		}
 		return
-	} else if size == 4 {
-		if sc.alignment < scoreWinDetection {
-			sc.alignment = scoreWinDetection + int16(n.rule.GetNumberAlignment())
-			sc.depthAlignment = depthOutEvalToFourSpots + depth
+	} else if size == 3 && a.IsStyle(ruler.AlignFree) && n.rule.NumberThree > 0 {
+		score := scoreWinDetection - int16(nbr) + (depthOutEvalToFreeThree - int16(depth))
+		if sc.alignment > score {
+			sc.alignment = score
 		}
+		return
+	}
+
+	// don't continue, because the next step can't be better if the score has already win detected
+	if sc.alignment < 0 {
 		return
 	}
 
@@ -91,12 +96,11 @@ func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8) {
 
 	// calcul score
 	score := int16(size) * coef
-	score += int16(n.rule.GetNumberAlignment()-1) * scoreByAlign
+	score += int16(nbr) * scoreByAlign
 
 	// check better score
 	if sc.alignment < score {
 		sc.alignment = score
-		sc.depthAlignment = depth
 	}
 	return
 }
@@ -177,14 +181,14 @@ func (s *State) analyzeScore(current, opponent *Score) int16 {
 	var score int16
 
 	if opponent.alignment > scoreWinDetection {
-		score = opponent.alignment + int16(opponent.depthAlignment)
+		score = opponent.alignment //+ int16(opponent.depthAlignment)
 		score += opponent.capture
-		score -= (current.alignment + int16(current.depthAlignment))
+		score -= current.alignment //+ int16(current.depthAlignment))
 		score -= current.capture
 	} else if current.alignment > scoreWinDetection {
-		score = current.alignment + int16(current.depthAlignment)
+		score = current.alignment //+ int16(current.depthAlignment)
 		score += current.capture
-		score -= (opponent.alignment + int16(opponent.depthAlignment))
+		score -= opponent.alignment //+ int16(opponent.depthAlignment))
 		score -= opponent.capture
 	} else {
 		score = scoreNeutral
