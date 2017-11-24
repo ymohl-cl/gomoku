@@ -15,23 +15,6 @@ func (r *Rules) PrintThrees() {
 func (r *Rules) PrintAlignments() {
 	fmt.Println("nb alignment ", len(r.aligns))
 	for _, a := range r.aligns {
-		fmt.Print("[size: ", a.size)
-		if a.style&AlignFree != 0 {
-			fmt.Print(", style: free")
-		} else if a.style&AlignHalf != 0 {
-			fmt.Print(", style: half")
-		} else if a.style&AlignFlanked != 0 {
-			fmt.Print(", style: flanked")
-		} else {
-			fmt.Print(", style: not define")
-		}
-		if a.iWin != nil {
-			if r.Win == false {
-				fmt.Print(", capturable")
-			} else {
-				fmt.Print(", no capturable")
-			}
-		}
-		fmt.Println("]")
+		a.Print()
 	}
 }

@@ -31,57 +31,18 @@ func prepareAnalyzeAlign(b *[19][19]uint8, r *Rules) *Rules {
 	var mask [11]uint8
 
 	r.getMaskFromBoard(b, -1, -1, &mask)
-	r.analyzeAlign(&mask, -1, -1)
+	r.analyzeAlignments(&mask, -1, -1)
 
 	r.getMaskFromBoard(b, -1, 0, &mask)
-	r.analyzeAlign(&mask, -1, 0)
+	r.analyzeAlignments(&mask, -1, 0)
 
 	r.getMaskFromBoard(b, -1, 1, &mask)
-	r.analyzeAlign(&mask, -1, 1)
+	r.analyzeAlignments(&mask, -1, 1)
 
 	r.getMaskFromBoard(b, 0, -1, &mask)
-	r.analyzeAlign(&mask, 0, -1)
+	r.analyzeAlignments(&mask, 0, -1)
 
 	return r
-}
-
-func TestIsOnTheBoard(t *testing.T) {
-	var y, x int8
-
-	// test: 0 > top left of the board
-	y = 0
-	x = 0
-	if !isOnTheBoard(y, x) {
-		t.Error(t.Name() + " > test: 0")
-	}
-
-	// test: 1 > top right of the board
-	y = 0
-	x = 18
-	if !isOnTheBoard(y, x) {
-		t.Error(t.Name() + " > test: 1")
-	}
-
-	// test: 2 > bot right of the board
-	y = 18
-	x = 18
-	if !isOnTheBoard(y, x) {
-		t.Error(t.Name() + " > test: 2")
-	}
-
-	// test: 3 > bot left of the board
-	y = 18
-	x = 0
-	if !isOnTheBoard(y, x) {
-		t.Error(t.Name() + " > test: 3")
-	}
-
-	// test: 4 > out of board
-	y = 19
-	x = 0
-	if isOnTheBoard(y, x) {
-		t.Error(t.Name() + " > test: 4")
-	}
 }
 
 func TestIsAvailablePosition(t *testing.T) {
@@ -580,92 +541,6 @@ func TestLenAlignmentP1_P2(t *testing.T) {
 
 }
 
-func TestAnalyzeTestLenAlignment(t *testing.T) {
-	var mask [11]uint8
-	var r *Rules
-
-	// create ruler instance
-	r = New(Player1, 0, 0)
-
-	// test: 0 > all spots set to the player
-	mask = [11]uint8{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
-	if ret := r.analyzeTestLenAlignment(&mask); ret != 5 {
-		t.Error(t.Name()+" > test: 0 > ret: ", ret)
-	}
-
-	// test: 1 > check extremities out of scope
-	mask = [11]uint8{0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}
-	if ret := r.analyzeTestLenAlignment(&mask); ret != 1 {
-		t.Error(t.Name()+" > test: 1 > ret: ", ret)
-	}
-
-	// test: 2 > check extremities on the scope
-	mask = [11]uint8{0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0}
-	if ret := r.analyzeTestLenAlignment(&mask); ret != 2 {
-		t.Error(t.Name()+" > test: 2 > ret: ", ret)
-	}
-
-	// test: 3 > check three alignment without salt
-	mask = [11]uint8{0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0}
-	if ret := r.analyzeTestLenAlignment(&mask); ret != 3 {
-		t.Error(t.Name()+" > test: 3 > ret: ", ret)
-	}
-
-	// test: 4 > check three alignment with salt
-	mask = [11]uint8{0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0}
-	if ret := r.analyzeTestLenAlignment(&mask); ret != 3 {
-		t.Error(t.Name()+" > test: 4 > ret: ", ret)
-	}
-
-	// test: 5 > check three alignment with salt. start mask by 'out of board'
-	mask = [11]uint8{3, 3, 1, 1, 0, 1, 0, 1, 0, 0, 0}
-	if ret := r.analyzeTestLenAlignment(&mask); ret != 3 {
-		t.Error(t.Name()+" > test: 5 > ret: ", ret)
-	}
-
-	// test: 6 > check alignment cut by ennemy spot
-	mask = [11]uint8{3, 3, 1, 1, 2, 1, 0, 0, 0, 0, 0}
-	if ret := r.analyzeTestLenAlignment(&mask); ret != 1 {
-		t.Error(t.Name()+" > test: 6 > ret: ", ret)
-	}
-
-	// test: 7 > reverse test 6
-	mask = [11]uint8{0, 0, 0, 0, 0, 1, 2, 1, 1, 3, 3}
-	if ret := r.analyzeTestLenAlignment(&mask); ret != 1 {
-		t.Error(t.Name()+" > test: 7 > ret: ", ret)
-	}
-
-	// test: 8 > check with not enought space to alignment.
-	mask = [11]uint8{0, 1, 1, 2, 0, 1, 0, 0, 2, 3, 3}
-	if ret := r.analyzeTestLenAlignment(&mask); ret != 0 {
-		t.Error(t.Name()+" > test: 8 > ret: ", ret)
-	}
-
-	// test: 9 > 3 token aligned with salt
-	mask = [11]uint8{0, 0, 1, 0, 0, 1, 1, 1, 2, 0, 0}
-	if ret := r.analyzeTestLenAlignment(&mask); ret != 3 {
-		t.Error(t.Name()+" > test: 9 > ret: ", ret)
-	}
-
-	// test: 10 > 2 test vrac
-	mask = [11]uint8{3, 1, 1, 0, 0, 1, 1, 2, 0, 0, 0}
-	if ret := r.analyzeTestLenAlignment(&mask); ret != 3 {
-		t.Error(t.Name()+" > test: 10 > ret: ", ret)
-	}
-
-	// test: 11 > test vrac
-	mask = [11]uint8{3, 3, 2, 0, 2, 1, 0, 1, 0, 0, 0}
-	if ret := r.analyzeTestLenAlignment(&mask); ret != 2 {
-		t.Error(t.Name()+" > test: 11 > ret: ", ret)
-	}
-
-	// test: 12 > test vrac
-	mask = [11]uint8{0, 0, 0, 0, 1, 1, 1, 0, 3, 3, 3}
-	if ret := r.analyzeTestLenAlignment(&mask); ret != 3 {
-		t.Error(t.Name()+" > test: 12 > ret: ", ret)
-	}
-}
-
 func TestLenAlignment(t *testing.T) {
 	// Player1 rules neutral instance
 	r := New(Player1, 0, 0)
@@ -730,15 +605,18 @@ func TestGetMaxAlignment(t *testing.T) {
 	// Player1 rules neutral instance
 	r := New(Player1, 0, 0)
 	//3 align similar with diffrents styles
-	align1 := &Align{size: 3, style: AlignFree}
-	r.aligns = append(r.aligns, align1)
-	align2 := &Align{size: 3, style: AlignHalf}
+	align2 := &Align{size: 3}
+	align2.style |= AlignHalf
 	r.aligns = append(r.aligns, align2)
 	align3 := &Align{size: 3, style: AlignFlanked}
+	align3.style |= AlignFlanked
 	r.aligns = append(r.aligns, align3)
+	align1 := &Align{size: 3, style: AlignFree}
+	align1.style |= AlignFree
+	r.aligns = append(r.aligns, align1)
 
 	// test: 1 > We want the best style -> AlignFree
-	if a := r.GetMaxAlignment(); a == nil || (a.size != 3 && a.style != AlignFree) {
+	if a := r.GetMaxAlignment(); a == nil || (a.size != 3 && a.style&AlignFree != 0) {
 		t.Error(t.Name()+" > test: 1 / alignment struct : ", a)
 	}
 
