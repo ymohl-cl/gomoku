@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/ymohl-cl/gomoku/game/boards"
+	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
+	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
 )
 
 // prepareAnalyzeCapture mock the check rules to operate on captures
@@ -45,67 +47,372 @@ func prepareAnalyzeAlign(b *[19][19]uint8, r *Rules) *Rules {
 	return r
 }
 
+func ExampleNew() {
+	r := New(rdef.Player1, 9, 9)
+	r.PrintMove()
+	// Output:
+	// player:  1  (y:  9  - x:  9 )
+}
+
+func ExampleRules_Init() {
+	r := New(rdef.Player1, 9, 9)
+	r.Init(rdef.Player2, 8, 8)
+	r.PrintMove()
+	// Output:
+	// player:  2  (y:  8  - x:  8 )
+}
+
+func TestApplyMove(t *testing.T) {
+	var b *[19][19]uint8
+	var r *Rules
+
+	b = boards.GetEmpty()
+	r = New(rdef.Player2, 9, 9)
+
+	// test: 0
+	r.ApplyMove(b)
+	if (*b)[9][9] != rdef.Player2 {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 1
+	b = boards.GetEmpty()
+	r = New(rdef.Player2, 9, 9)
+	(*b)[9][10] = rdef.GetOtherPlayer(rdef.Player2)
+	(*b)[9][11] = rdef.GetOtherPlayer(rdef.Player2)
+	r.captures = append(r.captures, &Spot{Y: 9, X: 10})
+	r.captures = append(r.captures, &Spot{Y: 9, X: 11})
+	r.ApplyMove(b)
+	if (*b)[9][10] != rdef.Empty && (*b)[9][11] != rdef.Empty {
+		t.Error(t.Name() + " > test: 2")
+	}
+}
+
+func TestRestoreMove(t *testing.T) {
+	var b *[19][19]uint8
+	var r *Rules
+
+	b = boards.GetEmpty()
+	r = New(rdef.Player2, 9, 9)
+	(*b)[9][10] = rdef.Player2
+
+	// test: 0
+	r.RestoreMove(b)
+	if (*b)[9][9] != rdef.Empty {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 1
+	b = boards.GetEmpty()
+	r = New(rdef.Player2, 9, 9)
+	(*b)[9][9] = rdef.Player2
+	(*b)[9][10] = rdef.Empty
+	(*b)[9][11] = rdef.Empty
+	r.captures = append(r.captures, &Spot{Y: 9, X: 10})
+	r.captures = append(r.captures, &Spot{Y: 9, X: 11})
+	r.RestoreMove(b)
+	if (*b)[9][9] != rdef.Empty && (*b)[9][10] != rdef.Player1 || (*b)[9][11] != rdef.Player1 {
+		t.Error(t.Name() + " > test: 1")
+	}
+}
+
+func TestGetCapture(t *testing.T) {
+
+	// test: 0
+	r := New(rdef.Player2, 9, 9)
+	captures := r.GetCaptures()
+	if len(captures) != 0 {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 1
+	r.captures = append(r.captures, &Spot{Y: 9, X: 10})
+	r.captures = append(r.captures, &Spot{Y: 9, X: 11})
+	captures = r.GetCaptures()
+	if len(captures) != 2 {
+		t.Error(t.Name() + " > test: 2")
+	}
+}
+
+func TestGetPlayer(t *testing.T) {
+	var r *Rules
+
+	// test: 0
+	r = New(rdef.Player1, 9, 9)
+	if r.GetPlayer() != rdef.Player1 {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 1
+	r = New(rdef.Player2, 8, 8)
+	if r.GetPlayer() != rdef.Player2 {
+		t.Error(t.Name() + " > test: 1")
+	}
+}
+
+func TestGetPosition(t *testing.T) {
+	// test: 0
+	r := New(rdef.Player1, 9, 9)
+	if y, x := r.GetPosition(); y != 9 && x != 9 {
+		t.Error(t.Name() + " > test: 0")
+	}
+}
+
+func TestGetNumberAlignment(t *testing.T) {
+	// test: 0
+	r := New(rdef.Player1, 9, 9)
+	if r.GetNumberAlignment() != 0 {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 1
+	r = New(rdef.Player1, 9, 9)
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 3})
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 2})
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 4})
+	if r.GetNumberAlignment() != 3 {
+		t.Error(t.Name() + " > test: 3")
+	}
+}
+
+func TestIsMyPosition(t *testing.T) {
+	var b *[19][19]uint8
+	var r *Rules
+
+	r = New(rdef.Player1, 9, 8)
+	b = boards.GetEmpty()
+
+	// test: 0 > position not set
+	if r.IsMyPosition(b) {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 1 > position set
+	(*b)[9][8] = rdef.Player1
+	if !r.IsMyPosition(b) {
+		t.Error(t.Name() + " > test: 1")
+	}
+}
+
 func TestIsAvailablePosition(t *testing.T) {
 	var b *[19][19]uint8
 	var r *Rules
 
 	b = boards.GetEmpty()
-	r = New(Player2, 9, 8)
+	r = New(rdef.Player2, 9, 8)
 	// test: 0 > already used 1/2
 	if r.isAvailablePosition(b) {
 		t.Error(t.Name() + " > test: 0")
 	}
 
 	b = boards.GetSimpleP2()
-	r = New(Player1, 9, 6)
+	r = New(rdef.Player1, 9, 6)
 	// test: 1 > allowed position
 	if !r.isAvailablePosition(b) {
 		t.Error(t.Name() + " > test: 1")
 	}
 
-	r = New(Player1, 9, 5)
+	r = New(rdef.Player1, 9, 5)
 	// test: 2 > no neighbour 1/2
 	if r.isAvailablePosition(b) {
 		t.Error(t.Name() + " > test: 2")
 	}
 
-	r = New(Player1, 9, 0)
+	r = New(rdef.Player1, 9, 0)
 	// test: 3 > neighbour 2/2
 	if r.isAvailablePosition(b) {
 		t.Error(t.Name() + " > test: 3")
 	}
 
-	r = New(Player1, 9, 9)
+	r = New(rdef.Player1, 9, 9)
 	// test: 4 > already used 2/2
 	if r.isAvailablePosition(b) {
 		t.Error(t.Name() + " > test: 4")
 	}
 
-	r = New(Player1, -1, 6)
+	r = New(rdef.Player1, -1, 6)
 	// test: 5 > out of board
 	if r.isAvailablePosition(b) {
 		t.Error(t.Name() + " > test: 5")
 	}
 }
 
-func ExampleRules_ApplyMove() {
+func TestAnalyzeWin(t *testing.T) {
+	var r *Rules
+
+	r = New(rdef.Player1, 9, 9)
+	// test: 0
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 3})
+	r.analyzeWinCondition(nil, 0)
+	if r.Win == true {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 1
+	r.NumberCapture = 3
+	r.analyzeWinCondition(nil, 2)
+	if r.Win == false {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 2
+	r.NumberCapture = 4
+	r.analyzeWinCondition(nil, 3)
+	if r.Win == false {
+		t.Error(t.Name() + " > test: 2")
+	}
+
+	// test: 3
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 5})
+	r.analyzeWinCondition(nil, 0)
+	if r.Win == false {
+		t.Error(t.Name() + " > test: 3")
+	}
+}
+
+func TestAnalyzeMoveCondition(t *testing.T) {
+	var r *Rules
+
+	r = New(rdef.Player1, 9, 9)
+	r.Movable = true
+	// test: 0
+	r.analyzeMoveCondition()
+	if r.Movable == false {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 1
+	r.NumberThree = 2
+	r.NumberCapture = 1
+	r.analyzeMoveCondition()
+	if r.Movable == false {
+		t.Error(t.Name() + " > test: 1")
+	}
+
+	// test: 2
+	r.NumberCapture = 0
+	r.analyzeMoveCondition()
+	if r.Movable == true {
+		t.Error(t.Name() + " > test: 2")
+	}
+}
+
+func TestAnalyzeAlignments(t *testing.T) {
+	var r *Rules
+	var mask [11]uint8
+
+	// test: 0 > not enought size to align five spot
+	r = New(rdef.Player1, 9, 9)
+	mask = [11]uint8{3, 3, 2, 0, 1, 1, 1, 2, 0, 0, 0}
+	r.analyzeAlignments(&mask, -1, 1)
+	if len(r.aligns) != 0 {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 1 > basic alignment
+	r = New(rdef.Player1, 9, 9)
+	mask = [11]uint8{3, 3, 2, 0, 1, 1, 1, 0, 2, 0, 0}
+	r.analyzeAlignments(&mask, -1, 1)
+	if len(r.aligns) != 1 || r.NumberThree != 0 {
+		t.Error(t.Name() + " > test: 1")
+	}
+
+	// test: 2 > basic alignment
+	r = New(rdef.Player1, 9, 9)
+	mask = [11]uint8{3, 3, 1, 0, 1, 1, 1, 0, 2, 0, 0}
+	r.analyzeAlignments(&mask, -1, 1)
+	if len(r.aligns) != 1 || r.NumberThree != 0 {
+		t.Error(t.Name() + " > test: 2")
+	}
+
+	// test: 3 > three alignment
+	r = New(rdef.Player1, 9, 9)
+	mask = [11]uint8{3, 3, 0, 0, 1, 1, 1, 0, 0, 2, 0}
+	r.analyzeAlignments(&mask, -1, 1)
+	if len(r.aligns) != 1 || r.NumberThree != 1 {
+		t.Error(t.Name() + " > test: 3")
+	}
+
+	// test: 4 > three alignment
+	r = New(rdef.Player1, 9, 9)
+	mask = [11]uint8{3, 3, 1, 1, 1, 1, 0, 1, 0, 2, 0}
+	r.analyzeAlignments(&mask, -1, 1)
+	if len(r.aligns) != 1 || r.NumberThree != 0 {
+		t.Error(t.Name() + " > test: 4")
+	}
+	for _, a := range r.aligns {
+		if a.Size != 4 {
+			t.Error(t.Name() + " > test: 4 > verification size alignment")
+		}
+	}
+
+	// test: 5 > three alignment
+	r = New(rdef.Player1, 9, 9)
+	mask = [11]uint8{3, 3, 1, 1, 1, 1, 1, 0, 0, 2, 0}
+	r.analyzeAlignments(&mask, -1, 1)
+	if len(r.aligns) != 1 || r.NumberThree != 0 {
+		t.Error(t.Name() + " > test: 5")
+	}
+	for _, a := range r.aligns {
+		if a.Size != 5 {
+			t.Error(t.Name() + " > test: 5 > verification size alignment")
+		}
+	}
+}
+
+func TestAddCapture(t *testing.T) {
+	r := New(rdef.Player1, 9, 9)
+
+	// test: 0 > 0 capture
+	if len(r.captures) != 0 {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 1 > 1 capture
+	r.addCapture(9, 8)
+	if len(r.captures) != 1 {
+		t.Error(t.Name() + " > test: 1")
+	}
+	// test: 2 > 1 capture
+	r.addCapture(9, 10)
+	if len(r.captures) != 2 {
+		t.Error(t.Name() + " > test: 2")
+	}
+}
+
+func ExampleRules_analyzeCapture() {
 	var b *[19][19]uint8
 	var r *Rules
 
 	b = boards.GetCaptureP1_1()
-	r = New(Player2, 0, 18)
+	r = New(rdef.Player2, 0, 18)
 	r = prepareAnalyzeCapture(b, r)
+	r.PrintCaptures()
 
-	fmt.Println(b[0])
-	r.ApplyMove(b)
-	fmt.Println(b[0])
-	r.RestoreMove(b)
-	fmt.Println(b[0])
+	b = boards.GetCaptureP2_1()
+	r = New(rdef.Player1, 7, 9)
+	r = prepareAnalyzeCapture(b, r)
+	r.PrintCaptures()
 
-	// Output:
-	// [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 1 0]
-	// [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 2]
-	// [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 1 0]
+	// Unordered output:
+	// (y - x):  9  -  9
+	// (y - x):  8  -  9
+	// (y - x):  9  -  11
+	// (y - x):  8  -  10
+	// (y - x):  7  -  11
+	// (y - x):  7  -  10
+	// (y - x):  5  -  11
+	// (y - x):  6  -  10
+	// (y - x):  5  -  9
+	// (y - x):  6  -  9
+	// (y - x):  5  -  7
+	// (y - x):  6  -  8
+	// (y - x):  7  -  7
+	// (y - x):  7  -  8
+	// (y - x):  8  -  8
+	// (y - x):  9  -  7
+	// (y - x):  0  -  17
+	// (y - x):  0  -  16
 }
 
 func ExampleRules_getMaskFrom() {
@@ -116,7 +423,7 @@ func ExampleRules_getMaskFrom() {
 	b = boards.GetSimpleP2()
 
 	// simple test_part1
-	r = New(Player1, 9, 6)
+	r = New(rdef.Player1, 9, 6)
 	r.getMaskFromBoard(b, -1, -1, &mask)
 	fmt.Println(mask)
 
@@ -130,7 +437,7 @@ func ExampleRules_getMaskFrom() {
 	fmt.Println(mask)
 
 	// simple test_part2
-	r = New(Player1, 8, 9)
+	r = New(rdef.Player1, 8, 9)
 	r.getMaskFromBoard(b, -1, -1, &mask)
 	fmt.Println(mask)
 
@@ -145,7 +452,7 @@ func ExampleRules_getMaskFrom() {
 
 	// test out of board
 	b = boards.GetFilledRightP2()
-	r = New(Player1, 10, 18)
+	r = New(rdef.Player1, 10, 18)
 	r.getMaskFromBoard(b, -1, -1, &mask)
 	fmt.Println(mask)
 
@@ -173,148 +480,157 @@ func ExampleRules_getMaskFrom() {
 	// [0 0 0 2 1 1 3 3 3 3 3]
 }
 
-func ExampleRules_analyzeCapture() {
+func TestCheckRules(t *testing.T) {
 	var b *[19][19]uint8
 	var r *Rules
 
+	// test: 0 > simple invalid move
+	b = boards.GetSimpleP2()
+	r = New(rdef.Player1, 3, 3)
+	r.CheckRules(b, 3)
+	if r.Movable == true {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 1 > invalid move by double three action
+	b = boards.GetTreeP1_1()
+	r = New(rdef.Player2, 10, 10)
+	r.CheckRules(b, 3)
+	if r.Movable == true {
+		t.Error(t.Name() + " > test: 1")
+	}
+
+	// test: 2 > win by capture
 	b = boards.GetCaptureP1_1()
-	r = New(Player2, 0, 18)
-	r = prepareAnalyzeCapture(b, r)
-	r.PrintCaptures()
+	r = New(rdef.Player2, 0, 18)
+	r.CheckRules(b, 4)
+	if r.Movable == false || r.Win == false {
+		t.Error(t.Name() + " > test: 2")
+	}
 
-	b = boards.GetCaptureP2_1()
-	r = New(Player1, 7, 9)
-	r = prepareAnalyzeCapture(b, r)
-	r.PrintCaptures()
+	/*
+		// test: 3 > align five token but align is capturable
+		b = boards.GetWinCapturableP2()
+		r = New(Player1, 9, 11)
+		r.CheckRules(b, 3)
+		if r.Win == true {
+			t.Error(t.Name() + " > test: 3")
+		}
+	*/
 
-	// Unordered output:
-	// (y - x):  9  -  9
-	// (y - x):  8  -  9
-	// (y - x):  9  -  11
-	// (y - x):  8  -  10
-	// (y - x):  7  -  11
-	// (y - x):  7  -  10
-	// (y - x):  5  -  11
-	// (y - x):  6  -  10
-	// (y - x):  5  -  9
-	// (y - x):  6  -  9
-	// (y - x):  5  -  7
-	// (y - x):  6  -  8
-	// (y - x):  7  -  7
-	// (y - x):  7  -  8
-	// (y - x):  8  -  8
-	// (y - x):  9  -  7
-	// (y - x):  0  -  17
-	// (y - x):  0  -  16
+	// test: 4 > win by align five token
+	b = boards.GetWinNoCapturableP2()
+	r = New(rdef.Player1, 9, 11)
+	r.CheckRules(b, 3)
+	if r.Movable == false || r.Win == false {
+		t.Error(t.Name() + " > test: 4")
+	}
+
+	// test: 5 > no win but align five token (not consecutive)
+	b = boards.GetWinSituationP2()
+	r = New(rdef.Player1, 9, 14)
+	r.CheckRules(b, 3)
+	if r.Movable == false || r.Win == true {
+		t.Error(t.Name() + " > test: 5")
+	}
+
+	// test: 6 > invalid move by double three action #1
+	b = boards.GetThreeP1_2()
+	r = New(rdef.Player1, 9, 8)
+	r.CheckRules(b, 0)
+	if r.Movable == true {
+		t.Error(t.Name() + " > test: 6 ")
+	}
+
+	// test: 7 > invalid move by double three action #2
+	b = boards.GetTreeP1_3()
+	r = New(rdef.Player1, 9, 10)
+	r.CheckRules(b, 0)
+	if r.Movable == false {
+		t.Error(t.Name() + " > test: 7 ")
+	}
 }
 
-func ExampleRules_analyzeAlign_noAlign() {
+func TestUpdateAlignments(t *testing.T) {
 	var b *[19][19]uint8
 	var r *Rules
 
-	b = boards.GetNoAlignP2_1()
-	r = New(Player1, 2, 0)
-	r = prepareAnalyzeAlign(b, r)
-	r.PrintAlignments()
+	// test: 0 > simple invalid move
+	b = boards.GetSimpleP2()
+	r = New(rdef.Player1, 3, 3)
+	r.CheckRules(b, 3)
+	r.UpdateAlignments(b)
+	if r.Movable == true {
+		t.Error(t.Name() + " > test: 0")
+	}
 
-	b = boards.GetNoAlignP2_2()
-	r = New(Player1, 9, 10)
-	r = prepareAnalyzeAlign(b, r)
-	r.PrintAlignments()
+	// test: 1 > invalid move by double three action
+	b = boards.GetTreeP1_1()
+	r = New(rdef.Player2, 10, 10)
+	r.CheckRules(b, 3)
+	r.UpdateAlignments(b)
+	if r.Movable == true {
+		t.Error(t.Name() + " > test: 1")
+	}
 
-	// Output:
-	// nb alignment  0
-	// nb alignment  0
+	// test: 2 > win by capture
+	b = boards.GetCaptureP1_1()
+	r = New(rdef.Player2, 0, 18)
+	r.CheckRules(b, 4)
+	r.UpdateAlignments(b)
+	if r.Movable == false || r.Win == false {
+		t.Error(t.Name() + " > test: 2")
+	}
+
+	/*
+		// test: 3 > align five token but align is capturable
+		b = boards.GetWinCapturableP2()
+		r = New(Player1, 9, 11)
+		r.CheckRules(b, 3)
+		r.UpdateAlignments(b)
+		if r.Win == true {
+			t.Error(t.Name() + " > test: 3")
+		}
+	*/
+
+	// test: 4 > win by align five token
+	b = boards.GetWinNoCapturableP2()
+	r = New(rdef.Player1, 9, 11)
+	r.CheckRules(b, 3)
+	r.UpdateAlignments(b)
+	if r.Movable == false || r.Win == false {
+		t.Error(t.Name() + " > test: 4")
+	}
+
+	// test: 5 > no win but align five token (not consecutive)
+	b = boards.GetWinSituationP2()
+	r = New(rdef.Player1, 9, 14)
+	r.CheckRules(b, 3)
+	r.UpdateAlignments(b)
+	if r.Movable == false || r.Win == true {
+		t.Error(t.Name() + " > test: 5")
+	}
+
+	// test: 6 > invalid move by double three action #1
+	b = boards.GetThreeP1_2()
+	r = New(rdef.Player1, 9, 8)
+	r.CheckRules(b, 0)
+	r.UpdateAlignments(b)
+	if r.Movable == true {
+		t.Error(t.Name() + " > test: 6 ")
+	}
+
+	// test: 7 > invalid move by double three action #2
+	b = boards.GetTreeP1_3()
+	r = New(rdef.Player1, 9, 10)
+	r.CheckRules(b, 0)
+	r.UpdateAlignments(b)
+	if r.Movable == false {
+		t.Error(t.Name() + " > test: 7 ")
+	}
 }
 
-func ExampleRules_analyzeAlign_moreAlign() {
-	var b *[19][19]uint8
-	var r *Rules
-
-	b = boards.GetAlignFlankedP2()
-	r = New(Player1, 9, 11)
-	r = prepareAnalyzeAlign(b, r)
-	r.PrintAlignments()
-
-	b = boards.GetAlignFreeP2()
-	r = New(Player1, 10, 10)
-	r = prepareAnalyzeAlign(b, r)
-	r.PrintAlignments()
-
-	b = boards.GetAlignHalfP2()
-	r = New(Player1, 7, 7)
-	r = prepareAnalyzeAlign(b, r)
-	r.PrintAlignments()
-
-	b = boards.GetDoubleAlignmentP2()
-	r = New(Player1, 7, 10)
-	r = prepareAnalyzeAlign(b, r)
-	r.PrintAlignments()
-
-	// Output:
-	// nb alignment  1
-	// [size: 4, style: flanked]
-	// nb alignment  1
-	// [size: 3, style: free]
-	// nb alignment  1
-	// [size: 4, style: half]
-	// nb alignment  2
-	// [size: 2, style: free]
-	// [size: 2, style: free]
-}
-
-func ExampleRules_analyzeAlign_tree() {
-	var b *[19][19]uint8
-	var r *Rules
-
-	b = boards.GetTreeP1_1()
-	r = New(Player2, 7, 7)
-	r = prepareAnalyzeAlign(b, r)
-	r.PrintAlignments()
-	r.PrintThrees()
-
-	b = boards.GetTreeP1_1()
-	r = New(Player2, 7, 13)
-	r = prepareAnalyzeAlign(b, r)
-	r.PrintAlignments()
-	r.PrintThrees()
-
-	b = boards.GetTreeP1_1()
-	r = New(Player2, 8, 9)
-	r = prepareAnalyzeAlign(b, r)
-	r.PrintAlignments()
-	r.PrintThrees()
-
-	// Output:
-	// nb alignment  2
-	// [size: 3, style: free]
-	// [size: 2, style: free]
-	// nb threes  1
-	// nb alignment  1
-	// [size: 3, style: free]
-	// nb threes  1
-	// nb alignment  2
-	// [size: 2, style: free]
-	// [size: 3, style: free]
-	// nb threes  1
-}
-
-func ExampleRules_analyzeAlign_doubleTree() {
-	var b *[19][19]uint8
-	var r *Rules
-
-	b = boards.GetTreeP1_1()
-	r = New(Player2, 10, 10)
-	r = prepareAnalyzeAlign(b, r)
-	r.PrintThrees()
-	r.analyzeMoveCondition()
-	fmt.Println(r.Info)
-
-	// Output:
-	// nb threes  2
-	// this spot compose one double three
-}
-
+/*
 func ExampleRules_analyzeAlign_winNoCapturable() {
 	var b *[19][19]uint8
 	var r *Rules
@@ -332,7 +648,7 @@ func ExampleRules_analyzeAlign_winNoCapturable() {
 	// congratulation, winner by alignment
 }
 
-/*
+
 func ExampleRules_analyzeAlign_winCapturable() {
 	var b *[19][19]uint8
 	var r *Rules
@@ -350,327 +666,48 @@ func ExampleRules_analyzeAlign_winCapturable() {
 }
 */
 
-func TestCheckRules(t *testing.T) {
-	var b *[19][19]uint8
-	var r *Rules
-
-	// test: 0 > simple invalid move
-	b = boards.GetSimpleP2()
-	r = New(Player1, 3, 3)
-	r.CheckRules(b, 3)
-	if r.Movable == true {
+func TestGetBetterAlignment(t *testing.T) {
+	// test: 0
+	r := New(rdef.Player1, 9, 9)
+	if r.GetBetterAlignment() != nil {
 		t.Error(t.Name() + " > test: 0")
 	}
 
-	// test: 1 > invalid move by double three action
-	b = boards.GetTreeP1_1()
-	r = New(Player2, 10, 10)
-	r.CheckRules(b, 3)
-	if r.Movable == true {
+	// test: 1
+	r = New(rdef.Player1, 9, 9)
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 3, Style: rdef.AlignFlanked})
+	a := r.GetBetterAlignment()
+	if a.Style&rdef.AlignFlanked == 0 || a.Style&rdef.AlignFree != 0 || a.Style&rdef.AlignHalf != 0 || a.Size != 3 {
 		t.Error(t.Name() + " > test: 1")
 	}
 
-	// test: 2 > win by capture
-	b = boards.GetCaptureP1_1()
-	r = New(Player2, 0, 18)
-	r.CheckRules(b, 4)
-	if r.Win == false {
+	// test: 2
+	r = New(rdef.Player1, 9, 9)
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 3, Style: rdef.AlignFlanked})
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 4, Style: rdef.AlignFlanked})
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 2, Style: rdef.AlignFlanked})
+	a = r.GetBetterAlignment()
+	if a.Style&rdef.AlignFlanked == 0 || a.Style&rdef.AlignFree != 0 || a.Style&rdef.AlignHalf != 0 || a.Size != 4 {
 		t.Error(t.Name() + " > test: 2")
 	}
 
-	// test: 3 > align five token but align is capturable
-	/*
-		b = boards.GetWinCapturableP2()
-		r = New(Player1, 9, 11)
-		r.CheckRules(b, 3)
-		if r.Win == true {
-			t.Error(t.Name() + " > test: 3")
-		}
-	*/
+	// test: 3
+	r = New(rdef.Player1, 9, 9)
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 3, Style: rdef.AlignFlanked})
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 3, Style: rdef.AlignFree})
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 3, Style: rdef.AlignFlanked})
+	a = r.GetBetterAlignment()
+	if a.Style&rdef.AlignFlanked != 0 || a.Style&rdef.AlignFree == 0 || a.Style&rdef.AlignHalf != 0 || a.Size != 3 {
+		t.Error(t.Name() + " > test: 3")
+	}
 
-	// test: 4 > win by align five token
-	b = boards.GetWinNoCapturableP2()
-	r = New(Player1, 9, 11)
-	r.CheckRules(b, 3)
-	if r.Win == false {
+	// test: 4
+	r = New(rdef.Player1, 9, 9)
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 4, Style: rdef.AlignHalf})
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 2, Style: rdef.AlignFree})
+	r.aligns = append(r.aligns, &alignment.Alignment{Size: 3, Style: rdef.AlignFlanked})
+	a = r.GetBetterAlignment()
+	if a.Style&rdef.AlignFlanked != 0 || a.Style&rdef.AlignFree != 0 || a.Style&rdef.AlignHalf == 0 || a.Size != 4 {
 		t.Error(t.Name() + " > test: 4")
-	}
-
-	// test: 5 > no win but align five token (not consecutive)
-	b = boards.GetWinSituationP2()
-	r = New(Player1, 9, 14)
-	r.CheckRules(b, 3)
-	if r.Win == true {
-		t.Error(t.Name() + " > test: 5")
-	}
-
-	// test: 6 > invalid move by double three action #2
-	b = boards.GetThreeP1_2()
-	r = New(Player1, 9, 8)
-	r.CheckRules(b, 0)
-	if r.Movable == true {
-		t.Error(t.Name() + " > test: 6 ")
-	}
-
-	// test: 7 > invalid move by double three action #2
-	b = boards.GetTreeP1_3()
-	r = New(Player1, 9, 10)
-	r.CheckRules(b, 0)
-	if r.Movable == false {
-		t.Error(t.Name() + " > test: 7 ")
-	}
-}
-
-func TestLenAlignment_P1Only(t *testing.T) {
-	// Player1 rules neutral instance
-	r := New(Player1, 0, 0)
-
-	// test: 1 > 2 token aligned consecutively
-	mask1 := [11]uint8{0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask1); a == nil || a.size != 2 {
-		t.Error(t.Name()+" > test: 1 / alignment struct : ", a)
-	}
-
-	// test: 2 > 2 token aligned not consecutively
-	mask2 := [11]uint8{0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask2); a == nil || a.size != 2 {
-		t.Error(t.Name()+" > test: 2 / alignment struct : ", a)
-	}
-
-	// test: 3 > 3 token aligned consecutively
-	mask3 := [11]uint8{0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask3); a == nil || a.size != 3 {
-		t.Error(t.Name()+" > test: 3 / alignment struct : ", a)
-	}
-
-	// test: 4 > 3 token aligned not consecutively
-	mask4 := [11]uint8{0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask4); a == nil || a.size != 3 {
-		t.Error(t.Name()+" > test: 4 / alignment struct : ", a)
-	}
-
-	// test: 5 > 3 token aligned not consecutively
-	mask5 := [11]uint8{0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask5); a == nil || a.size != 3 {
-		t.Error(t.Name()+" > test: 5 / alignment struct : ", a)
-	}
-
-	// test: 6 > 3 token aligned not consecutively
-	mask6 := [11]uint8{0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask6); a == nil || a.size != 4 {
-		t.Error(t.Name()+" > test: 6 / alignment struct : ", a)
-	}
-
-	// test: 7 > 4 token aligned consecutively
-	mask7 := [11]uint8{0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask7); a == nil || a.size != 4 {
-		t.Error(t.Name()+" > test: 7 / alignment struct : ", a)
-	}
-
-	// test: 8 > 4 token aligned not consecutively
-	mask8 := [11]uint8{0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask8); a == nil || a.size != 4 {
-		t.Error(t.Name()+" > test: 8 / alignment struct : ", a)
-	}
-
-	// test: 9 > 4 token aligned not consecutively
-	mask9 := [11]uint8{0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask9); a == nil || a.size != 4 {
-		t.Error(t.Name()+" > test: 9 / alignment struct : ", a)
-	}
-
-}
-
-func TestLenAlignmentP1_P2(t *testing.T) {
-	// Player1 rules neutral instance
-	r := New(Player1, 0, 0)
-
-	// test: 1 > 2 token aligned consecutively
-	mask1 := [11]uint8{0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask1); a == nil || a.size != 2 {
-		t.Error(t.Name()+" > test: 1 / alignment struct : ", a)
-	}
-
-	// test: 2 > 2 token aligned not consecutively
-	mask2 := [11]uint8{0, 0, 2, 0, 2, 1, 0, 1, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask2); a == nil || a.size != 2 {
-		t.Error(t.Name()+" > test: 2 / alignment struct : ", a)
-	}
-
-	// test: 3 > 3 token aligned consecutively
-	mask3 := [11]uint8{0, 0, 0, 0, 2, 1, 1, 1, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask3); a == nil || a.size != 3 {
-		t.Error(t.Name()+" > test: 3 / alignment struct : ", a)
-	}
-
-	// test: 4 > 3 token aligned not consecutively
-	mask4 := [11]uint8{0, 2, 0, 1, 0, 1, 1, 2, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask4); a == nil || a.size != 3 {
-		t.Error(t.Name()+" > test: 4 / alignment struct : ", a)
-	}
-
-	// test: 5 > 3 token aligned not consecutively
-	mask5 := [11]uint8{0, 2, 1, 0, 0, 1, 1, 2, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask5); a == nil || a.size != 3 {
-		t.Error(t.Name()+" > test: 5 / alignment struct : ", a)
-	}
-
-	// test: 6 > 3 token aligned not consecutively
-	mask6 := [11]uint8{0, 0, 1, 0, 0, 1, 1, 1, 2, 0, 0}
-	if a := r.analyzeLenAlignment(&mask6); a == nil || a.size != 4 {
-		t.Error(t.Name()+" > test: 6 / alignment struct : ", a)
-	}
-
-	// test: 7 > 4 token aligned consecutively
-	mask7 := [11]uint8{0, 0, 0, 1, 1, 1, 1, 2, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask7); a == nil || a.size != 4 {
-		t.Error(t.Name()+" > test: 7 / alignment struct : ", a)
-	}
-
-	// test: 8 > 4 token aligned not consecutively
-	mask8 := [11]uint8{0, 2, 1, 1, 0, 1, 1, 0, 0, 2, 0}
-	if a := r.analyzeLenAlignment(&mask8); a == nil || a.size != 4 {
-		t.Error(t.Name()+" > test: 8 / alignment struct : ", a)
-	}
-
-	// test: 9 > 4 token aligned not consecutively
-	mask9 := [11]uint8{0, 1, 1, 0, 0, 1, 1, 2, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask9); a == nil || a.size != 4 {
-		t.Error(t.Name()+" > test: 9 / alignment struct : ", a)
-	}
-
-}
-
-func TestLenAlignment(t *testing.T) {
-	// Player1 rules neutral instance
-	r := New(Player1, 0, 0)
-
-	// test: 1 > 2 token aligned consecutively
-	mask1 := [11]uint8{3, 3, 3, 3, 2, 1, 1, 0, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask1); a == nil || a.size != 2 {
-		t.Error(t.Name()+" > test: 1 / alignment struct : ", a)
-	}
-
-	// test: 2 > 2 token aligned not consecutively
-	mask2 := [11]uint8{3, 3, 2, 0, 2, 1, 0, 1, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask2); a == nil || a.size != 2 {
-		t.Error(t.Name()+" > test: 2 / alignment struct : ", a)
-	}
-
-	// test: 3 > 3 token aligned consecutively
-	mask3 := [11]uint8{0, 0, 0, 0, 1, 1, 1, 0, 3, 3, 3}
-	if a := r.analyzeLenAlignment(&mask3); a == nil || a.size != 3 {
-		t.Error(t.Name()+" > test: 3 / alignment struct : ", a)
-	}
-
-	// test: 4 > 3 token aligned not consecutively
-	mask4 := [11]uint8{0, 2, 0, 1, 0, 1, 1, 2, 3, 3, 3}
-	if a := r.analyzeLenAlignment(&mask4); a == nil || a.size != 3 {
-		t.Error(t.Name()+" > test: 4 / alignment struct : ", a)
-	}
-
-	// test: 5 > 3 token aligned not consecutively
-	mask5 := [11]uint8{0, 2, 1, 0, 0, 1, 1, 2, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask5); a == nil || a.size != 3 {
-		t.Error(t.Name()+" > test: 5 / alignment struct : ", a)
-	}
-
-	// test: 6 > 3 token aligned not consecutively
-	mask6 := [11]uint8{0, 0, 1, 0, 0, 1, 1, 1, 2, 0, 0}
-	if a := r.analyzeLenAlignment(&mask6); a == nil || a.size != 4 {
-		t.Error(t.Name()+" > test: 6 / alignment struct : ", a)
-	}
-
-	// test: 7 > 4 token aligned consecutively
-	mask7 := [11]uint8{3, 3, 0, 1, 1, 1, 1, 2, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask7); a == nil || a.size != 4 {
-		t.Error(t.Name()+" > test: 7 / alignment struct : ", a)
-	}
-
-	// test: 8 > 4 token aligned not consecutively
-	mask8 := [11]uint8{0, 2, 1, 1, 0, 1, 1, 0, 0, 2, 0}
-	if a := r.analyzeLenAlignment(&mask8); a == nil || a.size != 4 {
-		t.Error(t.Name()+" > test: 8 / alignment struct : ", a)
-	}
-
-	// test: 9 > 4 token aligned not consecutively
-	mask9 := [11]uint8{3, 1, 1, 0, 0, 1, 1, 2, 0, 0, 0}
-	if a := r.analyzeLenAlignment(&mask9); a == nil || a.size != 4 {
-		t.Error(t.Name()+" > test: 9 / alignment struct : ", a)
-	}
-
-}
-
-func TestGetMaxAlignment(t *testing.T) {
-	// Player1 rules neutral instance
-	r := New(Player1, 0, 0)
-	//3 align similar with diffrents styles
-	align2 := &Align{size: 3}
-	align2.style |= AlignHalf
-	r.aligns = append(r.aligns, align2)
-	align3 := &Align{size: 3, style: AlignFlanked}
-	align3.style |= AlignFlanked
-	r.aligns = append(r.aligns, align3)
-	align1 := &Align{size: 3, style: AlignFree}
-	align1.style |= AlignFree
-	r.aligns = append(r.aligns, align1)
-
-	// test: 1 > We want the best style -> AlignFree
-	if a := r.GetMaxAlignment(); a == nil || (a.size != 3 && a.style&AlignFree != 0) {
-		t.Error(t.Name()+" > test: 1 / alignment struct : ", a)
-	}
-
-	// Player1 rules neutral instance
-	r = New(Player1, 0, 0)
-	//3 align not similar
-	align1 = &Align{size: 2, style: AlignFree}
-	r.aligns = append(r.aligns, align1)
-	align2 = &Align{size: 2, style: AlignHalf}
-	r.aligns = append(r.aligns, align2)
-	align3 = &Align{size: 3, style: AlignFlanked}
-	r.aligns = append(r.aligns, align3)
-
-	// test: 2 > we want the bigger size -> 3
-	if a := r.GetMaxAlignment(); a == nil || a.size != 3 {
-		t.Error(t.Name()+" > test: 2 / alignment struct : ", a)
-	}
-
-	// Player1 rules neutral instance
-	r = New(Player1, 0, 0)
-	//2 align not similar
-	align1 = &Align{size: 2, style: AlignFree}
-	r.aligns = append(r.aligns, align1)
-	align2 = &Align{size: 2, style: AlignHalf}
-	r.aligns = append(r.aligns, align2)
-
-	// test: 3 > we want the but style -> AlignFree
-	if a := r.GetMaxAlignment(); a == nil || (a.size != 3 && a.style != AlignFree) {
-		t.Error(t.Name()+" > test: 3 / alignment struct : ", a)
-	}
-
-	// Player1 rules neutral instance
-	r = New(Player1, 0, 0)
-	//2 align not similar
-	align1 = &Align{size: 2, style: AlignFree}
-	r.aligns = append(r.aligns, align1)
-	align2 = &Align{size: 2, style: AlignFlanked}
-	r.aligns = append(r.aligns, align2)
-
-	// test: 4 > we want the but style -> AlignFree
-	if a := r.GetMaxAlignment(); a == nil || (a.size != 3 && a.style != AlignFree) {
-		t.Error(t.Name()+" > test: 4 / alignment struct : ", a)
-	}
-
-	// Player1 rules neutral instance
-	r = New(Player1, 0, 0)
-	//2 align not similar
-	align1 = &Align{size: 2, style: AlignHalf}
-	r.aligns = append(r.aligns, align1)
-	align2 = &Align{size: 2, style: AlignFlanked}
-	r.aligns = append(r.aligns, align2)
-
-	// test: 5 > we want the but style -> AlignHalf
-	if a := r.GetMaxAlignment(); a == nil || (a.size != 3 && a.style != AlignHalf) {
-		t.Error(t.Name()+" > test: 5 / alignment struct : ", a)
 	}
 }

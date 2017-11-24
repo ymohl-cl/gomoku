@@ -104,6 +104,12 @@ func TestIsBetter(t *testing.T) {
 	if one.IsBetter(&two) {
 		t.Error(t.Name() + " > test: 4")
 	}
+
+	// test: 5 > one is better because two is nil
+	one = Alignment{Size: 2, Style: rdef.AlignFree}
+	if !one.IsBetter(nil) {
+		t.Error(t.Name() + " > test: 5")
+	}
 }
 
 func TestSetStyleByMask(t *testing.T) {

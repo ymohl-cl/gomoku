@@ -72,6 +72,10 @@ func (a *Alignment) Copy(src *Alignment) {
 
 // IsBetter return true if 'a' is a better alignment than 'compare'
 func (a Alignment) IsBetter(compare *Alignment) bool {
+	if compare == nil {
+		return true
+	}
+
 	if a.Size > compare.Size {
 		return true
 	} else if a.Size == compare.Size && a.Style <= compare.Style {
@@ -137,16 +141,19 @@ func (a *Alignment) AnalyzeThree(mask *[11]uint8) bool {
 
 	switch {
 	// [0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0]
-	case left[0] == player && left[1] == player && left[2] == rdef.Empty &&
-		right[0] == rdef.Empty:
+	case (left[3] == rdef.Empty || left[3] == player) && left[0] == player &&
+		left[1] == player && left[2] == rdef.Empty && right[0] == rdef.Empty &&
+		(right[1] == rdef.Empty || right[1] == player):
 		fallthrough
 	// [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0]
-	case left[0] == player && left[1] == rdef.Empty && right[0] == player &&
-		right[1] == rdef.Empty:
+	case (left[2] == rdef.Empty || left[2] == player) && left[0] == player &&
+		left[1] == rdef.Empty && right[0] == player && right[1] == rdef.Empty &&
+		(right[2] == rdef.Empty || right[2] == player):
 		fallthrough
 	// [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0]
-	case left[0] == rdef.Empty && right[0] == player && right[1] == player &&
-		right[2] == rdef.Empty:
+	case (left[1] == rdef.Empty || left[1] == player) && left[0] == rdef.Empty &&
+		right[0] == player && right[1] == player && right[2] == rdef.Empty &&
+		(right[3] == rdef.Empty || right[3] == player):
 		fallthrough
 	// [0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0]
 	case (left[3] == rdef.Empty || left[3] == player) && left[2] == player &&

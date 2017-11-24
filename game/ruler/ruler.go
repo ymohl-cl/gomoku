@@ -93,6 +93,18 @@ func (r Rules) GetNumberAlignment() int16 {
 	return int16(len(r.aligns))
 }
 
+// GetBetterAlignment return the alignment with the most value to the evaluation (size and style)
+func (r Rules) GetBetterAlignment() *alignment.Alignment {
+	var save *alignment.Alignment
+
+	for _, a := range r.aligns {
+		if a.IsBetter(save) {
+			save = a
+		}
+	}
+	return save
+}
+
 // IsMyPosition check the position on the board is equal at player on the rule
 func (r Rules) IsMyPosition(b *[19][19]uint8) bool {
 	if (*b)[r.y][r.x] == r.player {
@@ -183,7 +195,9 @@ func (r *Rules) analyzeAlignments(mask *[11]uint8, dirY, dirX int8) {
 		r.NumberThree++
 	}
 
-	if a.Size == 5 && a.IsConsecutive(mask) {
+	// test consecutive deleted because, the size window measure five spot
+	// so if alignment size == 5, it's inevitably consecutive (&& a.IsConsecutive(mask))
+	if a.Size == 5 {
 		a.NewInfosWin(mask, dirY, dirX, false)
 	}
 
@@ -297,6 +311,7 @@ func (r *Rules) UpdateAlignments(board *[19][19]uint8) {
 	var mask [11]uint8
 
 	r.aligns = nil
+	r.NumberThree = 0
 	// check around move position. y and x represent one direction
 	for y := int8(-1); y <= 0; y++ {
 		for x := int8(-1); x <= 1; x++ {
@@ -345,15 +360,6 @@ func positionIsCapturable(b *[19][19]uint8, posY, posX int8, player uint8) bool 
 	return false
 }
 
-// newInfoWin : _
-
-func (a *Align) newInfoWin(mask *[11]uint8, dirY, dirX int8) {
-	a.iWin = new(InfoWin)
-	copy(a.iWin.mask[:], (*mask)[:])
-	a.iWin.dirY = dirY
-	a.iWin.dirX = dirX
-}
-
 // alignIsCapturable : browse all point of alignment and check if the spot is capturable
 func (a *Align) isCapturable(b *[19][19]uint8, player uint8, posY, posX int8) bool {
 	i := a.iWin
@@ -380,47 +386,4 @@ func (a *Align) isCapturable(b *[19][19]uint8, player uint8, posY, posX int8) bo
 	return false
 }
 
-// GetSize : _
-func (a *Align) GetSize() int8 {
-	return int8(a.size)
-}
-
-// IsStyle : _
-func (a *Align) IsStyle(style uint8) bool {
-	if a.style&style != 0 {
-		return true
-	}
-	return false
-}
-
-// GetSizeMaxAlignment return size of the most alignment
-func (r Rules) GetSizeMaxAlignment() uint8 {
-	nbToken := uint8(0)
-
-	for _, align := range r.aligns {
-		if align.size > nbToken {
-			nbToken = align.size
-		}
-	}
-	return nbToken
-}
-
-// GetMaxAlignment return the most alignment
-func (r Rules) GetMaxAlignment() *Align {
-	var save *Align
-	nbToken := uint8(0)
-	styleToken := uint8(0)
-
-	for _, align := range r.aligns {
-		//		fmt.Println("align: ", align.size)
-		if align.size > nbToken || (align.size == nbToken && align.style < styleToken) {
-			fmt.Println("save")
-			save = align
-			nbToken = align.size
-			styleToken = align.style
-		}
-	}
-	//	fmt.Println("Return: ", save.size)
-	return save
-}
 */
