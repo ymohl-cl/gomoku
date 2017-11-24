@@ -3,7 +3,7 @@ package alphabeta
 import (
 	"math"
 
-	"github.com/ymohl-cl/gomoku/game/ruler"
+	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
 )
 
 const (
@@ -52,7 +52,7 @@ func maxWeight(v1, v2 int16) int16 {
 func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8) {
 	var coef int16
 	var size int8
-	var a *ruler.Align
+	var a *alignment.Alignment
 	var nbr int8
 
 	// get number align to the spot
@@ -72,7 +72,7 @@ func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8) {
 			sc.alignment = score
 		}
 		return
-	} else if size == 3 && a.IsStyle(ruler.AlignFree) && n.rule.NumberThree > 0 {
+	} else if size == 3 && a.IsStyle(rdef.AlignFree) && n.rule.NumberThree > 0 {
 		score := scoreWinDetection - int16(nbr) + (depthOutEvalToFreeThree - int16(depth))
 		if sc.alignment > score {
 			sc.alignment = score
@@ -86,9 +86,9 @@ func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8) {
 	}
 
 	// define multiplier from alignment type
-	if a.IsStyle(ruler.AlignHalf) {
+	if a.IsStyle(rdef.AlignHalf) {
 		coef = scoreHalf
-	} else if a.IsStyle(ruler.AlignFree) {
+	} else if a.IsStyle(rdef.AlignFree) {
 		coef = scoreFree
 	} else {
 		coef = scoreFlanked
@@ -206,7 +206,7 @@ func (s *State) eval(n *Node, depth uint8) int16 {
 	var opponent Score
 
 	current.idPlayer = n.rule.GetPlayer()
-	opponent.idPlayer = ruler.GetOtherPlayer(current.idPlayer)
+	opponent.idPlayer = rdef.GetOtherPlayer(current.idPlayer)
 
 	// wins situations
 	if n.rule.Win {

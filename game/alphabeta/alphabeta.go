@@ -6,6 +6,7 @@ import (
 
 	"github.com/ymohl-cl/gomoku/database"
 	"github.com/ymohl-cl/gomoku/game/ruler"
+	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
 )
 
 type InfoPlayer struct {
@@ -34,14 +35,14 @@ func New(b *[19][19]uint8, player uint8) *State {
 }
 
 func (s *State) getTotalCapture(player uint8) uint8 {
-	if player == ruler.Player1 {
+	if player == rdef.Player1 {
 		return s.infoP1.totalCapture
 	}
 	return s.infoP2.totalCapture
 }
 
 func (s *State) addTotalCapture(player uint8, number uint8) {
-	if player == ruler.Player1 {
+	if player == rdef.Player1 {
 		s.infoP1.totalCapture += number
 	} else {
 		s.infoP2.totalCapture += number
@@ -49,7 +50,7 @@ func (s *State) addTotalCapture(player uint8, number uint8) {
 }
 
 func (s *State) subTotalCapture(player uint8, number uint8) {
-	if player == ruler.Player1 {
+	if player == rdef.Player1 {
 		s.infoP1.totalCapture -= number
 	} else {
 		s.infoP2.totalCapture -= number
@@ -69,7 +70,7 @@ func (s *State) newNode(y, x int8) *Node {
 func (s *State) updateTokenPlayer(nodes *[]*Node) {
 	for _, n := range *nodes {
 		y, x := n.rule.GetPosition()
-		(*s.board)[y][x] = ruler.Empty
+		(*s.board)[y][x] = rdef.Empty
 	}
 }
 
@@ -84,7 +85,7 @@ func (s *State) updateData(n *Node, prev *Node) {
 	n.rule.ApplyMove(s.board)
 
 	s.addTotalCapture(n.rule.GetPlayer(), n.rule.NumberCapture)
-	s.currentPlayer = ruler.GetOtherPlayer(n.rule.GetPlayer())
+	s.currentPlayer = rdef.GetOtherPlayer(n.rule.GetPlayer())
 
 	n.prev = prev
 }
@@ -93,7 +94,7 @@ func (s *State) restoreData(n *Node, prev *Node) {
 	n.rule.RestoreMove(s.board)
 
 	s.subTotalCapture(n.rule.GetPlayer(), n.rule.NumberCapture)
-	s.currentPlayer = ruler.GetOtherPlayer(s.currentPlayer)
+	s.currentPlayer = rdef.GetOtherPlayer(s.currentPlayer)
 
 	n.prev = nil
 }
@@ -160,9 +161,9 @@ func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint8, n *Node) int1
 
 // Play start the alphabeta algorythm
 func Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
-	state := New(b, ruler.Player2)
-	state.addTotalCapture(ruler.Player1, uint8(s.NbCaptureP1))
-	state.addTotalCapture(ruler.Player2, uint8(s.NbCaptureP2))
+	state := New(b, rdef.Player2)
+	state.addTotalCapture(rdef.Player1, uint8(s.NbCaptureP1))
+	state.addTotalCapture(rdef.Player2, uint8(s.NbCaptureP2))
 
 	//ret := state.alphabetaNegaScout(math.MinInt8+1, math.MaxInt8, state.maxDepth, nil)
 	state.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, state.maxDepth, nil)
