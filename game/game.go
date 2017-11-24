@@ -8,6 +8,7 @@ import (
 
 	"github.com/ymohl-cl/gomoku/database"
 	"github.com/ymohl-cl/gomoku/game/ruler"
+	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
 	"github.com/ymohl-cl/gomoku/game/stats"
 )
 
@@ -93,10 +94,10 @@ func (g *Game) AppliesMove(x, y uint8) {
 	s := stats.New(x, y, time.Since(g.timerPlay), false)
 
 	if g.players.currentPlayer == g.players.p1 {
-		g.board[y][x] = ruler.Player1
+		g.board[y][x] = rdef.Player1
 		g.players.statsP1 = append(g.players.statsP1, s)
 	} else {
-		g.board[y][x] = ruler.Player2
+		g.board[y][x] = rdef.Player2
 		g.players.statsP2 = append(g.players.statsP2, s)
 	}
 }
@@ -119,10 +120,10 @@ func (g *Game) Move(x, y uint8) (bool, string, error) {
 
 	// get current player with token value
 	if g.players.currentPlayer == g.players.p1 {
-		valueToken = ruler.Player1
+		valueToken = rdef.Player1
 		nbCaps = &g.data.Current.NbCaptureP1
 	} else {
-		valueToken = ruler.Player2
+		valueToken = rdef.Player2
 		nbCaps = &g.data.Current.NbCaptureP2
 	}
 
@@ -179,6 +180,7 @@ func (g Game) GetTimeGame() time.Duration {
 	return time.Since(g.timerGame)
 }
 
+// GetBoard : _
 func (g Game) GetBoard() *[19][19]uint8 {
 	return &g.board
 }

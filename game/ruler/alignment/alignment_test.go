@@ -56,6 +56,34 @@ func ExampleAlignment_NewInfosWin() {
 	//( 5  -  2 )
 }
 
+func TestIsStyle(t *testing.T) {
+	var a *Alignment
+
+	// test: 0 > no style defined
+	a = &Alignment{Size: 2}
+	if a.IsStyle(rdef.AlignFlanked) || a.IsStyle(rdef.AlignHalf) || a.IsStyle(rdef.AlignFree) {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 1 > syle free
+	a = &Alignment{Size: 2, Style: rdef.AlignFree}
+	if a.IsStyle(rdef.AlignFlanked) || a.IsStyle(rdef.AlignHalf) || !a.IsStyle(rdef.AlignFree) {
+		t.Error(t.Name() + " > test: 1")
+	}
+
+	// test: 2 > style flanked
+	a = &Alignment{Size: 2, Style: rdef.AlignFlanked}
+	if !a.IsStyle(rdef.AlignFlanked) || a.IsStyle(rdef.AlignHalf) || a.IsStyle(rdef.AlignFree) {
+		t.Error(t.Name() + " > test: 2")
+	}
+
+	// test: 3 > syle half-free
+	a = &Alignment{Size: 2, Style: rdef.AlignHalf}
+	if a.IsStyle(rdef.AlignFlanked) || !a.IsStyle(rdef.AlignHalf) || a.IsStyle(rdef.AlignFree) {
+		t.Error(t.Name() + " > test: 3")
+	}
+}
+
 func TestCopy(t *testing.T) {
 	var dst Alignment
 	src := Alignment{Size: 2, Style: rdef.AlignFree}

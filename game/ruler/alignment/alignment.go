@@ -48,20 +48,13 @@ func (a *Alignment) NewInfosWin(mask *[11]uint8, dirY, dirX int8, capturable boo
 	a.iWin.capturable = capturable
 }
 
-/*
-// GetSize : _
-func (a *Align) GetSize() int8 {
-	return int8(a.Size)
-}
-
-// IsStyle : _
-func (a *Align) IsStyle(style uint8) bool {
+// IsStyle check is the style parameters match with the style alignment
+func (a *Alignment) IsStyle(style uint8) bool {
 	if a.Style&style != 0 {
 		return true
 	}
 	return false
 }
-*/
 
 // Copy on the 'a' alignment, size and style from 'src' alignment parameter
 func (a *Alignment) Copy(src *Alignment) {

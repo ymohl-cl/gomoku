@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
+	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
 )
 
 const (
@@ -51,32 +52,27 @@ func maxWeight(v1, v2 int16) int16 {
 // calcul score on alignment simulation
 func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8) {
 	var coef int16
-	var size int8
 	var a *alignment.Alignment
-	var nbr int8
+	var nbr int16
+	var score int16
 
 	// get number align to the spot
 	if nbr = n.rule.GetNumberAlignment(); nbr == 0 {
 		return
 	}
-	nbr -= 1
 
-	// get max alignment creted by this spot
-	a = n.rule.GetMaxAlignment()
-	size = a.GetSize()
+	// remove from counter the better alignment
+	nbr--
+	a = n.rule.GetBetterAlignment()
 
 	// check wins situations
-	if size >= 4 {
-		score := scoreWinDetection - int16(nbr) + (depthOutEvalToFourSpots - int16(depth))
-		if sc.alignment > score {
-			sc.alignment = score
-		}
-		return
-	} else if size == 3 && a.IsStyle(rdef.AlignFree) && n.rule.NumberThree > 0 {
-		score := scoreWinDetection - int16(nbr) + (depthOutEvalToFreeThree - int16(depth))
-		if sc.alignment > score {
-			sc.alignment = score
-		}
+	if a.Size == 4 {
+		score = scoreWinDetection - nbr + (depthOutEvalToFourSpots - int16(depth))
+	} else if a.Size == 3 && a.IsThree {
+		score = scoreWinDetection - nbr + (depthOutEvalToFreeThree - int16(depth))
+	}
+	if score != 0 && sc.alignment > score {
+		sc.alignment = score
 		return
 	}
 
@@ -95,8 +91,8 @@ func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8) {
 	}
 
 	// calcul score
-	score := int16(size) * coef
-	score += int16(nbr) * scoreByAlign
+	score = int16(a.Size) * coef
+	score += nbr * scoreByAlign
 
 	// check better score
 	if sc.alignment < score {
@@ -120,7 +116,7 @@ func (s *State) evalAlignment(n *Node, current, opponent *Score) {
 			// remove previous spots from the board.
 			s.updateTokenPlayer(&spots)
 			// check if this spot don't be captured
-			node.rule.UpdateAlignment(s.board)
+			node.rule.UpdateAlignments(s.board)
 			// get score opponent on this move
 			s.scoreAlignment(node, opponent, depth)
 			// save the current spot
