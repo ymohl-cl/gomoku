@@ -177,6 +177,9 @@ func (s *State) evalCapture(n *Node, current, opponent *Score) {
 func (s *State) analyzeScore(current, opponent *Score) int16 {
 	var score int16
 
+	if opponent.alignment < 0 {
+		opponent.alignment = (scoreFree * 5) + (scoreByAlign * 3)
+	}
 	/*
 		if opponent.alignment < 0 {
 			// win condition for opponent
@@ -193,10 +196,8 @@ func (s *State) analyzeScore(current, opponent *Score) int16 {
 		score += opponent.alignment
 		score += opponent.capture
 		return score
-	} else if opponent.alignment < 0 {
-		opponent.alignment = 50
 	}
-	// no win
+	// else 	// no win
 	score = scoreNeutral
 	score -= current.alignment - opponent.alignment
 	score -= current.capture - opponent.capture
