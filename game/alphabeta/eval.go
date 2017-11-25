@@ -176,6 +176,7 @@ func (s *State) evalCapture(n *Node, current, opponent *Score) {
 // analyzeScore return the final weight
 func (s *State) analyzeScore(current, opponent *Score) int16 {
 	var score int16
+
 	/*
 		if opponent.alignment < 0 {
 			// win condition for opponent
@@ -183,19 +184,22 @@ func (s *State) analyzeScore(current, opponent *Score) int16 {
 			score -= opponent.capture
 			//score += current.alignment
 			score += current.capture
-		}*/
+		}
+	*/
 	if current.alignment < 0 {
 		// win condition for current
 		score = current.alignment
 		score -= current.capture
 		score += opponent.alignment
 		score += opponent.capture
-	} else {
-		// no win
-		score = scoreNeutral
-		score -= current.alignment - opponent.alignment
-		score -= current.capture - opponent.capture
+		return score
+	} else if opponent.alignment < 0 {
+		opponent.alignment = 50
 	}
+	// no win
+	score = scoreNeutral
+	score -= current.alignment - opponent.alignment
+	score -= current.capture - opponent.capture
 
 	return score
 }
