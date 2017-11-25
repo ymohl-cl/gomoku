@@ -59,8 +59,17 @@ func (a *Alignment) IsStyle(style uint8) bool {
 // Copy on the 'a' alignment, size and style from 'src' alignment parameter
 func (a *Alignment) Copy(src *Alignment) {
 	a.Size = src.Size
+	a.Style = src.Style
+	a.IsThree = src.IsThree
+	a.iWin = src.iWin
+}
+
+// clear the alignment
+func (a *Alignment) clear() {
+	a.Size = 0
 	a.Style = 0
-	a.Style |= src.Style
+	a.IsThree = false
+	a.iWin = nil
 }
 
 // IsBetter return true if 'a' is a better alignment than 'compare'
@@ -71,7 +80,13 @@ func (a Alignment) IsBetter(compare *Alignment) bool {
 
 	if a.Size > compare.Size {
 		return true
-	} else if a.Size == compare.Size && a.Style <= compare.Style {
+	} else if a.Size < compare.Size {
+		return false
+	} else if a.IsThree {
+		return true
+	} else if compare.IsThree {
+		return false
+	} else if a.Style <= compare.Style {
 		return true
 	}
 	return false
@@ -102,8 +117,7 @@ func New(mask *[11]uint8, player uint8) *Alignment {
 	var ret, tmp Alignment
 
 	for i := 1; i <= 5; i++ {
-		tmp.Size = 0
-		tmp.Style = 0
+		tmp.clear()
 		available := uint8(0)
 		for c := 0; c < 5; c++ {
 			value := (*mask)[i+c]
@@ -117,6 +131,9 @@ func New(mask *[11]uint8, player uint8) *Alignment {
 		}
 		if available+tmp.Size == 5 && tmp.Size >= ret.Size {
 			tmp.setStyleByMask(mask, i, player)
+			if tmp.Size == 3 && tmp.Style&rdef.AlignFree != 0 {
+				tmp.AnalyzeThree(mask)
+			}
 			if !ret.IsBetter(&tmp) {
 				ret.Copy(&tmp)
 			}

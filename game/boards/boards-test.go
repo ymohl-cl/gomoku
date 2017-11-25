@@ -212,9 +212,10 @@ func GetAlignFlankedP2() *[19][19]uint8 {
 }
 
 // GetAlignFreeP2 : _
-// . x . .
-// . o x .
-// . o . .
+//                     |
+//   . . . . . . . . x . . . . . . . . . .
+// - . . . . . . . . o x . . . . . . . . .
+//   . . . . . . . . o . . . . . . . . . .
 func GetAlignFreeP2() *[19][19]uint8 {
 	var b [19][19]uint8
 

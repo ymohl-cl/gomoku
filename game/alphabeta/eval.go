@@ -35,6 +35,7 @@ const (
 	depthOutEvalToFourSpots = int16(2)
 )
 
+// Score is the data to each player pending the evaluation
 type Score struct {
 	idPlayer   uint8
 	capturable bool
@@ -104,13 +105,14 @@ func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8) {
 // evalAlignment return score to alignment parameter on this evaluation
 func (s *State) evalAlignment(n *Node, current, opponent *Score) {
 	var spots []*Node
+	var depth uint8
 
 	// get score current
-	s.scoreAlignment(n, current, s.maxDepth)
+	s.scoreAlignment(n, current, depth)
 
 	// get score opponent - flag define the opponent turn
 	flag := true
-	depth := s.maxDepth - 1
+	depth++
 	for node := n.prev; node != nil; node = node.prev {
 		if flag == true && node.rule.IsMyPosition(s.board) {
 			// remove previous spots from the board.
@@ -122,17 +124,16 @@ func (s *State) evalAlignment(n *Node, current, opponent *Score) {
 			// save the current spot
 			spots = append(spots, node)
 		}
-		depth--
+		depth++
 		flag = !flag
 	}
 	// restore spots deleted
 	s.restoreTokenPlayer(&spots)
 
-	// set advantage to the first action
-	if opponent.alignment > 0 {
+	// if there are not winneable situation and equality score.
+	// Give advantage to the first player which played
+	if opponent.alignment == current.alignment && opponent.alignment > 0 {
 		opponent.alignment += scoreFirst
-	} else if current.alignment > 0 {
-		current.alignment += scoreFirst
 	}
 
 	return
@@ -175,21 +176,25 @@ func (s *State) evalCapture(n *Node, current, opponent *Score) {
 // analyzeScore return the final weight
 func (s *State) analyzeScore(current, opponent *Score) int16 {
 	var score int16
-
-	if opponent.alignment > scoreWinDetection {
-		score = opponent.alignment //+ int16(opponent.depthAlignment)
-		score += opponent.capture
-		score -= current.alignment //+ int16(current.depthAlignment))
+	/*
+		if opponent.alignment < 0 {
+			// win condition for opponent
+			score = opponent.alignment
+			score -= opponent.capture
+			//score += current.alignment
+			score += current.capture
+		}*/
+	if current.alignment < 0 {
+		// win condition for current
+		score = current.alignment
 		score -= current.capture
-	} else if current.alignment > scoreWinDetection {
-		score = current.alignment //+ int16(current.depthAlignment)
-		score += current.capture
-		score -= opponent.alignment //+ int16(opponent.depthAlignment))
-		score -= opponent.capture
+		score += opponent.alignment
+		score += opponent.capture
 	} else {
+		// no win
 		score = scoreNeutral
-		score += current.alignment - opponent.alignment
-		score += current.capture - current.capture
+		score -= current.alignment - opponent.alignment
+		score -= current.capture - opponent.capture
 	}
 
 	return score

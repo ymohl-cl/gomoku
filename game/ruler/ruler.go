@@ -191,7 +191,7 @@ func (r *Rules) analyzeAlignments(mask *[11]uint8, dirY, dirX int8) {
 		return
 	}
 
-	if a.Size == 3 && a.Style == rdef.AlignFree && a.AnalyzeThree(mask) {
+	if a.IsThree {
 		r.NumberThree++
 	}
 

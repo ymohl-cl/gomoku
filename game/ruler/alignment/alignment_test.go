@@ -86,11 +86,28 @@ func TestIsStyle(t *testing.T) {
 
 func TestCopy(t *testing.T) {
 	var dst Alignment
-	src := Alignment{Size: 2, Style: rdef.AlignFree}
+	src := Alignment{Size: 2, Style: rdef.AlignFree, IsThree: true, iWin: nil}
 
 	// test: 0 > src and dst match
 	dst.Copy(&src)
 	if src.Size != dst.Size || src.Style != dst.Style {
+		t.Error(t.Name() + " > test: 0")
+	}
+
+	// test: 1 > src and dst match
+	dst = Alignment{Size: 3, Style: rdef.AlignFlanked, IsThree: false, iWin: &InfoWin{}}
+	dst.Copy(&src)
+	if src.Size != dst.Size || src.Style != dst.Style {
+		t.Error(t.Name() + " > test: 1")
+	}
+}
+
+func TestClear(t *testing.T) {
+	src := Alignment{Size: 2, Style: rdef.AlignFree, IsThree: true, iWin: &InfoWin{}}
+
+	// test: 0
+	src.clear()
+	if src.Size != 0 || src.Style != 0 || src.IsThree == true || src.iWin != nil {
 		t.Error(t.Name() + " > test: 0")
 	}
 }
@@ -137,6 +154,20 @@ func TestIsBetter(t *testing.T) {
 	one = Alignment{Size: 2, Style: rdef.AlignFree}
 	if !one.IsBetter(nil) {
 		t.Error(t.Name() + " > test: 5")
+	}
+
+	// test: 6 > 2 three but just one is free-three so rwo is better
+	one = Alignment{Size: 3, Style: rdef.AlignFree, IsThree: false}
+	two = Alignment{Size: 3, Style: rdef.AlignFree, IsThree: true}
+	if one.IsBetter(&two) {
+		t.Error(t.Name() + " > test: 6")
+	}
+
+	// test: 7 > invert of 6
+	one = Alignment{Size: 3, Style: rdef.AlignFree, IsThree: true}
+	two = Alignment{Size: 3, Style: rdef.AlignFree, IsThree: false}
+	if !one.IsBetter(&two) {
+		t.Error(t.Name() + " > test: 7")
 	}
 }
 
@@ -351,7 +382,7 @@ func TestAnalyzeThree(t *testing.T) {
 	mask = [11]uint8{0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0}
 	a = New(&mask, rdef.Player1)
 	a.AnalyzeThree(&mask)
-	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree == true {
+	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != false {
 		t.Error(t.Name()+" > test: 9 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
 	// test: 10

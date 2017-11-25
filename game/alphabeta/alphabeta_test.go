@@ -255,33 +255,3 @@ func ExampleRestoreData() {
 	//p1 nb capture:  0
 	//p2 nb capture:  0
 }
-
-/*func ExampleAlphabetaNegaScout_1() {
-	var b *[19][19]uint8
-	var state *State
-
-	b = boards.GetStartP2_1()
-	state = New(b, ruler.Player1)
-	state.maxDepth = 1
-
-	state.addTotalCapture(ruler.Player1, uint8(0))
-	state.addTotalCapture(ruler.Player2, uint8(0))
-
-	ret := state.alphabetaNegaScout(math.MinInt8+1, math.MaxInt8, state.maxDepth, nil)
-	fmt.Println("ret: ", ret)
-
-	tmp := int8(math.MinInt8)
-	for n := state.lst; n != nil; n = n.next {
-		if tmp < n.weight {
-			tmp = n.weight
-			state.save = n
-		}
-		y, x := n.rule.GetPosition()
-		fmt.Println("Node weight: ", n.weight, " y et x: ", y, " - ", x)
-	}
-	y, x := state.save.rule.GetPosition()
-	fmt.Println("select: weight: ", state.save.weight, " y et x: ", y, " - ", x)
-
-	// Output:
-	// ?
-}*/
