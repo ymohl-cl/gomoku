@@ -8,7 +8,7 @@ import (
 )
 
 /* functions to help creation tests */
-func createNodes_b(t *testing.B, s *State, spots []int8) *Node {
+func createNodesB(t *testing.B, s *State, spots []int8) *Node {
 	var y, x int8
 	var node, prev *Node
 
@@ -43,7 +43,7 @@ func BenchmarkEvalCapture(b *testing.B) {
 	//   . . . . . . . . o x o . . . . . . . .
 	// - . . . . . . . x x o . x x . . . . . .
 	// createSimulation [P2: 9-6 | P1: 9-5 | P2: 9-13 | P1: 9-4]
-	node = createNodes_b(b, state, []int8{9, 10, 9, 7, 8, 8, 8, 9, 8, 10, 9, 11, 9, 9, 9, 12, 9, 6, 9, 5, 9, 13, 9, 4})
+	node = createNodesB(b, state, []int8{9, 10, 9, 7, 8, 8, 8, 9, 8, 10, 9, 11, 9, 9, 9, 12, 9, 6, 9, 5, 9, 13, 9, 4})
 	current, opponent = getNewScore(node)
 
 	//StartBenchmark capture
@@ -69,7 +69,7 @@ func BenchmarkEvalAlignment(b *testing.B) {
 	// - . . . . . . x o x o x . . . . . . . .
 	//   . . . . . . x . o . . . . . . . . . .
 	// createSimulation [P1: 8-7 | P2: 9-11]
-	node = createNodes_b(b, state, []int8{9, 7, 8, 8, 10, 8, 9, 10, 8, 11, 8, 6, 8, 10, 9, 6, 8, 9, 10, 6, 8, 12, 8, 7, 9, 11})
+	node = createNodesB(b, state, []int8{9, 7, 8, 8, 10, 8, 9, 10, 8, 11, 8, 6, 8, 10, 9, 6, 8, 9, 10, 6, 8, 12, 8, 7, 9, 11})
 	current, opponent = getNewScore(node)
 
 	//StartBenchmark alignment
