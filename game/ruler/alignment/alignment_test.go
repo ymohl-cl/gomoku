@@ -179,39 +179,47 @@ func TestSetStyleByMask(t *testing.T) {
 	mask = [11]uint8{0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0}
 	a.setStyleByMask(&mask, 2, rdef.Player1)
 	if a.Style&rdef.AlignFlanked != 0 || a.Style&rdef.AlignFree == 0 || a.Style&rdef.AlignHalf != 0 {
-		t.Error(t.Name() + " > test: 0")
+		t.Error(t.Name()+" > test: 0 > style: ", a.Style)
 	}
 
 	// test: 1 > half-free style
-	a.Style = 0
+	a.clear()
 	mask = [11]uint8{0, 0, 0, 0, 1, 1, 1, 2, 0, 0, 0}
 	a.setStyleByMask(&mask, 2, rdef.Player1)
 	if a.Style&rdef.AlignFlanked != 0 || a.Style&rdef.AlignFree != 0 || a.Style&rdef.AlignHalf == 0 {
-		t.Error(t.Name() + " > test: 1")
+		t.Error(t.Name()+" > test: 1 > style: ", a.Style)
 	}
 
 	// test: 2 > flanked style
-	a.Style = 0
+	a.clear()
 	mask = [11]uint8{3, 3, 0, 0, 1, 1, 1, 2, 0, 0, 0}
 	a.setStyleByMask(&mask, 2, rdef.Player1)
 	if a.Style&rdef.AlignFlanked == 0 || a.Style&rdef.AlignFree != 0 || a.Style&rdef.AlignHalf != 0 {
-		t.Error(t.Name() + " > test: 2")
+		t.Error(t.Name()+" > test: 2 > style: ", a.Style)
 	}
 
 	// test: 3 > flanked style
-	a.Style = 0
+	a.clear()
 	mask = [11]uint8{3, 3, 1, 1, 0, 1, 0, 1, 0, 0, 0}
 	a.setStyleByMask(&mask, 2, rdef.Player1)
 	if a.Style&rdef.AlignFlanked != 0 || a.Style&rdef.AlignFree != 0 || a.Style&rdef.AlignHalf == 0 {
-		t.Error(t.Name() + " > test: 3")
+		t.Error(t.Name()+" > test: 3 > style: ", a.Style)
 	}
 
-	// test: 4 > free style
-	a.Style = 0
+	// test: 4 > half free
+	a.clear()
 	mask = [11]uint8{3, 3, 1, 1, 0, 1, 0, 1, 0, 0, 0}
 	a.setStyleByMask(&mask, 3, rdef.Player1)
+	if a.Style&rdef.AlignFlanked != 0 || a.Style&rdef.AlignFree != 0 || a.Style&rdef.AlignHalf == 0 {
+		t.Error(t.Name()+" > test: 4 > style: ", a.Style)
+	}
+
+	// test: 5 > free style
+	a.clear()
+	mask = [11]uint8{2, 0, 1, 1, 0, 1, 0, 2, 0, 0, 0}
+	a.setStyleByMask(&mask, 1, rdef.Player1)
 	if a.Style&rdef.AlignFlanked != 0 || a.Style&rdef.AlignFree == 0 || a.Style&rdef.AlignHalf != 0 {
-		t.Error(t.Name() + " > test: 4")
+		t.Error(t.Name()+" > test: 5 > style: ", a.Style)
 	}
 }
 
@@ -220,7 +228,7 @@ func TestNew(t *testing.T) {
 	var a *Alignment
 
 	// test: 0 > all spots set to the player
-	mask = [11]uint8{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+	mask = [11]uint8{0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0}
 	a = New(&mask, rdef.Player1)
 	if a.Size != 5 || a.Style&rdef.AlignFree == 0 {
 		t.Error(t.Name()+" > test: 0 > (Size: ", a.Size, " - Style: ", a.Style, ")")
@@ -257,7 +265,7 @@ func TestNew(t *testing.T) {
 	// test: 5 > check three alignment with salt. start mask by 'out of board'
 	mask = [11]uint8{3, 3, 1, 1, 0, 1, 0, 1, 0, 0, 0}
 	a = New(&mask, rdef.Player1)
-	if a.Size != 3 || a.Style&rdef.AlignFree == 0 {
+	if a.Size != 3 || a.Style&rdef.AlignHalf == 0 {
 		t.Error(t.Name()+" > test: 5 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
 
@@ -285,14 +293,14 @@ func TestNew(t *testing.T) {
 	// test: 9 > 3 token aligned with salt
 	mask = [11]uint8{0, 0, 1, 0, 0, 1, 1, 1, 2, 0, 0}
 	a = New(&mask, rdef.Player1)
-	if a.Size != 3 || a.Style&rdef.AlignFree == 0 {
+	if a.Size != 3 || a.Style&rdef.AlignHalf == 0 {
 		t.Error(t.Name()+" > test: 9 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
 
 	// test: 10 > 2 test vrac
 	mask = [11]uint8{3, 1, 1, 0, 0, 1, 1, 2, 0, 0, 0}
 	a = New(&mask, rdef.Player1)
-	if a.Size != 3 || a.Style&rdef.AlignHalf == 0 {
+	if a.Size != 3 || a.Style&rdef.AlignFlanked == 0 {
 		t.Error(t.Name()+" > test: 10 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
 
@@ -315,68 +323,257 @@ func TestAnalyzeThree(t *testing.T) {
 	var mask [11]uint8
 	var a *Alignment
 
-	// test: 0
+	// test: 0.0
 	mask = [11]uint8{0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0}
 	a = New(&mask, rdef.Player1)
 	a.AnalyzeThree(&mask)
 	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
-		t.Error(t.Name()+" > test: 0 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+		t.Error(t.Name()+" > test: 0.0 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
-	// test: 1
+	// test: 0.1
+	mask = [11]uint8{0, 0, 0, 1, 1, 1, 0, 2, 0, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
+		t.Error(t.Name()+" > test: 0.1 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 0.2
+	mask = [11]uint8{0, 2, 0, 1, 1, 1, 0, 0, 0, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
+		t.Error(t.Name()+" > test: 0.2 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 0.3
+	mask = [11]uint8{0, 2, 0, 1, 1, 1, 0, 2, 0, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 0.3 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 1.0
 	mask = [11]uint8{0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0}
 	a = New(&mask, rdef.Player1)
 	a.AnalyzeThree(&mask)
 	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
-		t.Error(t.Name()+" > test: 1 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+		t.Error(t.Name()+" > test: 1.0 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
-	// test: 2
+	// test: 1.1
+	mask = [11]uint8{0, 0, 0, 0, 1, 1, 1, 0, 2, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
+		t.Error(t.Name()+" > test: 1.1 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 1.2
+	mask = [11]uint8{0, 0, 2, 0, 1, 1, 1, 0, 0, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
+		t.Error(t.Name()+" > test: 1.2 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 1.3
+	mask = [11]uint8{0, 0, 2, 0, 1, 1, 1, 0, 2, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 1.3 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 2.0
 	mask = [11]uint8{0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0}
 	a = New(&mask, rdef.Player1)
 	a.AnalyzeThree(&mask)
 	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
-		t.Error(t.Name()+" > test: 2 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+		t.Error(t.Name()+" > test: 2.0 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
-	// test: 3
+	// test: 2.1
+	mask = [11]uint8{0, 0, 0, 0, 0, 1, 1, 1, 0, 2, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
+		t.Error(t.Name()+" > test: 2.1 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 2.2
+	mask = [11]uint8{0, 0, 0, 2, 0, 1, 1, 1, 0, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
+		t.Error(t.Name()+" > test: 2.2 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 2.3
+	mask = [11]uint8{0, 0, 0, 2, 0, 1, 1, 1, 0, 2, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 2.3 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 3.0
 	mask = [11]uint8{0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0}
 	a = New(&mask, rdef.Player1)
 	a.AnalyzeThree(&mask)
 	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
-		t.Error(t.Name()+" > test: 3 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+		t.Error(t.Name()+" > test: 3.0 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
-	// test: 4
+	// test: 3.1
+	mask = [11]uint8{2, 0, 1, 1, 0, 1, 0, 2, 0, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
+		t.Error(t.Name()+" > test: 3.1 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 3.2
+	mask = [11]uint8{0, 0, 1, 1, 0, 1, 2, 0, 0, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 3.2 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 3.3
+	mask = [11]uint8{0, 2, 1, 1, 0, 1, 0, 0, 0, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 3.3 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 4.0
 	mask = [11]uint8{0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0}
 	a = New(&mask, rdef.Player1)
 	a.AnalyzeThree(&mask)
 	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
-		t.Error(t.Name()+" > test: 4 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+		t.Error(t.Name()+" > test: 4.0 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
-	// test: 5
+	// test: 4.1
+	mask = [11]uint8{0, 0, 2, 0, 1, 1, 0, 1, 0, 2, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
+		t.Error(t.Name()+" > test: 4.1 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 4.2
+	mask = [11]uint8{0, 0, 0, 0, 1, 1, 0, 1, 2, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 4.2 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 4.3
+	mask = [11]uint8{0, 0, 0, 2, 1, 1, 0, 1, 0, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 4.3 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 5.0
 	mask = [11]uint8{0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0}
 	a = New(&mask, rdef.Player1)
 	a.AnalyzeThree(&mask)
 	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
-		t.Error(t.Name()+" > test: 5 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+		t.Error(t.Name()+" > test: 5.0 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
-	// test: 6
+	// test: 5.1
+	mask = [11]uint8{0, 0, 0, 2, 0, 1, 1, 0, 1, 0, 2}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
+		t.Error(t.Name()+" > test: 5.1 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 5.2
+	mask = [11]uint8{0, 0, 0, 0, 0, 1, 1, 0, 1, 2, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 5.2 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 5.3
+	mask = [11]uint8{0, 0, 0, 0, 2, 1, 1, 0, 1, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 5.3 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 6.0
 	mask = [11]uint8{0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0}
 	a = New(&mask, rdef.Player1)
 	a.AnalyzeThree(&mask)
 	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
-		t.Error(t.Name()+" > test: 6 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+		t.Error(t.Name()+" > test: 6.0 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
-	// test: 7
+	// test: 6.1
+	mask = [11]uint8{0, 0, 0, 2, 0, 1, 0, 1, 1, 0, 2}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
+		t.Error(t.Name()+" > test: 6.1 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 6.2
+	mask = [11]uint8{0, 0, 0, 0, 0, 1, 0, 1, 1, 2, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 6.2 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 6.3
+	mask = [11]uint8{0, 0, 0, 0, 2, 1, 0, 1, 1, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 6.3 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 7.0
 	mask = [11]uint8{0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0}
 	a = New(&mask, rdef.Player1)
 	a.AnalyzeThree(&mask)
 	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
-		t.Error(t.Name()+" > test: 7 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+		t.Error(t.Name()+" > test: 7.0 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
-	// test: 8
+	// test: 7.1
+	mask = [11]uint8{0, 2, 0, 1, 0, 1, 1, 0, 2, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
+		t.Error(t.Name()+" > test: 7.1 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 7.2
+	mask = [11]uint8{0, 0, 2, 1, 0, 1, 1, 0, 0, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 7.2 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 7.3
+	mask = [11]uint8{0, 0, 0, 1, 0, 1, 1, 2, 0, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 7.3 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 8.0
 	mask = [11]uint8{0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0}
 	a = New(&mask, rdef.Player1)
 	a.AnalyzeThree(&mask)
 	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
-		t.Error(t.Name()+" > test: 8 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+		t.Error(t.Name()+" > test: 8.0 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 8.1
+	mask = [11]uint8{2, 0, 1, 0, 1, 1, 0, 2, 0, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
+		t.Error(t.Name()+" > test: 8.1 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 8.2
+	mask = [11]uint8{0, 0, 1, 0, 1, 1, 2, 0, 0, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 8.2 > (Size: ", a.Size, " - Style: ", a.Style, ")")
+	}
+	// test: 8.3
+	mask = [11]uint8{0, 2, 1, 0, 1, 1, 0, 0, 0, 0, 0}
+	a = New(&mask, rdef.Player1)
+	a.AnalyzeThree(&mask)
+	if a.Size != 3 || a.Style&rdef.AlignFree != 0 || a.IsThree != false {
+		t.Error(t.Name()+" > test: 8.3 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
 	// test: 9
 	mask = [11]uint8{0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0}
@@ -384,13 +581,6 @@ func TestAnalyzeThree(t *testing.T) {
 	a.AnalyzeThree(&mask)
 	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != false {
 		t.Error(t.Name()+" > test: 9 > (Size: ", a.Size, " - Style: ", a.Style, ")")
-	}
-	// test: 10
-	mask = [11]uint8{0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0}
-	a = New(&mask, rdef.Player1)
-	a.AnalyzeThree(&mask)
-	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
-		t.Error(t.Name()+" > test: 10 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
 }
 

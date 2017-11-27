@@ -129,7 +129,7 @@ func TestNewNode(t *testing.T) {
 	}
 }
 
-func ExampleUpdateData() {
+func ExampleState_updateData() {
 	var b *[19][19]uint8
 	var state *State
 	var n *Node
@@ -192,7 +192,7 @@ func ExampleUpdateData() {
 	//p2 nb capture:  0
 }
 
-func ExampleRestoreData() {
+func ExampleState_restoreData() {
 	var b *[19][19]uint8
 	var state *State
 	var n *Node

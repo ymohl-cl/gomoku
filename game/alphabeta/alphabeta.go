@@ -9,10 +9,12 @@ import (
 	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
 )
 
+// InfoPlayer of previous evaluation
 type InfoPlayer struct {
 	totalCapture uint8
 }
 
+// State of evaluation
 type State struct {
 	maxDepth      uint8
 	board         *[19][19]uint8
@@ -23,6 +25,7 @@ type State struct {
 	lst           *Node
 }
 
+// Node represent one move
 type Node struct {
 	rule   ruler.Rules
 	weight int16
@@ -30,6 +33,7 @@ type Node struct {
 	prev   *Node
 }
 
+// New provide a State
 func New(b *[19][19]uint8, player uint8) *State {
 	return &State{maxDepth: 4, board: b, currentPlayer: player}
 }

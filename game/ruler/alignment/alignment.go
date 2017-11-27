@@ -93,14 +93,21 @@ func (a Alignment) IsBetter(compare *Alignment) bool {
 }
 
 func (a *Alignment) setStyleByMask(mask *[11]uint8, index int, player uint8) {
-	var left, right bool
+	var left, right, check bool
 
-	valueLeft := (*mask)[(index+0)-1]
-	valueRight := (*mask)[(index+4)+1]
-	if valueLeft == rdef.Empty || valueLeft == player {
+	vLeft := (*mask)[(index + 0)]
+	vRight := (*mask)[(index + 4)]
+	vLeftOut := (*mask)[(index+0)-1]
+	vRightOut := (*mask)[(index+4)+1]
+	if vLeftOut != player && vLeftOut != rdef.Empty && vRightOut != player && vRightOut != rdef.Empty {
+		left = false
+		right = false
+		check = true
+	}
+	if check == false && (vLeft == rdef.Empty || (vLeft == player && vLeftOut == rdef.Empty)) {
 		left = true
 	}
-	if valueRight == rdef.Empty || valueRight == player {
+	if check == false && (vRight == rdef.Empty || (vRight == player && vRightOut == rdef.Empty)) {
 		right = true
 	}
 	if left && right {
@@ -151,49 +158,40 @@ func (a *Alignment) AnalyzeThree(mask *[11]uint8) bool {
 
 	switch {
 	// [0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0]
-	case (left[3] == rdef.Empty || left[3] == player) && left[0] == player &&
-		left[1] == player && left[2] == rdef.Empty && right[0] == rdef.Empty &&
-		(right[1] == rdef.Empty || right[1] == player):
+	case left[0] == player && left[1] == player && left[2] == rdef.Empty &&
+		right[0] == rdef.Empty && (left[3] == rdef.Empty || right[1] == rdef.Empty):
 		fallthrough
 	// [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0]
-	case (left[2] == rdef.Empty || left[2] == player) && left[0] == player &&
-		left[1] == rdef.Empty && right[0] == player && right[1] == rdef.Empty &&
-		(right[2] == rdef.Empty || right[2] == player):
+	case left[0] == player && left[1] == rdef.Empty && right[0] == player &&
+		right[1] == rdef.Empty && (right[2] == rdef.Empty || left[2] == rdef.Empty):
 		fallthrough
 	// [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0]
-	case (left[1] == rdef.Empty || left[1] == player) && left[0] == rdef.Empty &&
-		right[0] == player && right[1] == player && right[2] == rdef.Empty &&
-		(right[3] == rdef.Empty || right[3] == player):
+	case left[0] == rdef.Empty && right[0] == player && right[1] == player &&
+		right[2] == rdef.Empty && (right[3] == rdef.Empty || left[1] == rdef.Empty):
 		fallthrough
 	// [0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0]
-	case (left[3] == rdef.Empty || left[3] == player) && left[2] == player &&
-		left[1] == player && left[0] == rdef.Empty &&
-		(right[0] == rdef.Empty || right[0] == player):
+	case left[3] == rdef.Empty && left[2] == player && left[1] == player &&
+		left[0] == rdef.Empty && right[0] == rdef.Empty:
 		fallthrough
 	// [0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0]
-	case (left[1] == rdef.Empty || left[1] == player) && left[0] == player &&
-		right[0] == rdef.Empty && right[1] == player &&
-		(right[1] == rdef.Empty || right[1] == player):
+	case left[1] == rdef.Empty && left[0] == player && right[0] == rdef.Empty &&
+		right[1] == player && right[2] == rdef.Empty:
 		fallthrough
 	// [0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0]
-	case (left[0] == rdef.Empty || left[0] == player) && right[0] == player &&
-		right[1] == rdef.Empty && right[2] == player &&
-		(right[3] == rdef.Empty || right[3] == player):
+	case left[0] == rdef.Empty && right[0] == player && right[1] == rdef.Empty &&
+		right[2] == player && right[3] == rdef.Empty:
 		fallthrough
 	// [0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0]
-	case (left[0] == rdef.Empty || left[0] == player) && right[0] == rdef.Empty &&
-		right[1] == player && right[2] == player &&
-		(right[3] == rdef.Empty || right[3] == player):
+	case left[0] == rdef.Empty && right[0] == rdef.Empty && right[1] == player &&
+		right[2] == player && right[3] == rdef.Empty:
 		fallthrough
 	// [0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0]
-	case (left[2] == rdef.Empty || left[2] == player) && left[1] == player &&
-		left[0] == rdef.Empty && right[0] == player &&
-		(right[1] == rdef.Empty || right[1] == player):
+	case left[2] == rdef.Empty && left[1] == player && left[0] == rdef.Empty &&
+		right[0] == player && right[1] == rdef.Empty:
 		fallthrough
 	// [0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0
-	case (left[3] == rdef.Empty || left[3] == player) && left[2] == player &&
-		left[1] == rdef.Empty && left[0] == player &&
-		(right[0] == rdef.Empty || right[0] == player):
+	case left[3] == rdef.Empty && left[2] == player && left[1] == rdef.Empty &&
+		left[0] == player && right[0] == rdef.Empty:
 		a.IsThree = true
 		return true
 	default:
