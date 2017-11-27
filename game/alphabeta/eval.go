@@ -104,8 +104,9 @@ func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8, flag bool) {
 
 // evalAlignment return score to alignment parameter on this evaluation
 func (s *State) evalAlignment(n *Node, current, opponent *Score) {
-	var spots []*Node
+	spots := new([5]*Node)
 	var depth uint8
+	index := 0
 
 	// get score current
 	s.scoreAlignment(n, current, depth, true)
@@ -113,22 +114,29 @@ func (s *State) evalAlignment(n *Node, current, opponent *Score) {
 	// get score opponent - flag define the opponent turn
 	flag := true
 	depth++
+
 	for node := n.prev; node != nil; node = node.prev {
 		if flag == true && node.rule.IsMyPosition(s.board) {
-			// remove previous spots from the board.
-			s.updateTokenPlayer(&spots)
-			// check if this spot don't be captured
-			node.rule.UpdateAlignments(s.board)
+			if current.capturable {
+				// remove previous spots from the board.
+				s.updateTokenPlayer(spots)
+				// check if this spot don't be captured
+				node.rule.UpdateAlignments(s.board)
+			}
 			// get score opponent on this move
 			s.scoreAlignment(node, opponent, depth, false)
-			// save the current spot
-			spots = append(spots, node)
+
+			if current.capturable {
+				// save the current spot
+				spots[index] = node
+				index++
+			}
 		}
 		depth++
 		flag = !flag
 	}
 	// restore spots deleted
-	s.restoreTokenPlayer(&spots)
+	s.restoreTokenPlayer(spots)
 
 	// if there are not winneable situation and equality score.
 	// Give advantage to the first player which played
@@ -185,7 +193,7 @@ func (s *State) analyzeScore(current, opponent *Score) int16 {
 		score += opponent.capture
 		return score
 	}
-	// else 	// no win
+	// else no win
 	score = scoreNeutral
 	score -= current.alignment - opponent.alignment
 	score -= current.capture - opponent.capture

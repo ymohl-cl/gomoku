@@ -71,15 +71,31 @@ func (s *State) newNode(y, x int8) *Node {
 	return n
 }
 
-func (s *State) updateTokenPlayer(nodes *[]*Node) {
-	for _, n := range *nodes {
+func (s *State) updateTokenPlayer(nodes *[5]*Node) {
+	var n *Node
+
+	for i := 0; i < 5; i++ {
+		if n = (*nodes)[i]; n == nil {
+			break
+		}
 		y, x := n.rule.GetPosition()
 		(*s.board)[y][x] = rdef.Empty
 	}
+	/*
+		for _, n := range *nodes {
+			y, x := n.rule.GetPosition()
+			(*s.board)[y][x] = rdef.Empty
+		}
+	*/
 }
 
-func (s *State) restoreTokenPlayer(nodes *[]*Node) {
-	for _, n := range *nodes {
+func (s *State) restoreTokenPlayer(nodes *[5]*Node) {
+	var n *Node
+
+	for i := 0; i < 5; i++ {
+		if n = (*nodes)[i]; n == nil {
+			break
+		}
 		y, x := n.rule.GetPosition()
 		(*s.board)[y][x] = n.rule.GetPlayer()
 	}

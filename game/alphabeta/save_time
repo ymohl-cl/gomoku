@@ -1,0 +1,12 @@
+BenchmarkEvalCapture-8     	100000000	        15.7 ns/op
+BenchmarkEvalAlignment-8   	  500000	      3462 ns/op
+BenchmarkAnalyseScore-8    	2000000000	         0.27 ns/op
+PASS
+ok  	github.com/ymohl-cl/gomoku/game/alphabeta	3.954s
+
+BenchmarkAvailablePosition-8      	100000000	        20.5 ns/op
+BenchmarkMaskFromBoard-8          	100000000	        21.6 ns/op
+BenchmarkAnalyzeCapture-8         	500000000	         3.51 ns/op
+BenchmarkAnalyzeAlignments-8      	20000000	        91.4 ns/op
+BenchmarkAnalyzeMoveCondition-8   	2000000000	         0.80 ns/op
+BenchmarkAnalyzeiWinCondition-8   	500000000	         3.40 ns/op

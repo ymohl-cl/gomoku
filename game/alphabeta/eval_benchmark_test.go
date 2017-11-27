@@ -69,7 +69,7 @@ func BenchmarkEvalAlignment(b *testing.B) {
 	// - . . . . . . x o x o x . . . . . . . .
 	//   . . . . . . x . o . . . . . . . . . .
 	// createSimulation [P1: 8-7 | P2: 9-11]
-	node = createNodes_b(b, state, []int8{9, 7, 8, 8, 10, 8, 9, 10, 8, 11, 8, 6, 8, 10, 9, 6, 8, 9, 10, 6, 8, 12, 8, 7, 9, 11})
+	node = createNodes_b(b, state, []int8{9, 7, 8, 8, 10, 8, 9, 10})
 	current, opponent = getNewScore(node)
 
 	//StartBenchmark alignment

@@ -1,6 +1,8 @@
 package ruler
 
 import (
+	"sync"
+
 	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
 	// rdef is the ruler defines
 	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
@@ -37,6 +39,7 @@ type Rules struct {
 	NumberCapture uint8
 	Movable       bool
 	Win           bool
+	m             *sync.Mutex
 }
 
 // New return a new instance with one player and one position (y, x)
@@ -45,6 +48,7 @@ func New(p uint8, y, x int8) *Rules {
 		player: p,
 		y:      y,
 		x:      x,
+		m:      new(sync.Mutex),
 	}
 }
 
@@ -53,6 +57,7 @@ func (r *Rules) Init(p uint8, y, x int8) {
 	r.player = p
 	r.y = y
 	r.x = x
+	r.m = new(sync.Mutex)
 }
 
 // ApplyMove write on the board the spot of move and delete captured spot
@@ -307,7 +312,6 @@ func (r *Rules) CheckRules(board *[19][19]uint8, nbCaps uint8) {
 
 // UpdateAlignments define aligns with a new state baord
 func (r *Rules) UpdateAlignments(board *[19][19]uint8) {
-	var stop bool
 	var mask [11]uint8
 
 	r.aligns = nil
@@ -317,8 +321,7 @@ func (r *Rules) UpdateAlignments(board *[19][19]uint8) {
 		for x := int8(-1); x <= 1; x++ {
 			if x == 0 && y == 0 {
 				// all direction are checked so break
-				stop = true
-				break
+				return
 			}
 
 			// create mask to the direction
@@ -326,10 +329,6 @@ func (r *Rules) UpdateAlignments(board *[19][19]uint8) {
 
 			// record informations alinment
 			r.analyzeAlignments(&mask, y, x)
-		}
-
-		if stop == true {
-			break
 		}
 	}
 }
