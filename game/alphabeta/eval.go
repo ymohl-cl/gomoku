@@ -50,8 +50,8 @@ func maxWeight(v1, v2 int16) int16 {
 	return v2
 }
 
-// calcul score on alignment simulation
-func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8) {
+// calcul score on alignment simulation, if flag == true, the win condition is applies
+func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8, flag bool) {
 	var coef int16
 	var a *alignment.Alignment
 	var nbr int16
@@ -67,9 +67,9 @@ func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8) {
 	a = n.rule.GetBetterAlignment()
 
 	// check wins situations
-	if a.Size == 4 {
+	if flag == true && a.Size == 4 {
 		score = scoreWinDetection - nbr + (depthOutEvalToFourSpots - int16(depth))
-	} else if a.Size == 3 && a.IsThree {
+	} else if flag == true && a.Size == 3 && a.IsThree {
 		score = scoreWinDetection - nbr + (depthOutEvalToFreeThree - int16(depth))
 	}
 	if score != 0 && sc.alignment > score {
@@ -108,7 +108,7 @@ func (s *State) evalAlignment(n *Node, current, opponent *Score) {
 	var depth uint8
 
 	// get score current
-	s.scoreAlignment(n, current, depth)
+	s.scoreAlignment(n, current, depth, true)
 
 	// get score opponent - flag define the opponent turn
 	flag := true
@@ -120,7 +120,7 @@ func (s *State) evalAlignment(n *Node, current, opponent *Score) {
 			// check if this spot don't be captured
 			node.rule.UpdateAlignments(s.board)
 			// get score opponent on this move
-			s.scoreAlignment(node, opponent, depth)
+			s.scoreAlignment(node, opponent, depth, false)
 			// save the current spot
 			spots = append(spots, node)
 		}
@@ -177,9 +177,9 @@ func (s *State) evalCapture(n *Node, current, opponent *Score) {
 func (s *State) analyzeScore(current, opponent *Score) int16 {
 	var score int16
 
-	if opponent.alignment < 0 {
-		opponent.alignment = (scoreFree * 5) + (scoreByAlign * 3)
-	}
+	//	if opponent.alignment < 0 {
+	//		opponent.alignment = (scoreFree * 5) + (scoreByAlign * 3)
+	//	}
 	/*
 		if opponent.alignment < 0 {
 			// win condition for opponent
