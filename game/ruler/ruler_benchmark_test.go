@@ -8,14 +8,6 @@ import (
 	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
 )
 
-/*var stop bool
-
-
-
-// check if win exist
-r.analyzeWinCondition(board, nbCaps)
-return*/
-
 func BenchmarkAvailablePosition(b *testing.B) {
 	var board *[19][19]uint8
 	var r *Rules
@@ -104,5 +96,37 @@ func BenchmarkAnalyzeiWinCondition(b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		r.analyzeWinCondition(nil, 0)
+	}
+}
+
+func BenchmarkUpdateAlignments(b *testing.B) {
+	var board *[19][19]uint8
+	var r *Rules
+
+	// test: > invalid move by double three action
+	board = boards.GetTreeP1_1()
+	r = New(rdef.Player2, 10, 10)
+	r.CheckRules(board, 3)
+
+	//Benchmark
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		r.UpdateAlignments(board)
+	}
+}
+
+func BenchmarkCheckRules(b *testing.B) {
+	var board *[19][19]uint8
+	var r *Rules
+
+	// test: > invalid move by double three action
+	board = boards.GetTreeP1_1()
+	r = New(rdef.Player2, 10, 10)
+	r.CheckRules(board, 3)
+
+	//Benchmark
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		r.CheckRules(board, 3)
 	}
 }
