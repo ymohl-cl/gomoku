@@ -105,7 +105,6 @@ func BenchmarkUpdateAlignments(b *testing.B) {
 
 	// test: > invalid move by double three action
 	board = boards.GetTreeP1_1()
-	r = New(rdef.Player2, 10, 10)
 	r.CheckRules(board, 3)
 
 	//Benchmark
@@ -121,12 +120,11 @@ func BenchmarkCheckRules(b *testing.B) {
 
 	// test: > invalid move by double three action
 	board = boards.GetTreeP1_1()
-	r = New(rdef.Player2, 10, 10)
-	r.CheckRules(board, 3)
 
 	//Benchmark
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
+		r = New(rdef.Player2, 10, 10)
 		r.CheckRules(board, 3)
 	}
 }
