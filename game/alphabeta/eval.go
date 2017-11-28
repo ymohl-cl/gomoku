@@ -2,6 +2,7 @@ package alphabeta
 
 import (
 	"math"
+	"sync"
 
 	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
 	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
@@ -104,39 +105,39 @@ func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8, flag bool) {
 
 // evalAlignment return score to alignment parameter on this evaluation
 func (s *State) evalAlignment(n *Node, current, opponent *Score) {
-	spots := new([5]*Node)
 	var depth uint8
-	index := 0
+	var wg sync.WaitGroup
 
 	// get score current
 	s.scoreAlignment(n, current, depth, true)
 
 	// get score opponent - flag define the opponent turn
 	flag := true
-	depth++
 
 	for node := n.prev; node != nil; node = node.prev {
 		if flag == true && node.rule.IsMyPosition(s.board) {
-			if current.capturable {
-				// remove previous spots from the board.
-				s.updateTokenPlayer(spots)
-				// check if this spot don't be captured
-				node.rule.UpdateAlignments(s.board)
-			}
-			// get score opponent on this move
-			s.scoreAlignment(node, opponent, depth, false)
-
-			if current.capturable {
-				// save the current spot
-				spots[index] = node
-				index++
-			}
+			// createAlignment
+			wg.Add(1)
+			go func(n *Node) {
+				defer wg.Done()
+				n.rule.UpdateAlignments(s.board)
+			}(node)
 		}
 		depth++
 		flag = !flag
 	}
-	// restore spots deleted
-	s.restoreTokenPlayer(spots)
+	wg.Wait()
+
+	flag = true
+	depth++
+	for node := n.prev; node != nil; node = node.prev {
+		if flag == true {
+			// updateScore
+			s.scoreAlignment(n, opponent, depth, false)
+		}
+		depth++
+		flag = !flag
+	}
 
 	// if there are not winneable situation and equality score.
 	// Give advantage to the first player which played

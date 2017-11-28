@@ -82,7 +82,10 @@ func (a Alignment) IsBetter(compare *Alignment) bool {
 		return true
 	} else if a.Size < compare.Size {
 		return false
-	} else if a.IsThree {
+	}
+
+	// alignments have a same size
+	if a.IsThree {
 		return true
 	} else if compare.IsThree {
 		return false
@@ -93,7 +96,7 @@ func (a Alignment) IsBetter(compare *Alignment) bool {
 }
 
 func (a *Alignment) setStyleByMask(mask *[11]uint8, index int, player uint8) {
-	var left, right, check bool
+	var left, right bool
 
 	vLeft := (*mask)[(index + 0)]
 	vRight := (*mask)[(index + 4)]
@@ -102,13 +105,13 @@ func (a *Alignment) setStyleByMask(mask *[11]uint8, index int, player uint8) {
 	if vLeftOut != player && vLeftOut != rdef.Empty && vRightOut != player && vRightOut != rdef.Empty {
 		left = false
 		right = false
-		check = true
-	}
-	if check == false && (vLeft == rdef.Empty || (vLeft == player && vLeftOut == rdef.Empty)) {
-		left = true
-	}
-	if check == false && (vRight == rdef.Empty || (vRight == player && vRightOut == rdef.Empty)) {
-		right = true
+	} else {
+		if vLeft == rdef.Empty || (vLeft == player && vLeftOut == rdef.Empty) {
+			left = true
+		}
+		if vRight == rdef.Empty || (vRight == player && vRightOut == rdef.Empty) {
+			right = true
+		}
 	}
 	if left && right {
 		a.Style |= rdef.AlignFree
@@ -121,25 +124,30 @@ func (a *Alignment) setStyleByMask(mask *[11]uint8, index int, player uint8) {
 
 // New create alignment after scan it
 func New(mask *[11]uint8, player uint8) *Alignment {
-	var ret, tmp Alignment
+	var ret Alignment
 
 	for i := 1; i <= 5; i++ {
-		tmp.clear()
+		size := uint8(0)
 		available := uint8(0)
+
 		for c := 0; c < 5; c++ {
-			value := (*mask)[i+c]
+			value := mask[i+c]
 			if value == player {
-				tmp.Size++
+				size++
 			} else if value == rdef.Empty {
 				available++
 			} else {
 				break
 			}
 		}
-		if available+tmp.Size == 5 && tmp.Size >= ret.Size {
+
+		if available+size == 5 && size >= ret.Size {
+			tmp := Alignment{Size: size}
 			tmp.setStyleByMask(mask, i, player)
 			if tmp.Size == 3 && tmp.Style&rdef.AlignFree != 0 {
-				tmp.AnalyzeThree(mask)
+				if AnalyzeThree(mask) {
+					tmp.IsThree = true
+				}
 			}
 			if !ret.IsBetter(&tmp) {
 				ret.Copy(&tmp)
@@ -150,15 +158,41 @@ func New(mask *[11]uint8, player uint8) *Alignment {
 	return &ret
 }
 
+// AnalyzeWin alignment and return it if it's a case
+func AnalyzeWin(mask *[11]uint8) *Alignment {
+	size := uint8(1)
+	player := mask[5]
+
+	for i := 4; i >= 0; i-- {
+		if mask[i] == player {
+			size++
+		} else {
+			break
+		}
+	}
+	for i := 6; i < 11; i++ {
+		if mask[i] == player {
+			size++
+		} else {
+			break
+		}
+	}
+	if size >= 5 {
+		return &Alignment{Size: size}
+	}
+	return nil
+}
+
+/*
 // AnalyzeThree check the alignment to define a free-three and record it on isThree attribute
-func (a *Alignment) AnalyzeThree(mask *[11]uint8) bool {
+func AnalyzeThree(mask *[11]uint8) bool {
 	player := mask[5]
 	left := [4]uint8{mask[5-1], mask[5-2], mask[5-3], mask[5-4]}
 	right := [4]uint8{mask[5+1], mask[5+2], mask[5+3], mask[5+4]}
 
 	switch {
 	// [0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0]
-	case left[0] == player && left[1] == player && left[2] == rdef.Empty &&
+	case left[0] == player && mask[5-2] == player && left[2] == rdef.Empty &&
 		right[0] == rdef.Empty && (left[3] == rdef.Empty || right[1] == rdef.Empty):
 		fallthrough
 	// [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0]
@@ -189,10 +223,59 @@ func (a *Alignment) AnalyzeThree(mask *[11]uint8) bool {
 	case left[2] == rdef.Empty && left[1] == player && left[0] == rdef.Empty &&
 		right[0] == player && right[1] == rdef.Empty:
 		fallthrough
-	// [0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0
+	// [0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0]
 	case left[3] == rdef.Empty && left[2] == player && left[1] == rdef.Empty &&
 		left[0] == player && right[0] == rdef.Empty:
-		a.IsThree = true
+		return true
+	default:
+		//default
+	}
+
+	return false
+}
+*/
+
+func AnalyzeThree(mask *[11]uint8) bool {
+	player := mask[5]
+	//	left := [4]uint8{mask[5-1], mask[5-2], mask[5-3], mask[5-4]}
+	//	right := [4]uint8{mask[5+1], mask[5+2], mask[5+3], mask[5+4]}
+
+	switch {
+	// [0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0]
+	case mask[5-1] == player && mask[5-2] == player && mask[5-3] == rdef.Empty &&
+		mask[5+1] == rdef.Empty && (mask[5-4] == rdef.Empty || mask[5+2] == rdef.Empty):
+		fallthrough
+	// [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0]
+	case mask[5-1] == player && mask[5-2] == rdef.Empty && mask[5+1] == player &&
+		mask[5+2] == rdef.Empty && (mask[5+3] == rdef.Empty || mask[5-3] == rdef.Empty):
+		fallthrough
+	// [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0]
+	case mask[5-1] == rdef.Empty && mask[5+1] == player && mask[5+2] == player &&
+		mask[5+3] == rdef.Empty && (mask[5+4] == rdef.Empty || mask[5-2] == rdef.Empty):
+		fallthrough
+	// [0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0]
+	case mask[5-4] == rdef.Empty && mask[5-3] == player && mask[5-2] == player &&
+		mask[5-1] == rdef.Empty && mask[5+1] == rdef.Empty:
+		fallthrough
+	// [0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0]
+	case mask[5-2] == rdef.Empty && mask[5-1] == player && mask[5+1] == rdef.Empty &&
+		mask[5+2] == player && mask[5+3] == rdef.Empty:
+		fallthrough
+	// [0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0]
+	case mask[5-1] == rdef.Empty && mask[5+1] == player && mask[5+2] == rdef.Empty &&
+		mask[5+3] == player && mask[5+4] == rdef.Empty:
+		fallthrough
+	// [0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0]
+	case mask[5-1] == rdef.Empty && mask[5+1] == rdef.Empty && mask[5+2] == player &&
+		mask[5+3] == player && mask[5+4] == rdef.Empty:
+		fallthrough
+	// [0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0]
+	case mask[5-3] == rdef.Empty && mask[5-2] == player && mask[5-1] == rdef.Empty &&
+		mask[5+1] == player && mask[5+2] == rdef.Empty:
+		fallthrough
+	// [0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0
+	case mask[5-4] == rdef.Empty && mask[5-3] == player && mask[5-2] == rdef.Empty &&
+		mask[5-1] == player && mask[5+1] == rdef.Empty:
 		return true
 	default:
 		//default

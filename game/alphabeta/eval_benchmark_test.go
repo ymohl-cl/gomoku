@@ -8,7 +8,7 @@ import (
 )
 
 /* functions to help creation tests */
-func createNodesB(t *testing.B, s *State, spots []int8) *Node {
+func createNodesB(b *testing.B, s *State, spots []int8) *Node {
 	var y, x int8
 	var node, prev *Node
 
@@ -18,7 +18,7 @@ func createNodesB(t *testing.B, s *State, spots []int8) *Node {
 		} else {
 			x = spot
 			if node = s.newNode(y, x); node == nil {
-				t.Fatal(t.Name(), " can't create a new node on (y: ", y, " - x: ", x, ")")
+				b.Fatal(b.Name(), " can't create a new node on (y: ", y, " - x: ", x, ")")
 			}
 			s.updateData(node, prev)
 			prev = node
@@ -27,49 +27,77 @@ func createNodesB(t *testing.B, s *State, spots []int8) *Node {
 	return prev
 }
 
-func BenchmarkEvalCapture(b *testing.B) {
+func BenchmarkScoreAlignment_noAlignment(b *testing.B) {
+	var current *Score
 
-	var board *[19][19]uint8
-	var state *State
-	var node *Node
-	var current, opponent *Score
+	board := boards.GetStartP1_1()
+	state := New(board, rdef.Player2)
+	node := createNodesB(b, state, []int8{9, 7})
+	current, _ = getNewScore(node)
 
-	board = boards.GetStartP1_1()
-	state = New(board, rdef.Player2)
-
-	/* test: P1: 0 capture | P2: 1 capture */
-	// State board
-	//                     |
-	//   . . . . . . . . o x o . . . . . . . .
-	// - . . . . . . . x x o . x x . . . . . .
-	// createSimulation [P2: 9-6 | P1: 9-5 | P2: 9-13 | P1: 9-4]
-	node = createNodesB(b, state, []int8{9, 10, 9, 7, 8, 8, 8, 9, 8, 10, 9, 11, 9, 9, 9, 12, 9, 6, 9, 5, 9, 13, 9, 4})
-	current, opponent = getNewScore(node)
-
-	//StartBenchmark capture
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		state.evalCapture(node, current, opponent)
+		state.scoreAlignment(node, current, state.maxDepth, true)
 	}
+	b.StopTimer()
+	b.ReportAllocs()
 }
 
-func BenchmarkEvalAlignment(b *testing.B) {
-	var board *[19][19]uint8
-	var state *State
-	var node *Node
+func BenchmarkScoreAlignment_freeThree(b *testing.B) {
+	var current *Score
+
+	board := boards.GetStartP1_1()
+	state := New(board, rdef.Player2)
+	node := createNodesB(b, state, []int8{9, 7})
+	node = createNodesB(b, state, []int8{8, 8, 10, 8, 9, 10, 8, 11, 8, 6, 8, 10})
+	current, _ = getNewScore(node)
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		state.scoreAlignment(node, current, 0, true)
+	}
+	b.StopTimer()
+	b.ReportAllocs()
+}
+
+func BenchmarkEvalAlignment_noAlignment(b *testing.B) {
 	var current, opponent *Score
 
-	board = boards.GetStartP1_1()
-	state = New(board, rdef.Player2)
+	board := boards.GetStartP1_1()
+	state := New(board, rdef.Player2)
+	node := createNodesB(b, state, []int8{9, 7})
+	current, opponent = getNewScore(node)
 
-	/* test: 0 > last spot is not winneable situation */
-	// State board
-	//                     |
-	//   . . . . . . x . x o o o o . . . . . .
-	// - . . . . . . x o x o x . . . . . . . .
-	//   . . . . . . x . o . . . . . . . . . .
-	// createSimulation [P1: 9-7 | P2: 8-8 | P1: 10-9 | P2: 9-10]
-	node = createNodesB(b, state, []int8{9, 7, 8, 8, 10, 8, 9, 10})
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		state.evalAlignment(node, current, opponent)
+	}
+	b.StopTimer()
+	b.ReportAllocs()
+}
+
+func BenchmarkEvalAlignment_freeThree(b *testing.B) {
+	var current, opponent *Score
+
+	board := boards.GetStartP1_1()
+	state := New(board, rdef.Player2)
+	node := createNodesB(b, state, []int8{9, 7, 8, 8, 10, 8, 9, 10})
+	current, opponent = getNewScore(node)
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		state.evalAlignment(node, current, opponent)
+	}
+	b.StopTimer()
+	b.ReportAllocs()
+}
+
+func BenchmarkEvalAlignment_fourSpotAligned(b *testing.B) {
+	var current, opponent *Score
+
+	board := boards.GetStartP1_1()
+	state := New(board, rdef.Player2)
+	node := createNodesB(b, state, []int8{9, 7, 8, 8, 10, 8, 9, 10})
 	current, opponent = getNewScore(node)
 
 	//StartBenchmark alignment
@@ -77,17 +105,34 @@ func BenchmarkEvalAlignment(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		state.evalAlignment(node, current, opponent)
 	}
+	b.StopTimer()
+	b.ReportAllocs()
 }
 
-func BenchmarkAnalyseScore(b *testing.B) {
-	var board *[19][19]uint8
-	var state *State
+func BenchmarkEvalCapture(b *testing.B) {
 	var current, opponent *Score
 
-	board = boards.GetStartP1_1()
-	state = New(board, rdef.Player2)
+	board := boards.GetStartP1_1()
+	state := New(board, rdef.Player2)
 
-	// test: 0
+	node := createNodesB(b, state, []int8{9, 10, 9, 7, 8, 8, 8, 9, 8, 10, 9, 11, 9, 9, 9, 12, 9, 6, 9, 5, 9, 13, 9, 4})
+	current, opponent = getNewScore(node)
+
+	//StartBenchmark capture
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		state.evalCapture(node, current, opponent)
+	}
+	b.StopTimer()
+	b.ReportAllocs()
+}
+
+func BenchmarkAnalyseScore_winByCapture(b *testing.B) {
+	var current, opponent *Score
+
+	board := boards.GetStartP1_1()
+	state := New(board, rdef.Player2)
+
 	current = &Score{capturable: true, capture: 6, alignment: 17}
 	opponent = &Score{capturable: false, capture: 0, alignment: 14}
 	//StartBenchmark analyzeScore
@@ -95,4 +140,22 @@ func BenchmarkAnalyseScore(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		state.analyzeScore(current, opponent)
 	}
+	b.StopTimer()
+	b.ReportAllocs()
+}
+
+func BenchmarkAnalyseScore_winByAlignment(b *testing.B) {
+	var current, opponent *Score
+
+	board := boards.GetStartP1_1()
+	state := New(board, rdef.Player2)
+
+	current = &Score{capturable: true, capture: 10, alignment: -31765}
+	opponent = &Score{capturable: true, capture: 11, alignment: 19}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		state.analyzeScore(current, opponent)
+	}
+	b.StopTimer()
+	b.ReportAllocs()
 }

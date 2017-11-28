@@ -314,11 +314,12 @@ func TestNew(t *testing.T) {
 	// test: 12 > test vrac
 	mask = [11]uint8{0, 0, 0, 0, 1, 1, 1, 0, 3, 3, 3}
 	a = New(&mask, rdef.Player1)
-	if a.Size != 3 || a.Style&rdef.AlignFree == 0 {
+	if a.Size != 3 || a.Style&rdef.AlignFree == 0 || a.IsThree != true {
 		t.Error(t.Name()+" > test: 12 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
 }
 
+/*
 func TestAnalyzeThree(t *testing.T) {
 	var mask [11]uint8
 	var a *Alignment
@@ -583,7 +584,7 @@ func TestAnalyzeThree(t *testing.T) {
 		t.Error(t.Name()+" > test: 9 > (Size: ", a.Size, " - Style: ", a.Style, ")")
 	}
 }
-
+*/
 func TestIsConsecutive(t *testing.T) {
 	var mask [11]uint8
 	var a *Alignment

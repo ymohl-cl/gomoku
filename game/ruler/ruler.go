@@ -39,7 +39,7 @@ type Rules struct {
 	NumberCapture uint8
 	Movable       bool
 	Win           bool
-	m             *sync.Mutex
+	m             sync.Mutex
 }
 
 // New return a new instance with one player and one position (y, x)
@@ -48,7 +48,6 @@ func New(p uint8, y, x int8) *Rules {
 		player: p,
 		y:      y,
 		x:      x,
-		m:      new(sync.Mutex),
 	}
 }
 
@@ -57,7 +56,6 @@ func (r *Rules) Init(p uint8, y, x int8) {
 	r.player = p
 	r.y = y
 	r.x = x
-	r.m = new(sync.Mutex)
 }
 
 // ApplyMove write on the board the spot of move and delete captured spot
@@ -187,26 +185,17 @@ func (r *Rules) analyzeMoveCondition() bool {
 	return true
 }
 
-// analyzeAlignments : Check alignment type and records when there are enought available spot
+// analyzeAlignments : Check three alignment and win alignment
 func (r *Rules) analyzeAlignments(mask *[11]uint8, dirY, dirX int8) {
-	var a *alignment.Alignment
-
-	a = alignment.New(mask, r.player)
-	if a.Size < 2 {
-		return
-	}
-
-	if a.IsThree {
+	if alignment.AnalyzeThree(mask) {
 		r.NumberThree++
 	}
 
-	// test consecutive deleted because, the size window measure five spot
-	// so if alignment size == 5, it's inevitably consecutive (&& a.IsConsecutive(mask))
-	if a.Size == 5 {
+	if a := alignment.AnalyzeWin(mask); a != nil {
 		a.NewInfosWin(mask, dirY, dirX, false)
+		r.aligns = append(r.aligns, a)
 	}
 
-	r.aligns = append(r.aligns, a)
 	return
 }
 
@@ -219,20 +208,20 @@ func (r *Rules) addCapture(y, x int8) {
 func (r *Rules) analyzeCapture(mask *[11]uint8, dirY, dirX int8) {
 	cible := rdef.GetOtherPlayer(r.player)
 
-	if (*mask)[4] == cible && (*mask)[3] == cible && (*mask)[2] == r.player {
+	if mask[4] == cible && mask[3] == cible && mask[2] == r.player {
 		// simulate capture to the check alignment
-		(*mask)[4] = rdef.Empty
-		(*mask)[3] = rdef.Empty
+		mask[4] = rdef.Empty
+		mask[3] = rdef.Empty
 
 		r.NumberCapture++
 		r.addCapture(r.y+dirY, r.x+dirX)
 		r.addCapture(r.y+(dirY*2), r.x+(dirX*2))
 	}
 
-	if (*mask)[6] == cible && (*mask)[7] == cible && (*mask)[8] == r.player {
+	if mask[6] == cible && mask[7] == cible && mask[8] == r.player {
 		// simulate capture to the check alignment
-		(*mask)[6] = rdef.Empty
-		(*mask)[7] = rdef.Empty
+		mask[6] = rdef.Empty
+		mask[7] = rdef.Empty
 
 		r.NumberCapture++
 		r.addCapture(r.y+(dirY*-1), r.x+(dirX*-1))
@@ -310,12 +299,23 @@ func (r *Rules) CheckRules(board *[19][19]uint8, nbCaps uint8) {
 	return
 }
 
+// getAlignment : Check alignment type and records when there are enought available spot
+func (r *Rules) getAlignment(mask *[11]uint8, dirY, dirX int8) {
+	var a *alignment.Alignment
+
+	a = alignment.New(mask, r.player)
+	if a.Size < 2 {
+		return
+	}
+
+	r.aligns = append(r.aligns, a)
+	return
+}
+
 // UpdateAlignments define aligns with a new state baord
 func (r *Rules) UpdateAlignments(board *[19][19]uint8) {
 	var mask [11]uint8
 
-	r.aligns = nil
-	r.NumberThree = 0
 	// check around move position. y and x represent one direction
 	for y := int8(-1); y <= 0; y++ {
 		for x := int8(-1); x <= 1; x++ {
@@ -328,7 +328,7 @@ func (r *Rules) UpdateAlignments(board *[19][19]uint8) {
 			r.getMaskFromBoard(board, y, x, &mask)
 
 			// record informations alinment
-			r.analyzeAlignments(&mask, y, x)
+			r.getAlignment(&mask, y, x)
 		}
 	}
 }
