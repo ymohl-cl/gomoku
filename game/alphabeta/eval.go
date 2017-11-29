@@ -2,7 +2,6 @@ package alphabeta
 
 import (
 	"math"
-	"sync"
 
 	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
 	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
@@ -106,34 +105,19 @@ func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8, flag bool) {
 // evalAlignment return score to alignment parameter on this evaluation
 func (s *State) evalAlignment(n *Node, current, opponent *Score) {
 	var depth uint8
-	var wg sync.WaitGroup
 
 	// get score current
+	n.rule.UpdateAlignments(s.board)
 	s.scoreAlignment(n, current, depth, true)
 
 	// get score opponent - flag define the opponent turn
 	flag := true
-
+	depth++
 	for node := n.prev; node != nil; node = node.prev {
 		if flag == true && node.rule.IsMyPosition(s.board) {
 			// createAlignment
-			wg.Add(1)
-			go func(n *Node) {
-				defer wg.Done()
-				n.rule.UpdateAlignments(s.board)
-			}(node)
-		}
-		depth++
-		flag = !flag
-	}
-	wg.Wait()
-
-	flag = true
-	depth++
-	for node := n.prev; node != nil; node = node.prev {
-		if flag == true {
-			// updateScore
-			s.scoreAlignment(n, opponent, depth, false)
+			node.rule.UpdateAlignments(s.board)
+			s.scoreAlignment(node, opponent, depth, false)
 		}
 		depth++
 		flag = !flag

@@ -48,8 +48,8 @@ func BenchmarkScoreAlignment_freeThree(b *testing.B) {
 
 	board := boards.GetStartP1_1()
 	state := New(board, rdef.Player2)
-	node := createNodesB(b, state, []int8{9, 7})
-	node = createNodesB(b, state, []int8{8, 8, 10, 8, 9, 10, 8, 11, 8, 6, 8, 10})
+	_ = createNodesB(b, state, []int8{9, 7})
+	node := createNodesB(b, state, []int8{8, 8, 10, 8, 9, 10, 8, 11, 8, 6, 8, 10})
 	current, _ = getNewScore(node)
 
 	b.ResetTimer()

@@ -183,58 +183,7 @@ func AnalyzeWin(mask *[11]uint8) *Alignment {
 	return nil
 }
 
-/*
 // AnalyzeThree check the alignment to define a free-three and record it on isThree attribute
-func AnalyzeThree(mask *[11]uint8) bool {
-	player := mask[5]
-	left := [4]uint8{mask[5-1], mask[5-2], mask[5-3], mask[5-4]}
-	right := [4]uint8{mask[5+1], mask[5+2], mask[5+3], mask[5+4]}
-
-	switch {
-	// [0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0]
-	case left[0] == player && mask[5-2] == player && left[2] == rdef.Empty &&
-		right[0] == rdef.Empty && (left[3] == rdef.Empty || right[1] == rdef.Empty):
-		fallthrough
-	// [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0]
-	case left[0] == player && left[1] == rdef.Empty && right[0] == player &&
-		right[1] == rdef.Empty && (right[2] == rdef.Empty || left[2] == rdef.Empty):
-		fallthrough
-	// [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0]
-	case left[0] == rdef.Empty && right[0] == player && right[1] == player &&
-		right[2] == rdef.Empty && (right[3] == rdef.Empty || left[1] == rdef.Empty):
-		fallthrough
-	// [0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0]
-	case left[3] == rdef.Empty && left[2] == player && left[1] == player &&
-		left[0] == rdef.Empty && right[0] == rdef.Empty:
-		fallthrough
-	// [0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0]
-	case left[1] == rdef.Empty && left[0] == player && right[0] == rdef.Empty &&
-		right[1] == player && right[2] == rdef.Empty:
-		fallthrough
-	// [0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0]
-	case left[0] == rdef.Empty && right[0] == player && right[1] == rdef.Empty &&
-		right[2] == player && right[3] == rdef.Empty:
-		fallthrough
-	// [0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0]
-	case left[0] == rdef.Empty && right[0] == rdef.Empty && right[1] == player &&
-		right[2] == player && right[3] == rdef.Empty:
-		fallthrough
-	// [0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0]
-	case left[2] == rdef.Empty && left[1] == player && left[0] == rdef.Empty &&
-		right[0] == player && right[1] == rdef.Empty:
-		fallthrough
-	// [0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0]
-	case left[3] == rdef.Empty && left[2] == player && left[1] == rdef.Empty &&
-		left[0] == player && right[0] == rdef.Empty:
-		return true
-	default:
-		//default
-	}
-
-	return false
-}
-*/
-
 func AnalyzeThree(mask *[11]uint8) bool {
 	player := mask[5]
 	//	left := [4]uint8{mask[5-1], mask[5-2], mask[5-3], mask[5-4]}

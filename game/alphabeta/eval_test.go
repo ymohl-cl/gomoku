@@ -75,6 +75,7 @@ func TestScoreAlignment(t *testing.T) {
 	// - . . . . . . . . x o . . . . . . . . .
 	// createSimulation [P2: 9-7]
 	node = createNodes(t, state, []int8{9, 7})
+	node.rule.UpdateAlignments(state.board)
 	current, _ = getNewScore(node)
 	// call scoreAlignment to test
 	state.scoreAlignment(node, current, state.maxDepth, true)
@@ -90,11 +91,12 @@ func TestScoreAlignment(t *testing.T) {
 	//   . . . . . . . . o . . . . . . . . . .
 	// createSimulation [P1: 8-8 | P2: 10-8 | p1: 9-10 | p2: 8-11 | p1: 8-6 | p2: 8-10]
 	node = createNodes(t, state, []int8{8, 8, 10, 8, 9, 10, 8, 11, 8, 6, 8, 10})
+	node.rule.UpdateAlignments(state.board)
 	current, _ = getNewScore(node)
 	// call scoreAlignment to test
 	state.scoreAlignment(node, current, 0, true)
 	if current.alignment != scoreWinDetection-(scoreByAlign)+(depthOutEvalToFreeThree-0) {
-		t.Error(t.Name()+" > test: 1 > score current: ", current, " rule: ", node.rule)
+		t.Error(t.Name()+" > test: 1 > score current: ", current)
 	}
 
 	/* test: 2 > Align four three, score already set by free three */
@@ -105,6 +107,7 @@ func TestScoreAlignment(t *testing.T) {
 	//   . . . . . . . . o . . . . . . . . . .
 	// createSimulation [P1: 9-6 | P2: 8-9 | p1: 10-6 | p2: 8-12]
 	node = createNodes(t, state, []int8{9, 6, 8, 9, 10, 6, 8, 12})
+	node.rule.UpdateAlignments(state.board)
 	// call scoreAlignment to test
 	state.scoreAlignment(node, current, state.maxDepth-2, true)
 	if current.alignment != scoreWinDetection+(depthOutEvalToFourSpots-2) {
@@ -119,6 +122,7 @@ func TestScoreAlignment(t *testing.T) {
 	//   . . . . . . x . o . . . . . . . . . .
 	// createSimulation [P1: 8-7 | P2: 9-11]
 	node = createNodes(t, state, []int8{8, 7, 9, 11})
+	node.rule.UpdateAlignments(state.board)
 	// call scoreAlignment to test
 	state.scoreAlignment(node, current, 0, true)
 	if current.alignment != scoreWinDetection+(depthOutEvalToFourSpots-2) {
@@ -133,6 +137,7 @@ func TestScoreAlignment(t *testing.T) {
 	//   . . . . . . x . o . . . . . . . . . .
 	// createSimulation [P1: 9-5 | P2: 11-8]
 	node = createNodes(t, state, []int8{9, 5, 11, 8})
+	node.rule.UpdateAlignments(state.board)
 	current, _ = getNewScore(node)
 	// call scoreAlignment to test
 	state.scoreAlignment(node, current, 0, true)
@@ -149,6 +154,7 @@ func TestScoreAlignment(t *testing.T) {
 	//   . . . . . . . . o . . . . . . . . . .
 	// createSimulation [P1: 12-8 | P2: 13-7 | P1: 14-7 | P2: 12-7]
 	node = createNodes(t, state, []int8{12, 8, 13, 7, 14, 7, 12, 7})
+	node.rule.UpdateAlignments(state.board)
 	current, _ = getNewScore(node)
 	// call scoreAlignment to test
 	state.scoreAlignment(node, current, 0, true)
@@ -169,6 +175,7 @@ func TestScoreAlignment(t *testing.T) {
 	//   . . . . . . . x . . . . . . . . . . .
 	// createSimulation [P1: 12-9 | P2: 13-6]
 	node = createNodes(t, state, []int8{12, 9, 13, 6})
+	node.rule.UpdateAlignments(state.board)
 	current, _ = getNewScore(node)
 	// call scoreAlignment to test
 	state.scoreAlignment(node, current, 0, true)
@@ -202,6 +209,7 @@ func TestScoreAlignment(t *testing.T) {
 	//   . . . . . . . . . . . . . . . . . . .
 	// createSimulation [P2: 11-9 | P1: 9-5 | P2 11-10 | P1: 6-7 | P2: 9-7 | P1: 9-8]
 	node = createNodes(t, state, []int8{11, 9, 9, 5, 11, 10, 6, 7, 9, 7, 9, 8})
+	node.rule.UpdateAlignments(state.board)
 	current, _ = getNewScore(node)
 	// call scoreAlignment to test
 	state.scoreAlignment(node, current, 0, true)
@@ -249,9 +257,9 @@ func TestEvalAlignment(t *testing.T) {
 	/* test: 1 > Align free three + one minor align */
 	// State board
 	//                     |
-	//   . . . . . . x . x . o o . . . . . . .
+	//   . . . . . . . . . . . . . . . . . . .
 	// - . . . . . . . o x o . . . . . . . . .
-	//   . . . . . . . . o . . . . . . . . . .
+	//   . . . . . . . . . . . . . . . . . . .
 	// createSimulation [P1: 8-8 | P2: 10-8 | p1: 9-10 | p2: 8-11 | p1: 8-6 | p2: 8-10]
 	node = createNodes(t, state, []int8{8, 8, 10, 8, 9, 10, 8, 11, 8, 6, 8, 10})
 	current, opponent = getNewScore(node)
@@ -260,7 +268,7 @@ func TestEvalAlignment(t *testing.T) {
 	if current.alignment != scoreWinDetection-(scoreByAlign)+(depthOutEvalToFreeThree-0) {
 		t.Error(t.Name()+" > test: 1 > current: ", current, ", score want: ", scoreWinDetection-(scoreByAlign)+(depthOutEvalToFreeThree-0))
 	}
-	if opponent.alignment != scoreFree*2 {
+	if opponent.alignment != scoreFree*2+scoreByAlign {
 		t.Error(t.Name()+" > test: 1 > opponent: ", opponent, ", score want: ", scoreFree*2)
 	}
 
