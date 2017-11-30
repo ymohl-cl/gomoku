@@ -576,3 +576,23 @@ func TestAnalyzeScore(t *testing.T) {
 		t.Error(t.Name()+" > test: 0 > want: ", -31745, " got: ", ret)
 	}
 }
+
+func TestEval(t *testing.T) {
+	b := boards.GetStartP1_1()
+	state := New(b, rdef.Player2)
+
+	// test: 0
+	// State board
+	//                     |
+	// - . . . . . . . . x o . . . . . . . . .
+	// createSimulation [P2: 8-7 | P1: 8-9 | P2: 7-10 | P1: 7-10]
+	node := createNodes(t, state, []int8{8, 7})
+	// State board
+	//                     |
+	//   . . . . . . . . . . x . . . . . . . .
+	//   . . . . . . . o . x . . . . . . . . .
+	// - . . . . . . . . x o . . . . . . . . .
+	//   . . . . . . . o . . . . . . . . . . .
+	ret := state.eval(node, 0)
+	t.Error(t.Name()+" > test: 0 > ", ret)
+}
