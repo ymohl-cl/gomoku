@@ -1,6 +1,7 @@
 package alphabeta
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/ymohl-cl/gomoku/game/boards"
@@ -577,7 +578,7 @@ func TestAnalyzeScore(t *testing.T) {
 	}
 }
 
-func TestEval(t *testing.T) {
+func TestEval_1(t *testing.T) {
 	// State board
 	//                     |
 	// - . . . . . . . . x o . . . . . . . . .
@@ -662,6 +663,118 @@ func TestEval(t *testing.T) {
 	// createSimulation [P2: 8-7 | P1: 8-8 | P2: 10-8 | P1: 7-8]
 	node = createNodes(t, state, []int8{8, 7, 8, 8, 10, 8, 7, 8})
 	if ret := state.eval(node, 0); ret != -16358 {
+		t.Error(t.Name()+" > test: 9 > ", ret)
+	}
+}
+
+func TestEval_2(t *testing.T) {
+	// State board
+	//                     |
+	//   . . . . . . . . o . . . . . . . . . .
+	//   . . . . . . . x . . . . . . . . . . .
+	//   . . . . . . x . . x . . . . . . . . .
+	// - . . . . . . . . x o . . . . . . . . .
+	//   . . . . . . . . . . . . . . . . . . .
+
+	// test: 0
+	b := boards.GetStartP1_1()
+	state := New(b, rdef.Player2)
+	_ = createNodes(t, state, []int8{8, 8, 7, 7, 8, 7, 8, 6, 6, 8, 8, 9})
+	// createSimulation [P2: 9-5 | P1: 5-7 | P2: 6-6 | P1: 7-10]
+	fmt.Println("[plop]")
+	node := createNodes(t, state, []int8{9, 5, 5, 7, 6, 6, 7, 10})
+	if ret := state.eval(node, 0); ret != -31743 {
+		t.Error(t.Name()+" > test: 0 > ", ret)
+	}
+	fmt.Println("[plip]")
+	// State board
+	//                     |
+	//   . . . . . . . x . . . . . . . . . . .
+	//   . . . . . . o . o . . . . . . . . . .
+	//   . . . . . . . . . . x . . . . . . . .
+	//   . . . . . . . . . x . . . . . . . . .
+	// - . . . . . o . . x o . . . . . . . . .
+	//   . . . . . . . . . . . . . . . . . . .
+
+	// test: 1
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	_ = createNodes(t, state, []int8{8, 8, 7, 7, 8, 7, 8, 6, 6, 8, 8, 9})
+	// createSimulation [P2: 9-5 | P1: 5-7 | P2: 8-8 | P1: 7-10]
+	node = createNodes(t, state, []int8{9, 5, 5, 7, 8, 8, 7, 10})
+	if ret := state.eval(node, 0); ret != -31743 {
+		t.Error(t.Name()+" > test: 1 > ", ret)
+	}
+	// test: 2
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	_ = createNodes(t, state, []int8{8, 8, 7, 7, 8, 7, 8, 6, 6, 8, 8, 9})
+	// createSimulation [P2: 9-5 | P1: 5-7 | P2: 8-10 | P1: 7-10]
+	node = createNodes(t, state, []int8{9, 5, 5, 7, 8, 10, 7, 10})
+	if ret := state.eval(node, 0); ret != -31743 {
+		t.Error(t.Name()+" > test: 2 > ", ret)
+	}
+	// test: 3
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	_ = createNodes(t, state, []int8{8, 8, 7, 7, 8, 7, 8, 6, 6, 8, 8, 9})
+	// createSimulation [P2: 9-5 | P1: 6-7 | P2: 8-8 | P1: 5-6]
+	node = createNodes(t, state, []int8{9, 5, 6, 7, 8, 8, 5, 6})
+	if ret := state.eval(node, 0); ret != -31743 {
+		t.Error(t.Name()+" > test: 3 > ", ret)
+	}
+	// test: 4
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	_ = createNodes(t, state, []int8{8, 8, 7, 7, 8, 7, 8, 6, 6, 8, 8, 9})
+	// createSimulation [P2: 9-5 | P1: 6-7 | P2: 8-10 | P1: 5-6]
+	node = createNodes(t, state, []int8{9, 5, 6, 7, 8, 10, 5, 6})
+	if ret := state.eval(node, 0); ret != -31743 {
+		t.Error(t.Name()+" > test: 4 > ", ret)
+	}
+	// test: 5
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	_ = createNodes(t, state, []int8{8, 8, 7, 7, 8, 7, 8, 6, 6, 8, 8, 9})
+	// createSimulation [P2: 9-5 | P1: 6-7 | P2: 8-8 | P1: 5-6]
+	node = createNodes(t, state, []int8{9, 5, 6, 7, 8, 8, 5, 6})
+	if ret := state.eval(node, 0); ret != -31743 {
+		t.Error(t.Name()+" > test: 5 > ", ret)
+	}
+	// test: 6
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	_ = createNodes(t, state, []int8{8, 8, 7, 7, 8, 7, 8, 6, 6, 8, 8, 9})
+	// createSimulation [P2: 9-5 | P1: 6-7 | P2: 8-10 | P1: 5-6]
+	node = createNodes(t, state, []int8{9, 5, 6, 7, 8, 10, 5, 6})
+	if ret := state.eval(node, 0); ret != -31743 {
+		t.Error(t.Name()+" > test: 6 > ", ret)
+	}
+	// test: 7
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	_ = createNodes(t, state, []int8{8, 8, 7, 7, 8, 7, 8, 6, 6, 8, 8, 9})
+	// createSimulation [P2: 9-5 | P1: 8-6 | P2: 7-7 | P1: 7-10]
+	node = createNodes(t, state, []int8{9, 5, 8, 6, 7, 7, 7, 10})
+	if ret := state.eval(node, 0); ret != -31743 {
+		t.Error(t.Name()+" > test: 7 > ", ret)
+	}
+	// test: 8
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	_ = createNodes(t, state, []int8{8, 8, 7, 7, 8, 7, 8, 6, 6, 8, 8, 9})
+	// createSimulation [P2: 9-5 | P1: 8-6 | P2: 8-8 | P1: 7-10]
+	node = createNodes(t, state, []int8{9, 5, 8, 6, 8, 8, 7, 10})
+	if ret := state.eval(node, 0); ret != -31743 {
+		t.Error(t.Name()+" > test: 8 > ", ret)
+	}
+	// test: 9
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	_ = createNodes(t, state, []int8{8, 8, 7, 7, 8, 7, 8, 6, 6, 8, 8, 9})
+	// createSimulation [P2: 9-5 | P1: 8-6 | P2: 8-10 | P1: 7-10]
+	node = createNodes(t, state, []int8{9, 5, 8, 6, 8, 10, 7, 10})
+	if ret := state.eval(node, 0); ret != -31743 {
 		t.Error(t.Name()+" > test: 9 > ", ret)
 	}
 }
