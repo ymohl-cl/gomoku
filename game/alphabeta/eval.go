@@ -220,5 +220,45 @@ func (s *State) eval(n *Node, depth uint8) int16 {
 	//	fmt.Println("current: ", current)
 	//	fmt.Println("opponent: ", opponent)
 
+	// s.printEval(n, depth, s.analyzeScore(&current, &opponent))
 	return s.analyzeScore(&current, &opponent)
 }
+
+/*
+Score eval:  -31743  - depth:  0
+move  4  on y:  7  - x:  10
+move  3  on y:  7  - x:  7
+move  2  on y:  8  - x:  6
+move  1  on y:  9  - x:  5
+--
+Score eval:  -31743  - depth:  0
+move  4  on y:  7  - x:  10
+move  3  on y:  8  - x:  8
+move  2  on y:  8  - x:  6
+move  1  on y:  9  - x:  5
+--
+Score eval:  -31743  - depth:  0
+move  4  on y:  10  - x:  7
+move  3  on y:  8  - x:  8
+move  2  on y:  8  - x:  6
+move  1  on y:  9  - x:  5
+--
+Score eval:  -31743  - depth:  0
+move  4  on y:  7  - x:  10
+move  3  on y:  8  - x:  8
+move  2  on y:  8  - x:  6
+move  1  on y:  9  - x:  5
+--
+Score eval:  -31743  - depth:  0
+move  4  on y:  7  - x:  10
+move  3  on y:  8  - x:  10
+move  2  on y:  8  - x:  6
+move  1  on y:  9  - x:  5
+--
+Score eval:  -31743  - depth:  0
+move  4  on y:  8  - x:  6
+move  3  on y:  7  - x:  7
+move  2  on y:  8  - x:  7
+move  1  on y:  9  - x:  5
+
+*/
