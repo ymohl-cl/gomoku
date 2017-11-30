@@ -143,8 +143,6 @@ func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint8, n *Node) int1
 			// apply move and update data
 			s.updateData(node, n)
 
-			node.weight = -s.alphabetaNegaScout(-beta, -alpha, depth-1, node)
-
 			if first == true {
 				first = false
 				node.weight = -s.alphabetaNegaScout(-beta, -alpha, depth-1, node)
