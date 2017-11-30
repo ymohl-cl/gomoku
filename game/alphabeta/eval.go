@@ -1,6 +1,7 @@
 package alphabeta
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
@@ -21,7 +22,7 @@ const (
 	scoreFirst = int16(1)
 	// scoreWinDetection is set when win situation is detected on out simulation
 	scoreWinDetection = scoreWin + 1000
-	scoreByCapture    = int16(5)
+	scoreByCapture    = int16(6)
 	// scoreAlign is a bonus to the additional alignments
 	scoreByAlign = int16(1)
 	// scoreFree / half and flanked are the multiplier to the alignment type
@@ -117,20 +118,20 @@ func (s *State) evalAlignment(n *Node, current, opponent *Score) {
 
 	for node := n.prev; node != nil; node = node.prev {
 		if flag == true && node.rule.IsMyPosition(s.board) {
-			if current.capturable {
-				// remove previous spots from the board.
-				s.updateTokenPlayer(spots)
-				// check if this spot don't be captured
-				node.rule.UpdateAlignments(s.board)
-			}
+			//		if current.capturable {
+			// remove previous spots from the board.
+			s.updateTokenPlayer(spots)
+			// check if this spot don't be captured
+			node.rule.UpdateAlignments(s.board)
+			//		}
 			// get score opponent on this move
 			s.scoreAlignment(node, opponent, depth, false)
 
-			if current.capturable {
-				// save the current spot
-				spots[index] = node
-				index++
-			}
+			//		if current.capturable {
+			// save the current spot
+			spots[index] = node
+			index++
+			//		}
 		}
 		depth++
 		flag = !flag
@@ -217,6 +218,8 @@ func (s *State) eval(n *Node, depth uint8) int16 {
 
 	s.evalCapture(n, &current, &opponent)
 	s.evalAlignment(n, &current, &opponent)
+	fmt.Println("current: ", current)
+	fmt.Println("opponent: ", opponent)
 
 	return s.analyzeScore(&current, &opponent)
 }

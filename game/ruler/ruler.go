@@ -326,7 +326,6 @@ func (r *Rules) UpdateAlignments(board *[19][19]uint8) {
 
 			// create mask to the direction
 			r.getMaskFromBoard(board, y, x, &mask)
-
 			// record informations alinment
 			r.analyzeAlignments(&mask, y, x)
 		}
