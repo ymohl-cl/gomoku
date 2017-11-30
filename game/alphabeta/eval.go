@@ -1,6 +1,7 @@
 package alphabeta
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
@@ -208,5 +209,7 @@ func (s *State) eval(n *Node, depth uint8) int16 {
 	s.evalCapture(n, &current, &opponent)
 	s.evalAlignment(n, &current, &opponent)
 
+	fmt.Println("current: ", current)
+	fmt.Println("opponent: ", opponent)
 	return s.analyzeScore(&current, &opponent)
 }
