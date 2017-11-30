@@ -1,0 +1,59 @@
+?   	github.com/ymohl-cl/gomoku	[no test files]
+?   	github.com/ymohl-cl/gomoku/conf	[no test files]
+?   	github.com/ymohl-cl/gomoku/controller	[no test files]
+?   	github.com/ymohl-cl/gomoku/database	[no test files]
+?   	github.com/ymohl-cl/gomoku/game	[no test files]
+BenchmarkScoreAlignment_noAlignment-8      	300000000	         5.03 ns/op	       0 B/op	       0 allocs/op
+BenchmarkScoreAlignment_freeThree-8        	300000000	         5.01 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvalAlignment_noAlignment-8       	 3000000	       442 ns/op	      64 B/op	       4 allocs/op
+BenchmarkEvalAlignment_freeThree-8         	 1000000	      1412 ns/op	     216 B/op	      14 allocs/op
+BenchmarkEvalAlignment_fourSpotAligned-8   	 1000000	      1413 ns/op	     216 B/op	      14 allocs/op
+BenchmarkEvalCapture-8                     	100000000	        17.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAnalyseScore_winByCapture-8       	2000000000	         0.27 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAnalyseScore_winByAlignment-8     	2000000000	         0.27 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/ymohl-cl/gomoku/game/alphabeta	11.569s
+?   	github.com/ymohl-cl/gomoku/game/boards	[no test files]
+BenchmarkIsAvailablePosition_true-8          	100000000	        13.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIsAvailablePosition_false-8         	100000000	        19.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAnalyzeWinCondition_byCapture-8     	1000000000	         2.70 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAnalyzeWinCondition_byAlignment-8   	500000000	         3.37 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAnalyzeWinCondition_false-8         	1000000000	         2.66 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAnalyzeMoveCondition_true-8         	2000000000	         0.80 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAnalyzeMoveCondition_false-8        	2000000000	         0.80 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAnalyzeAlignments_win-8             	100000000	        11.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAnalyzeAlignments_noWin-8           	100000000	        11.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAnalyzeCapture-8                    	500000000	         3.72 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGetMaskFromBoard-8                  	100000000	        21.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCheckRules_invalidPosition-8        	20000000	        57.3 ns/op	      80 B/op	       1 allocs/op
+BenchmarkCheckRules_three-8                  	30000000	        41.9 ns/op	      80 B/op	       1 allocs/op
+BenchmarkCheckRules_win-8                    	 5000000	       319 ns/op	     120 B/op	       4 allocs/op
+BenchmarkGetAlignment-8                      	20000000	       107 ns/op	      24 B/op	       2 allocs/op
+BenchmarkUpdateAlignments-8                  	 5000000	       382 ns/op	      64 B/op	       4 allocs/op
+PASS
+ok  	github.com/ymohl-cl/gomoku/game/ruler	30.297s
+BenchmarkAnalyzeThree_firstCase-8   	1000000000	         2.13 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAnalyzeThree_lastCase-8    	300000000	         5.84 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAnalyzeThree_noThree-8     	300000000	         5.83 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAnalyzeWin_noWin-8         	300000000	         5.72 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAnalyzeWin_Win-8           	50000000	        28.6 ns/op	      16 B/op	       1 allocs/op
+BenchmarkSetStyleByMask_flanked-8   	300000000	         4.09 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSetStyleByMask_free-8      	300000000	         4.24 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSetStyleByMask_half-8      	300000000	         5.04 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIsBetter_betterBySize-8    	2000000000	         0.37 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIsBetter_betterByStyle-8   	2000000000	         0.79 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIsBetter_lowerByStyle-8    	2000000000	         0.80 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNew_freethree-8            	20000000	        76.4 ns/op	      16 B/op	       1 allocs/op
+BenchmarkNew_noAvailableSpots-8     	30000000	        44.6 ns/op	      16 B/op	       1 allocs/op
+BenchmarkNew_fourSpotsFlanked-8     	30000000	        47.3 ns/op	      16 B/op	       1 allocs/op
+PASS
+ok  	github.com/ymohl-cl/gomoku/game/ruler/alignment	24.763s
+PASS
+ok  	github.com/ymohl-cl/gomoku/game/ruler/defines	0.006s
+?   	github.com/ymohl-cl/gomoku/game/stats	[no test files]
+?   	github.com/ymohl-cl/gomoku/scenes	[no test files]
+?   	github.com/ymohl-cl/gomoku/scenes/builder	[no test files]
+?   	github.com/ymohl-cl/gomoku/scenes/gomoku	[no test files]
+?   	github.com/ymohl-cl/gomoku/scenes/loader	[no test files]
+?   	github.com/ymohl-cl/gomoku/scenes/menu	[no test files]
+?   	github.com/ymohl-cl/gomoku/stat	[no test files]

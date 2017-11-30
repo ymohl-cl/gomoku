@@ -1,7 +1,6 @@
 package alphabeta
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/ymohl-cl/gomoku/game/boards"
@@ -681,12 +680,10 @@ func TestEval_2(t *testing.T) {
 	state := New(b, rdef.Player2)
 	_ = createNodes(t, state, []int8{8, 8, 7, 7, 8, 7, 8, 6, 6, 8, 8, 9})
 	// createSimulation [P2: 9-5 | P1: 5-7 | P2: 6-6 | P1: 7-10]
-	fmt.Println("[plop]")
 	node := createNodes(t, state, []int8{9, 5, 5, 7, 6, 6, 7, 10})
 	if ret := state.eval(node, 0); ret != -31743 {
 		t.Error(t.Name()+" > test: 0 > ", ret)
 	}
-	fmt.Println("[plip]")
 	// State board
 	//                     |
 	//   . . . . . . . x . . . . . . . . . . .

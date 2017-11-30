@@ -1,7 +1,6 @@
 package alphabeta
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
@@ -22,7 +21,7 @@ const (
 	scoreFirst = int16(1)
 	// scoreWinDetection is set when win situation is detected on out simulation
 	scoreWinDetection = scoreWin + 1000
-	scoreByCapture    = int16(5)
+	scoreByCapture    = int16(6)
 	// scoreAlign is a bonus to the additional alignments
 	scoreByAlign = int16(1)
 	// scoreFree / half and flanked are the multiplier to the alignment type
@@ -38,10 +37,11 @@ const (
 
 // Score is the data to each player pending the evaluation
 type Score struct {
-	idPlayer   uint8
-	capturable bool
-	capture    int16
-	alignment  int16
+	idPlayer      uint8
+	capturable    bool
+	capture       int16
+	alignment     int16
+	nbAlignements int16
 }
 
 func maxWeight(v1, v2 int16) int16 {
@@ -75,6 +75,7 @@ func (s *State) scoreAlignment(n *Node, sc *Score, flag bool) {
 	}
 	if score != 0 && sc.alignment > score {
 		sc.alignment = score
+		sc.nbAlignements = nbr
 		return
 	}
 
@@ -99,6 +100,7 @@ func (s *State) scoreAlignment(n *Node, sc *Score, flag bool) {
 	// check better score
 	if sc.alignment < score {
 		sc.alignment = score
+		sc.nbAlignements = nbr
 	}
 	return
 }
@@ -178,6 +180,11 @@ func (s *State) analyzeScore(current, opponent *Score) int16 {
 	var score int16
 
 	if current.alignment < 0 {
+		// nerf capture to lock a free three on the alignment and not by capture
+		//	if current.alignment == scoreWinDetection-current.nbAlignements+depthOutEvalToFreeThree {
+		//		opponent.capture *= -1
+		//	}
+
 		// win condition for current
 		score = current.alignment
 		score -= current.capture
@@ -210,7 +217,7 @@ func (s *State) eval(n *Node, depth uint8) int16 {
 	s.evalCapture(n, &current, &opponent)
 	s.evalAlignment(n, &current, &opponent)
 
-	fmt.Println("current: ", current)
-	fmt.Println("opponent: ", opponent)
+	//	fmt.Println("current: ", current)
+	//	fmt.Println("opponent: ", opponent)
 	return s.analyzeScore(&current, &opponent)
 }

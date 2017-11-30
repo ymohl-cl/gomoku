@@ -305,6 +305,10 @@ func (r *Rules) getAlignment(mask *[11]uint8, dirY, dirX int8) {
 		return
 	}
 
+	if a.IsThree {
+		r.NumberThree++
+	}
+
 	r.aligns = append(r.aligns, a)
 	return
 }
@@ -313,6 +317,8 @@ func (r *Rules) getAlignment(mask *[11]uint8, dirY, dirX int8) {
 func (r *Rules) UpdateAlignments(board *[19][19]uint8) {
 	var mask [11]uint8
 
+	r.aligns = nil
+	r.NumberThree = 0
 	// check around move position. y and x represent one direction
 	for y := int8(-1); y <= 0; y++ {
 		for x := int8(-1); x <= 1; x++ {

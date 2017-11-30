@@ -1,7 +1,6 @@
 package alphabeta
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/ymohl-cl/gomoku/database"
@@ -167,9 +166,6 @@ func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint8, n *Node) int1
 			alpha = maxWeight(alpha, node.weight)
 
 			if alpha >= beta {
-				if depth == 4 {
-					fmt.Println("alpha: ", alpha, " - beta: ", beta)
-				}
 				return alpha
 			}
 		}
@@ -187,20 +183,21 @@ func Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 	state.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, state.maxDepth, nil)
 	//fmt.Println("ret: ", ret)
 
-	tmp := int16(math.MinInt16)
+	//	tmp := int16(math.MinInt16)
 
-	yi, xi := state.save.rule.GetPosition()
-	fmt.Println("save weight: ", state.save.weight, " y et x: ", yi, " - ", xi)
+	//	yi, xi := state.save.rule.GetPosition()
+	/*
+		fmt.Println("save weight: ", state.save.weight, " y et x: ", yi, " - ", xi)
 
-	for n := state.lst; n != nil; n = n.next {
-		y, x := n.rule.GetPosition()
-		fmt.Println("Node weight: ", n.weight, " y et x: ", y, " - ", x)
-		if tmp <= n.weight {
-			tmp = n.weight
-			state.save = n
+		for n := state.lst; n != nil; n = n.next {
+			y, x := n.rule.GetPosition()
+			fmt.Println("Node weight: ", n.weight, " y et x: ", y, " - ", x)
+			if tmp <= n.weight {
+				tmp = n.weight
+				state.save = n
+			}
 		}
-	}
-
+	*/
 	y, x := state.save.rule.GetPosition()
 	c <- uint8(y)
 	c <- uint8(x)
