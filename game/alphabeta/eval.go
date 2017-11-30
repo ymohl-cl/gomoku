@@ -51,7 +51,7 @@ func maxWeight(v1, v2 int16) int16 {
 }
 
 // calcul score on alignment simulation, if flag == true, the win condition is applies
-func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8, flag bool) {
+func (s *State) scoreAlignment(n *Node, sc *Score, flag bool) {
 	var coef int16
 	var a *alignment.Alignment
 	var nbr int16
@@ -68,9 +68,9 @@ func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8, flag bool) {
 
 	// check wins situations
 	if flag == true && a.Size == 4 {
-		score = scoreWinDetection - nbr + (depthOutEvalToFourSpots - int16(depth))
+		score = scoreWinDetection - nbr + depthOutEvalToFourSpots
 	} else if flag == true && a.Size == 3 && a.IsThree {
-		score = scoreWinDetection - nbr + (depthOutEvalToFreeThree - int16(depth))
+		score = scoreWinDetection - nbr + depthOutEvalToFreeThree
 	}
 	if score != 0 && sc.alignment > score {
 		sc.alignment = score
@@ -104,29 +104,29 @@ func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8, flag bool) {
 
 // evalAlignment return score to alignment parameter on this evaluation
 func (s *State) evalAlignment(n *Node, current, opponent *Score) {
-	var depth uint8
-	var flag bool
 	spots := new([5]*Node)
 	index := 0
 
 	// get score current
 	n.rule.UpdateAlignments(s.board)
-	s.scoreAlignment(n, current, depth, true)
+	s.scoreAlignment(n, current, true)
 
 	// get score opponent - flag define the opponent turn
-	for node := n; node != nil; node = node.prev {
+	flag := true
+	for node := n.prev; node != nil; node = node.prev {
 		if flag == true && node.rule.IsMyPosition(s.board) {
-			// createAlignment
+			// remove previous spots from the board.
 			s.updateTokenPlayer(spots)
+			// get alignments
 			node.rule.UpdateAlignments(s.board)
-			s.scoreAlignment(node, opponent, depth, false)
+			// score
+			s.scoreAlignment(node, opponent, false)
 			spots[index] = node
 			index++
 		}
-		depth++
 		flag = !flag
 	}
-
+	// restore spots deleted
 	s.restoreTokenPlayer(spots)
 
 	// if there are not winneable situation and equality score.
@@ -209,5 +209,7 @@ func (s *State) eval(n *Node, depth uint8) int16 {
 	s.evalCapture(n, &current, &opponent)
 	s.evalAlignment(n, &current, &opponent)
 
+	//	fmt.Println("current: ", current)
+	//	fmt.Println("opponent: ", opponent)
 	return s.analyzeScore(&current, &opponent)
 }

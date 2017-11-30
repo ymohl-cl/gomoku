@@ -78,7 +78,7 @@ func TestScoreAlignment(t *testing.T) {
 	node.rule.UpdateAlignments(state.board)
 	current, _ = getNewScore(node)
 	// call scoreAlignment to test
-	state.scoreAlignment(node, current, state.maxDepth, true)
+	state.scoreAlignment(node, current, true)
 	if current.alignment > 0 { // || current.depthAlignment > 0 {
 		t.Error(t.Name()+" > test: 0 > score current: ", current)
 	}
@@ -94,7 +94,7 @@ func TestScoreAlignment(t *testing.T) {
 	node.rule.UpdateAlignments(state.board)
 	current, _ = getNewScore(node)
 	// call scoreAlignment to test
-	state.scoreAlignment(node, current, 0, true)
+	state.scoreAlignment(node, current, true)
 	if current.alignment != scoreWinDetection-(scoreByAlign)+(depthOutEvalToFreeThree-0) {
 		t.Error(t.Name()+" > test: 1 > score current: ", current)
 	}
@@ -109,8 +109,8 @@ func TestScoreAlignment(t *testing.T) {
 	node = createNodes(t, state, []int8{9, 6, 8, 9, 10, 6, 8, 12})
 	node.rule.UpdateAlignments(state.board)
 	// call scoreAlignment to test
-	state.scoreAlignment(node, current, state.maxDepth-2, true)
-	if current.alignment != scoreWinDetection+(depthOutEvalToFourSpots-2) {
+	state.scoreAlignment(node, current, true)
+	if current.alignment != scoreWinDetection+depthOutEvalToFourSpots {
 		t.Error(t.Name()+" > test: 2 > score current: ", current)
 	}
 
@@ -124,8 +124,8 @@ func TestScoreAlignment(t *testing.T) {
 	node = createNodes(t, state, []int8{8, 7, 9, 11})
 	node.rule.UpdateAlignments(state.board)
 	// call scoreAlignment to test
-	state.scoreAlignment(node, current, 0, true)
-	if current.alignment != scoreWinDetection+(depthOutEvalToFourSpots-2) {
+	state.scoreAlignment(node, current, true)
+	if current.alignment != scoreWinDetection+depthOutEvalToFourSpots {
 		t.Error(t.Name()+" > test: 3 > score current: ", current)
 	}
 
@@ -140,7 +140,7 @@ func TestScoreAlignment(t *testing.T) {
 	node.rule.UpdateAlignments(state.board)
 	current, _ = getNewScore(node)
 	// call scoreAlignment to test
-	state.scoreAlignment(node, current, 0, true)
+	state.scoreAlignment(node, current, true)
 	if current.alignment != scoreHalf*2 {
 		t.Error(t.Name()+" > test: 4 > score current: ", current)
 	}
@@ -157,7 +157,7 @@ func TestScoreAlignment(t *testing.T) {
 	node.rule.UpdateAlignments(state.board)
 	current, _ = getNewScore(node)
 	// call scoreAlignment to test
-	state.scoreAlignment(node, current, 0, true)
+	state.scoreAlignment(node, current, true)
 	if current.alignment != scoreFlanked*3 {
 		t.Error(t.Name()+" > test: 5 > score current: ", current)
 	}
@@ -178,7 +178,7 @@ func TestScoreAlignment(t *testing.T) {
 	node.rule.UpdateAlignments(state.board)
 	current, _ = getNewScore(node)
 	// call scoreAlignment to test
-	state.scoreAlignment(node, current, 0, true)
+	state.scoreAlignment(node, current, true)
 	if current.alignment != (scoreFree*2)+(scoreByAlign*1) {
 		t.Error(t.Name()+" > test: 6 > score current: ", current)
 	}
@@ -212,7 +212,7 @@ func TestScoreAlignment(t *testing.T) {
 	node.rule.UpdateAlignments(state.board)
 	current, _ = getNewScore(node)
 	// call scoreAlignment to test
-	state.scoreAlignment(node, current, 0, true)
+	state.scoreAlignment(node, current, true)
 	if current.alignment != scoreWinDetection-(scoreByAlign*2)+(depthOutEvalToFreeThree-0) {
 		t.Error(t.Name()+" > test: 7 > score current: ", current, " - want: ", scoreWinDetection-(scoreByAlign*2)+(depthOutEvalToFreeThree-0))
 	}
@@ -574,5 +574,94 @@ func TestAnalyzeScore(t *testing.T) {
 	opponent = &Score{capturable: true, capture: 11, alignment: 19}
 	if ret := state.analyzeScore(current, opponent); ret != -31745 {
 		t.Error(t.Name()+" > test: 0 > want: ", -31745, " got: ", ret)
+	}
+}
+
+func TestEval(t *testing.T) {
+	// State board
+	//                     |
+	// - . . . . . . . . x o . . . . . . . . .
+
+	// test: 0
+	b := boards.GetStartP1_1()
+	state := New(b, rdef.Player2)
+	// createSimulation [P2: 8-7 | P1: 10-8 | P2: 7-8 | P1: 8-8]
+	node := createNodes(t, state, []int8{8, 7, 10, 8, 7, 8, 8, 8})
+	if ret := state.eval(node, 0); ret != -16358 {
+		t.Error(t.Name()+" > test: 0 > ", ret)
+	}
+
+	// test: 1
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	// createSimulation [P2: 8-7 | P1: 9-7 | P2: 7-8 | P1: 9-6]
+	node = createNodes(t, state, []int8{8, 7, 9, 7, 7, 8, 9, 6})
+	if ret := state.eval(node, 0); ret != -16360 {
+		t.Error(t.Name()+" > test: 1 > ", ret)
+	}
+
+	// test: 2
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	// createSimulation [P2: 8-7 | P1: 8-9 | P2: 10-7 | P1: 7-10]
+	node = createNodes(t, state, []int8{8, 7, 8, 9, 10, 7, 7, 10})
+	if ret := state.eval(node, 0); ret != -16358 {
+		t.Error(t.Name()+" > test: 2 > ", ret)
+	}
+	// test: 3
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	// createSimulation [P2: 8-7 | P1: 8-9 | P2: 9-10 | P1: 7-8]
+	node = createNodes(t, state, []int8{8, 7, 8, 9, 9, 10, 7, 8})
+	if ret := state.eval(node, 0); ret != -16358 {
+		t.Error(t.Name()+" > test: 3 > ", ret)
+	}
+	// test: 4
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	// createSimulation [P2: 8-7 | P1: 10-8 | P2: 7-8 | P1: 8-8]
+	node = createNodes(t, state, []int8{8, 7, 10, 8, 7, 8, 8, 8})
+	if ret := state.eval(node, 0); ret != -16358 {
+		t.Error(t.Name()+" > test: 4 > ", ret)
+	}
+	// test: 5
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	// createSimulation [P2: 8-7 | P1: 8-8 | P2: 7-8 | P1: 10-8]
+	node = createNodes(t, state, []int8{8, 7, 8, 8, 7, 8, 10, 8})
+	if ret := state.eval(node, 0); ret != -16358 {
+		t.Error(t.Name()+" > test: 5 > ", ret)
+	}
+	// test: 6
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	// createSimulation [P2: 8-7 | P1: 8-8 | P2: 7-6 | P1: 9-7]
+	node = createNodes(t, state, []int8{8, 7, 8, 8, 7, 6, 9, 7})
+	if ret := state.eval(node, 0); ret != -16358 {
+		t.Error(t.Name()+" > test: 6 > ", ret)
+	}
+	// test: 7
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	// createSimulation [P2: 8-7 | P1: 10-8 | P2: 7-8 | P1: 8-8]
+	node = createNodes(t, state, []int8{8, 7, 10, 8, 7, 8, 8, 8})
+	if ret := state.eval(node, 0); ret != -16358 {
+		t.Error(t.Name()+" > test: 7 > ", ret)
+	}
+	// test: 8
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	// createSimulation [P2: 8-7 | P1: 8-8 | P2: 7-6 | P1: 8-9]
+	node = createNodes(t, state, []int8{8, 7, 8, 8, 7, 6, 8, 9})
+	if ret := state.eval(node, 0); ret != -16358 {
+		t.Error(t.Name()+" > test: 8 > ", ret)
+	}
+	// test: 9
+	b = boards.GetStartP1_1()
+	state = New(b, rdef.Player2)
+	// createSimulation [P2: 8-7 | P1: 8-8 | P2: 10-8 | P1: 7-8]
+	node = createNodes(t, state, []int8{8, 7, 8, 8, 10, 8, 7, 8})
+	if ret := state.eval(node, 0); ret != -16358 {
+		t.Error(t.Name()+" > test: 9 > ", ret)
 	}
 }

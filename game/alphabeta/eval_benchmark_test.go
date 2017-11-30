@@ -37,7 +37,7 @@ func BenchmarkScoreAlignment_noAlignment(b *testing.B) {
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		state.scoreAlignment(node, current, state.maxDepth, true)
+		state.scoreAlignment(node, current, true)
 	}
 	b.StopTimer()
 	b.ReportAllocs()
@@ -54,7 +54,7 @@ func BenchmarkScoreAlignment_freeThree(b *testing.B) {
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		state.scoreAlignment(node, current, 0, true)
+		state.scoreAlignment(node, current, true)
 	}
 	b.StopTimer()
 	b.ReportAllocs()
