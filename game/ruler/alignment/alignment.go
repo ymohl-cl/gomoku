@@ -186,8 +186,6 @@ func AnalyzeWin(mask *[11]uint8) *Alignment {
 // AnalyzeThree check the alignment to define a free-three and record it on isThree attribute
 func AnalyzeThree(mask *[11]uint8) bool {
 	player := mask[5]
-	//	left := [4]uint8{mask[5-1], mask[5-2], mask[5-3], mask[5-4]}
-	//	right := [4]uint8{mask[5+1], mask[5+2], mask[5+3], mask[5+4]}
 
 	switch {
 	// [0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0]

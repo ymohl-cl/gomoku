@@ -105,23 +105,29 @@ func (s *State) scoreAlignment(n *Node, sc *Score, depth uint8, flag bool) {
 // evalAlignment return score to alignment parameter on this evaluation
 func (s *State) evalAlignment(n *Node, current, opponent *Score) {
 	var depth uint8
+	var flag bool
+	spots := new([5]*Node)
+	index := 0
 
 	// get score current
 	n.rule.UpdateAlignments(s.board)
 	s.scoreAlignment(n, current, depth, true)
 
 	// get score opponent - flag define the opponent turn
-	flag := true
-	depth++
-	for node := n.prev; node != nil; node = node.prev {
+	for node := n; node != nil; node = node.prev {
 		if flag == true && node.rule.IsMyPosition(s.board) {
 			// createAlignment
+			s.updateTokenPlayer(spots)
 			node.rule.UpdateAlignments(s.board)
 			s.scoreAlignment(node, opponent, depth, false)
+			spots[index] = node
+			index++
 		}
 		depth++
 		flag = !flag
 	}
+
+	s.restoreTokenPlayer(spots)
 
 	// if there are not winneable situation and equality score.
 	// Give advantage to the first player which played

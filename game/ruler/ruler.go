@@ -1,8 +1,6 @@
 package ruler
 
 import (
-	"sync"
-
 	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
 	// rdef is the ruler defines
 	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
@@ -39,7 +37,6 @@ type Rules struct {
 	NumberCapture uint8
 	Movable       bool
 	Win           bool
-	m             sync.Mutex
 }
 
 // New return a new instance with one player and one position (y, x)

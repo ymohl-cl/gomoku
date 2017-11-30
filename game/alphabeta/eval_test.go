@@ -268,7 +268,7 @@ func TestEvalAlignment(t *testing.T) {
 	if current.alignment != scoreWinDetection-(scoreByAlign)+(depthOutEvalToFreeThree-0) {
 		t.Error(t.Name()+" > test: 1 > current: ", current, ", score want: ", scoreWinDetection-(scoreByAlign)+(depthOutEvalToFreeThree-0))
 	}
-	if opponent.alignment != scoreFree*2+scoreByAlign {
+	if opponent.alignment != scoreFree*2 {
 		t.Error(t.Name()+" > test: 1 > opponent: ", opponent, ", score want: ", scoreFree*2)
 	}
 
