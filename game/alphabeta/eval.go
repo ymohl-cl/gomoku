@@ -1,6 +1,7 @@
 package alphabeta
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
@@ -177,21 +178,38 @@ func (s *State) evalCapture(n *Node, current, opponent *Score) {
 }
 
 // analyzeScore return the final weight
-func (s *State) analyzeScore(current, opponent *Score) int16 {
+func (s *State) analyzeScore(current, opponent *Score, lastNode *Node) int16 {
 	var score int16
+	var score2 int16
 
 	if current.alignment < 0 {
+		score = current.alignment
+		score -= current.capture
+		score += opponent.alignment
+		score += opponent.capture
+		//		fmt.Println("score: ", score)
+		if current.alignment < scoreWinDetection && s.maxDepth < 10 {
+			newState := New(s.board, rdef.GetOtherPlayer(current.idPlayer))
+			newState.addTotalCapture(current.idPlayer, s.getTotalCapture(current.idPlayer))
+			newState.addTotalCapture(opponent.idPlayer, s.getTotalCapture(opponent.idPlayer))
+			newState.maxDepth = s.maxDepth + 2
+			save := lastNode.prev
+			lastNode.prev = nil
+			score2 = newState.alphabetaNegaScout(score, math.MaxInt16, 2, lastNode)
+			lastNode.prev = save
+			//			fmt.Println("new score: ", score2)
+			fmt.Println("La class: ", newState.maxDepth)
+			return score2
+		}
+
+		return score
+
 		// nerf capture to lock a free three on the alignment and not by capture
 		//		if current.alignment == scoreWinDetection-current.nbAlignements+depthOutEvalToFreeThree {
 		//			opponent.capture = 0
 		//		}
 
 		// win condition for current
-		score = current.alignment
-		score -= current.capture
-		score += opponent.alignment
-		score += opponent.capture
-		return score
 	}
 	// else no win
 	score = scoreNeutral
@@ -220,5 +238,5 @@ func (s *State) eval(n *Node, depth uint8) int16 {
 
 	//	fmt.Println("current: ", current)
 	//	fmt.Println("opponent: ", opponent)
-	return s.analyzeScore(&current, &opponent)
+	return s.analyzeScore(&current, &opponent, n)
 }

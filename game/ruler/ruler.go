@@ -16,6 +16,8 @@ const (
 	winByAlignmentMessage  = "congratulation, winner by alignment"
 )
 
+var mask [11]uint8
+
 // Spot on the board define by Y and X
 type Spot struct {
 	Y int8
@@ -113,6 +115,36 @@ func (r Rules) IsMyPosition(b *[19][19]uint8) bool {
 	return false
 }
 
+// IsAvailablePositionLight : check if the position is available
+func IsAvailablePositionLight(b *[19][19]uint8, vy, vx int8) bool {
+
+	if !rdef.IsOnTheBoard(vy, vx) {
+		return false
+	}
+	if !rdef.IsEmpty(b, vy, vx) {
+		return false
+	}
+
+	//Check around posX/posY
+	for yi := int8(-1); yi <= 1; yi++ {
+		for xi := int8(-1); xi <= 1; xi++ {
+
+			x := vx + xi
+			y := vy + yi
+
+			if (xi == 0 && yi == 0) || !rdef.IsOnTheBoard(y, x) {
+				continue
+			}
+
+			if !rdef.IsEmpty(b, y, x) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // isAvailablePosition : check if the position is available
 func (r *Rules) isAvailablePosition(b *[19][19]uint8) bool {
 
@@ -183,13 +215,13 @@ func (r *Rules) analyzeMoveCondition() bool {
 }
 
 // analyzeAlignments : Check three alignment and win alignment
-func (r *Rules) analyzeAlignments(mask *[11]uint8, dirY, dirX int8) {
-	if alignment.AnalyzeThree(mask) {
+func (r *Rules) analyzeAlignments(dirY, dirX int8) {
+	if alignment.AnalyzeThree(&mask) {
 		r.NumberThree++
 	}
 
-	if a := alignment.AnalyzeWin(mask); a != nil {
-		a.NewInfosWin(mask, dirY, dirX, false)
+	if a := alignment.AnalyzeWin(&mask); a != nil {
+		a.NewInfosWin(&mask, dirY, dirX, false)
 		r.aligns = append(r.aligns, a)
 	}
 
@@ -202,7 +234,7 @@ func (r *Rules) addCapture(y, x int8) {
 }
 
 // analyzeCapture : Check and records captured spot
-func (r *Rules) analyzeCapture(mask *[11]uint8, dirY, dirX int8) {
+func (r *Rules) analyzeCapture(dirY, dirX int8) {
 	cible := rdef.GetOtherPlayer(r.player)
 
 	if mask[4] == cible && mask[3] == cible && mask[2] == r.player {
@@ -230,8 +262,8 @@ func (r *Rules) analyzeCapture(mask *[11]uint8, dirY, dirX int8) {
 // it's more simplest and fast to applies all rules.
 // example [3 0 1 1 0 2 2 0 0 0 0]
 //            < < < =| |= > > >
-func (r *Rules) getMaskFromBoard(b *[19][19]uint8, dirY, dirX int8, mask *[11]uint8) {
-	(*mask)[5] = r.player
+func (r *Rules) getMaskFromBoard(b *[19][19]uint8, dirY, dirX int8) {
+	mask[5] = r.player
 
 	for i := int8(1); i <= 5; i++ {
 		leftY := uint8(r.y + (dirY * i))
@@ -240,15 +272,15 @@ func (r *Rules) getMaskFromBoard(b *[19][19]uint8, dirY, dirX int8, mask *[11]ui
 		rightX := uint8(r.x + (dirX * -i))
 
 		if rdef.IsOnTheBoard(int8(leftY), int8(leftX)) {
-			(*mask)[5-i] = (*b)[leftY][leftX]
+			mask[5-i] = (*b)[leftY][leftX]
 		} else {
-			(*mask)[5-i] = rdef.OutOfBoard
+			mask[5-i] = rdef.OutOfBoard
 		}
 
 		if rdef.IsOnTheBoard(int8(rightY), int8(rightX)) {
-			(*mask)[5+i] = (*b)[rightY][rightX]
+			mask[5+i] = (*b)[rightY][rightX]
 		} else {
-			(*mask)[5+i] = rdef.OutOfBoard
+			mask[5+i] = rdef.OutOfBoard
 		}
 	}
 }
@@ -257,12 +289,12 @@ func (r *Rules) getMaskFromBoard(b *[19][19]uint8, dirY, dirX int8, mask *[11]ui
 // create 4 masks to check all direction
 func (r *Rules) CheckRules(board *[19][19]uint8, nbCaps uint8) {
 	var stop bool
-	var mask [11]uint8
+	//	var mask [11]uint8
 
-	if !r.isAvailablePosition(board) {
-		return
-	}
-
+	//	if !r.isAvailablePosition(board) {
+	//		return
+	//	}
+	r.Movable = true
 	// check around move position. y and x represent one direction
 	for y := int8(-1); y <= 0; y++ {
 		for x := int8(-1); x <= 1; x++ {
@@ -273,12 +305,12 @@ func (r *Rules) CheckRules(board *[19][19]uint8, nbCaps uint8) {
 			}
 
 			// create mask to the direction
-			r.getMaskFromBoard(board, y, x, &mask)
+			r.getMaskFromBoard(board, y, x)
 
 			// record the capturable spots
-			r.analyzeCapture(&mask, y, x)
+			r.analyzeCapture(y, x)
 			// record informations alignment
-			r.analyzeAlignments(&mask, y, x)
+			r.analyzeAlignments(y, x)
 		}
 
 		if stop == true {
@@ -297,10 +329,10 @@ func (r *Rules) CheckRules(board *[19][19]uint8, nbCaps uint8) {
 }
 
 // getAlignment : Check alignment type and records when there are enought available spot
-func (r *Rules) getAlignment(mask *[11]uint8, dirY, dirX int8) {
+func (r *Rules) getAlignment(dirY, dirX int8) {
 	var a *alignment.Alignment
 
-	a = alignment.New(mask, r.player)
+	a = alignment.New(&mask, r.player)
 	if a.Size < 2 {
 		return
 	}
@@ -315,8 +347,6 @@ func (r *Rules) getAlignment(mask *[11]uint8, dirY, dirX int8) {
 
 // UpdateAlignments define aligns with a new state baord
 func (r *Rules) UpdateAlignments(board *[19][19]uint8) {
-	var mask [11]uint8
-
 	r.aligns = nil
 	r.NumberThree = 0
 	// check around move position. y and x represent one direction
@@ -328,10 +358,10 @@ func (r *Rules) UpdateAlignments(board *[19][19]uint8) {
 			}
 
 			// create mask to the direction
-			r.getMaskFromBoard(board, y, x, &mask)
+			r.getMaskFromBoard(board, y, x)
 
 			// record informations alinment
-			r.getAlignment(&mask, y, x)
+			r.getAlignment(y, x)
 		}
 	}
 }

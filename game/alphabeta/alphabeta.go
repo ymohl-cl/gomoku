@@ -1,6 +1,7 @@
 package alphabeta
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/ymohl-cl/gomoku/database"
@@ -81,6 +82,9 @@ func (s *State) refresh(b *[19][19]uint8, player uint8) {
 }
 
 func (s *State) newNode(y, x int8) *Node {
+	if !ruler.IsAvailablePositionLight(s.board, y, x) {
+		return nil
+	}
 	n := new(Node)
 	n.rule.Init(s.currentPlayer, y, x)
 	n.rule.CheckRules(s.board, s.getTotalCapture(s.currentPlayer))
@@ -184,21 +188,28 @@ func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint8, n *Node) int1
 			// restore move and restore data
 			s.restoreData(node, n)
 
-			//	if depth == s.maxDepth {
+			if depth == s.maxDepth {
+				//		s.addNode(node)
+
+				if alpha < node.weight {
+					s.save = node
+				}
+			}
+
+			/*
+				if depth == s.maxDepth && alpha < node.weight {
+					s.save = node
+				}
+			*/
+			//	 else if depth == s.maxDepth {
 			//		s.addNode(node)
 
-			//if alpha < node.weight {
-			//	s.save = node
 			//}
-			//		}
-
-			if depth == s.maxDepth && alpha < node.weight {
-				s.save = node
-			} else if depth%2 != 0 && alpha <= node.weight {
-				n.addNext(node, alpha)
-			} else if depth%2 == 0 && alpha < node.weight {
-				n.save = node
-			}
+			//			 else if depth%2 != 0 && alpha <= node.weight {
+			//				n.addNext(node, alpha)
+			//			} else if depth%2 == 0 && alpha < node.weight {
+			//				n.save = node
+			//			}
 
 			alpha = maxWeight(alpha, node.weight)
 
@@ -212,28 +223,31 @@ func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint8, n *Node) int1
 
 // Play start the alphabeta algorythm
 func (i *IA) Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
-	var alpha int16
-	if i.s == nil {
-		alpha = math.MaxInt16
-		i.s = New(b, rdef.Player2)
-		i.s.addTotalCapture(rdef.Player1, uint8(s.NbCaptureP1))
-		i.s.addTotalCapture(rdef.Player2, uint8(s.NbCaptureP2))
-	} else {
-		if i.s.save == nil {
-			alpha = math.MaxInt16
-		} else {
-			alpha = i.s.save.weight * -1
-		}
-		//		fmt.Println("alpha: ", alpha)
-		i.s.refresh(b, rdef.Player2)
-		i.s.setTotalCapture(rdef.Player1, uint8(s.NbCaptureP1))
-		i.s.setTotalCapture(rdef.Player2, uint8(s.NbCaptureP2))
-		i.s.save = nil
-		i.s.lst = nil
-	}
-
+	///	var alpha int16
+	//	if i.s == nil {
+	//		alpha = math.MaxInt16
+	i.s = New(b, rdef.Player2)
+	i.s.addTotalCapture(rdef.Player1, uint8(s.NbCaptureP1))
+	i.s.addTotalCapture(rdef.Player2, uint8(s.NbCaptureP2))
+	//	} else {
+	//		if i.s.save == nil {
+	//			alpha = math.MaxInt16
+	//		} else {
+	//			alpha = i.s.save.weight * -1
+	//		}
+	//		fmt.Println("alpha: ", alpha)
+	//		i.s.refresh(b, rdef.Player2)
+	//		i.s.setTotalCapture(rdef.Player1, uint8(s.NbCaptureP1))
+	//		i.s.setTotalCapture(rdef.Player2, uint8(s.NbCaptureP2))
+	//		i.s.save = nil
+	//		i.s.lst = nil
+	//	}
+	//
 	//ret := state.alphabetaNegaScout(math.MinInt8+1, math.MaxInt8, state.maxDepth, nil)
-	i.s.alphabetaNegaScout(math.MinInt16+1, alpha, i.s.maxDepth, nil)
+	//i.s.alphabetaNegaScout(math.MinInt16+1, alpha, i.s.maxDepth, nil)
+	fmt.Println("start")
+	ret := i.s.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, i.s.maxDepth, nil)
+	fmt.Println("finish: ", ret)
 	//fmt.Println("ret: ", ret)
 
 	//	tmp := int16(math.MinInt16)
@@ -251,36 +265,69 @@ func (i *IA) Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 			}
 		}
 	*/
+	/*	fmt.Println("Offi")
+		//	for n := i.s.lst; n != nil; n = n.next {
+			//	y, x := n.rule.GetPosition()
+				fmt.Println("y: ", y, " - x: ", x, " - weight: ", n.weight)
+			}
+	*/
 	y, x := i.s.save.rule.GetPosition()
-	i.s.save = i.s.save.next
+	//i.s.save = i.s.save.next
+
+	/* test
+	ybis, xbis := Test(b, s)
+	if ybis != y && xbis != x {
+		fmt.Println("C'est de la merde")
+	} else {
+		fmt.Println("Cool")
+	}*/
+	/* end test */
+
 	c <- uint8(y)
 	c <- uint8(x)
 }
 
+func Test(b *[19][19]uint8, s *database.Session) (int8, int8) {
+	state := New(b, rdef.Player2)
+	state.maxDepth = 2
+	state.addTotalCapture(rdef.Player1, uint8(s.NbCaptureP1))
+	state.addTotalCapture(rdef.Player2, uint8(s.NbCaptureP2))
+
+	state.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, state.maxDepth, nil)
+	fmt.Println("Test")
+	for n := state.lst; n != nil; n = n.next {
+		y, x := n.rule.GetPosition()
+		fmt.Println("y: ", y, " - x: ", x, " - weight: ", n.weight)
+	}
+	return state.save.rule.GetPosition()
+}
+
 func (i *IA) PlayOpposing(y, x uint8) {
-	var nb int8
-	var flag bool
+	/*
+		var nb int8
+		var flag bool
 
-	if i.s == nil || i.s.save == nil {
-		return
-	}
-	for n := i.s.save; n != nil; n = n.next {
-		nb++
-		ny, nx := n.rule.GetPosition()
-		//	fmt.Print("weight: ", n.weight)
-		if uint8(ny) == y && uint8(nx) == x {
-			//fmt.Println(" choiced")
-			i.s.save = n.save
-			flag = true
-		} else {
-			//fmt.Println(" not choice")
+		if i.s == nil || i.s.save == nil {
+			return
 		}
-	}
-	if flag == true {
-		//fmt.Println("GREAT !!!! nb: ", nb)
-		return
-	}
+		for n := i.s.save; n != nil; n = n.next {
+			nb++
+			ny, nx := n.rule.GetPosition()
+			//	fmt.Print("weight: ", n.weight)
+			if uint8(ny) == y && uint8(nx) == x {
+				//fmt.Println(" choiced")
+				i.s.save = n.save
+				flag = true
+			} else {
+				//fmt.Println(" not choice")
+			}
+		}
+		if flag == true {
+			//fmt.Println("GREAT !!!! nb: ", nb)
+			return
+		}
 
-	i.level++
-	//fmt.Println("NOOB, nb: ", nb)
+		i.level++
+		//fmt.Println("NOOB, nb: ", nb)
+	*/
 }
