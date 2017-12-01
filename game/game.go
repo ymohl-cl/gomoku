@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ymohl-cl/gomoku/database"
+	"github.com/ymohl-cl/gomoku/game/alphabeta"
 	"github.com/ymohl-cl/gomoku/game/ruler"
 	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
 	"github.com/ymohl-cl/gomoku/game/stats"
@@ -27,8 +28,8 @@ type Game struct {
 	timerPlay time.Time
 	timerGame time.Time
 	rules     *ruler.Rules
-	//Bot       *alphabeta.AI
-	data *database.Data
+	Bot       *alphabeta.IA
+	data      *database.Data
 }
 
 // playersInfo struct contain db and stats about the 2 players actual players
@@ -57,7 +58,7 @@ func New(d *database.Data) (*Game, error) {
 		if d.Current.P2, err = d.GetPlayerByName(database.Bot); err != nil {
 			return nil, err
 		}
-		//g.Bot = ai.New()
+		g.Bot = new(alphabeta.IA)
 	}
 
 	g.players = playersInfo{p1: d.Current.P1, p2: d.Current.P2}

@@ -151,6 +151,7 @@ func (s *State) evalCapture(n *Node, current, opponent *Score) {
 			first = node.rule.GetPlayer()
 			if first == current.idPlayer {
 				current.capturable = true
+				//				current.capture = 20
 			} else {
 				opponent.capturable = true
 			}
@@ -181,9 +182,9 @@ func (s *State) analyzeScore(current, opponent *Score) int16 {
 
 	if current.alignment < 0 {
 		// nerf capture to lock a free three on the alignment and not by capture
-		//	if current.alignment == scoreWinDetection-current.nbAlignements+depthOutEvalToFreeThree {
-		//		opponent.capture *= -1
-		//	}
+		//		if current.alignment == scoreWinDetection-current.nbAlignements+depthOutEvalToFreeThree {
+		//			opponent.capture = 0
+		//		}
 
 		// win condition for current
 		score = current.alignment

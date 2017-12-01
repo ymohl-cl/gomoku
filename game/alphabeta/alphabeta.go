@@ -8,6 +8,12 @@ import (
 	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
 )
 
+type IA struct {
+	s     *State
+	turn  uint16
+	level uint16
+}
+
 // InfoPlayer of previous evaluation
 type InfoPlayer struct {
 	totalCapture uint8
@@ -30,6 +36,7 @@ type Node struct {
 	weight int16
 	next   *Node
 	prev   *Node
+	save   *Node
 }
 
 // New provide a State
@@ -52,12 +59,25 @@ func (s *State) addTotalCapture(player uint8, number uint8) {
 	}
 }
 
+func (s *State) setTotalCapture(player uint8, number uint8) {
+	if player == rdef.Player1 {
+		s.infoP1.totalCapture = number
+	} else {
+		s.infoP2.totalCapture = number
+	}
+}
+
 func (s *State) subTotalCapture(player uint8, number uint8) {
 	if player == rdef.Player1 {
 		s.infoP1.totalCapture -= number
 	} else {
 		s.infoP2.totalCapture -= number
 	}
+}
+
+func (s *State) refresh(b *[19][19]uint8, player uint8) {
+	s.board = b
+	s.currentPlayer = player
 }
 
 func (s *State) newNode(y, x int8) *Node {
@@ -127,6 +147,15 @@ func (s *State) addNode(n *Node) {
 	s.lst = n
 }
 
+func (n *Node) addNext(node *Node, alpha int16) {
+	lst := n.next
+	n.next = node
+
+	if lst != nil && alpha == node.weight {
+		node.next = lst
+	}
+}
+
 func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint8, n *Node) int16 {
 	if (n != nil && n.rule.Win) || depth == 0 {
 		return s.eval(n, depth)
@@ -155,12 +184,20 @@ func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint8, n *Node) int1
 			// restore move and restore data
 			s.restoreData(node, n)
 
-			if depth == s.maxDepth {
-				s.addNode(node)
+			//	if depth == s.maxDepth {
+			//		s.addNode(node)
 
-				if alpha < node.weight {
-					s.save = node
-				}
+			//if alpha < node.weight {
+			//	s.save = node
+			//}
+			//		}
+
+			if depth == s.maxDepth && alpha < node.weight {
+				s.save = node
+			} else if depth%2 != 0 && alpha <= node.weight {
+				n.addNext(node, alpha)
+			} else if depth%2 == 0 && alpha < node.weight {
+				n.save = node
 			}
 
 			alpha = maxWeight(alpha, node.weight)
@@ -174,13 +211,29 @@ func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint8, n *Node) int1
 }
 
 // Play start the alphabeta algorythm
-func Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
-	state := New(b, rdef.Player2)
-	state.addTotalCapture(rdef.Player1, uint8(s.NbCaptureP1))
-	state.addTotalCapture(rdef.Player2, uint8(s.NbCaptureP2))
+func (i *IA) Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
+	var alpha int16
+	if i.s == nil {
+		alpha = math.MaxInt16
+		i.s = New(b, rdef.Player2)
+		i.s.addTotalCapture(rdef.Player1, uint8(s.NbCaptureP1))
+		i.s.addTotalCapture(rdef.Player2, uint8(s.NbCaptureP2))
+	} else {
+		if i.s.save == nil {
+			alpha = math.MaxInt16
+		} else {
+			alpha = i.s.save.weight * -1
+		}
+		//		fmt.Println("alpha: ", alpha)
+		i.s.refresh(b, rdef.Player2)
+		i.s.setTotalCapture(rdef.Player1, uint8(s.NbCaptureP1))
+		i.s.setTotalCapture(rdef.Player2, uint8(s.NbCaptureP2))
+		i.s.save = nil
+		i.s.lst = nil
+	}
 
 	//ret := state.alphabetaNegaScout(math.MinInt8+1, math.MaxInt8, state.maxDepth, nil)
-	state.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, state.maxDepth, nil)
+	i.s.alphabetaNegaScout(math.MinInt16+1, alpha, i.s.maxDepth, nil)
 	//fmt.Println("ret: ", ret)
 
 	//	tmp := int16(math.MinInt16)
@@ -198,7 +251,36 @@ func Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 			}
 		}
 	*/
-	y, x := state.save.rule.GetPosition()
+	y, x := i.s.save.rule.GetPosition()
+	i.s.save = i.s.save.next
 	c <- uint8(y)
 	c <- uint8(x)
+}
+
+func (i *IA) PlayOpposing(y, x uint8) {
+	var nb int8
+	var flag bool
+
+	if i.s == nil || i.s.save == nil {
+		return
+	}
+	for n := i.s.save; n != nil; n = n.next {
+		nb++
+		ny, nx := n.rule.GetPosition()
+		//	fmt.Print("weight: ", n.weight)
+		if uint8(ny) == y && uint8(nx) == x {
+			//fmt.Println(" choiced")
+			i.s.save = n.save
+			flag = true
+		} else {
+			//fmt.Println(" not choice")
+		}
+	}
+	if flag == true {
+		//fmt.Println("GREAT !!!! nb: ", nb)
+		return
+	}
+
+	i.level++
+	//fmt.Println("NOOB, nb: ", nb)
 }
