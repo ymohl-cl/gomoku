@@ -2,7 +2,6 @@ package game
 
 import (
 	"errors"
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -113,8 +112,7 @@ func (g *Game) SwitchPlayer() {
 
 // Move : Call the rules checker
 // Do the move according to the circumstances
-// return if current player win
-func (g *Game) Move(x, y uint8) (bool, string, error) {
+func (g *Game) Move(x, y uint8) (bool, string) {
 	var valueToken uint8
 	var nbCaps *int32
 
@@ -127,30 +125,36 @@ func (g *Game) Move(x, y uint8) (bool, string, error) {
 		nbCaps = &g.data.Current.NbCaptureP2
 	}
 
+	if ok, message := ruler.IsAvailablePosition(&g.board, int8(y), int8(x)); !ok {
+		return ok, message
+	}
+
+	// Create the ruler
 	g.rules = ruler.New(valueToken, int8(y), int8(x))
+	g.rules.Movable = true
 
 	//CheckAllRules
 	g.rules.CheckRules(&g.board, uint8(*nbCaps))
-	//g.rules.Print()
+	if !g.rules.Movable {
+		return false, g.rules.Info
+	}
+
 	//add Capture nb
 	*nbCaps += int32(g.rules.NumberCapture)
-	//Verify Check
-	fmt.Println(g.rules)
-	if g.rules.Movable == false {
-		return false, "", errors.New(g.rules.Info)
-	}
+
+	// applies the move on the board
 	g.rules.ApplyMove(&g.board)
-	/*
-		if g.rules.IsCaptured == true {
-			for _, cap := range g.rules.GetCaptures() {
-				g.board[cap.Y][cap.X] = ruler.TokenEmpty
-			}
-		}
-	*/
+	// applies the move on the data game
 	g.AppliesMove(x, y)
+
 	g.SwitchPlayer()
 
-	return g.rules.Win, g.rules.Info, nil
+	return true, ""
+}
+
+// IsWin return status win created by the ruler
+func (g *Game) IsWin() (bool, string) {
+	return g.rules.Win, g.rules.Info
 }
 
 // GetCaptures : return a reference of slice of actual player captures

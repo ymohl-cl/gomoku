@@ -61,11 +61,14 @@ func (s *State) subTotalCapture(player uint8, number uint8) {
 }
 
 func (s *State) newNode(y, x int8) *Node {
+	if ok, _ := ruler.IsAvailablePosition(s.board, y, x); !ok {
+		return nil
+	}
 	n := new(Node)
 	n.rule.Init(s.currentPlayer, y, x)
 	n.rule.CheckRules(s.board, s.getTotalCapture(s.currentPlayer))
 	if !n.rule.Movable {
-		n = nil
+		return nil
 	}
 	return n
 }

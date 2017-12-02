@@ -53,6 +53,7 @@ func (r *Rules) Init(p uint8, y, x int8) {
 	r.player = p
 	r.y = y
 	r.x = x
+	r.Movable = true
 }
 
 // ApplyMove write on the board the spot of move and delete captured spot
@@ -113,38 +114,34 @@ func (r Rules) IsMyPosition(b *[19][19]uint8) bool {
 	return false
 }
 
-// isAvailablePosition : check if the position is available
-func (r *Rules) isAvailablePosition(b *[19][19]uint8) bool {
+// IsAvailablePosition : check if the position is available
+func IsAvailablePosition(b *[19][19]uint8, posY, posX int8) (bool, string) {
 
-	if !rdef.IsOnTheBoard(r.y, r.x) {
-		r.Info = outOfBoardMessage
-		return false
+	if !rdef.IsOnTheBoard(posY, posX) {
+		return false, outOfBoardMessage
 	}
-	if !rdef.IsEmpty(b, r.y, r.x) {
-		r.Info = spotAlreadyUsedMessage
-		return false
+	if !rdef.IsEmpty(b, posY, posX) {
+		return false, spotAlreadyUsedMessage
 	}
 
 	//Check around posX/posY
 	for yi := int8(-1); yi <= 1; yi++ {
 		for xi := int8(-1); xi <= 1; xi++ {
 
-			x := r.x + xi
-			y := r.y + yi
+			x := posX + xi
+			y := posY + yi
 
 			if (xi == 0 && yi == 0) || !rdef.IsOnTheBoard(y, x) {
 				continue
 			}
 
 			if !rdef.IsEmpty(b, y, x) {
-				r.Movable = true
-				return true
+				return true, ""
 			}
 		}
 	}
 
-	r.Info = noNeighbourMessage
-	return false
+	return false, noNeighbourMessage
 }
 
 // analyzeWinCondition : Check conditions to accept the win move
@@ -258,10 +255,6 @@ func (r *Rules) getMaskFromBoard(b *[19][19]uint8, dirY, dirX int8, mask *[11]ui
 func (r *Rules) CheckRules(board *[19][19]uint8, nbCaps uint8) {
 	var stop bool
 	var mask [11]uint8
-
-	if !r.isAvailablePosition(board) {
-		return
-	}
 
 	// check around move position. y and x represent one direction
 	for y := int8(-1); y <= 0; y++ {
