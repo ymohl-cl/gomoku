@@ -1,6 +1,7 @@
 package alphabeta
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
@@ -42,6 +43,7 @@ type Score struct {
 	capture       int16
 	alignment     int16
 	nbAlignements int16
+	isTree        bool
 }
 
 func maxWeight(v1, v2 int16) int16 {
@@ -57,6 +59,7 @@ func (s *State) scoreAlignment(n *Node, sc *Score, flag bool) {
 	var a *alignment.Alignment
 	var nbr int16
 	var score int16
+	var tree bool
 
 	// get number align to the spot
 	if nbr = n.rule.GetNumberAlignment(); nbr == 0 {
@@ -72,10 +75,12 @@ func (s *State) scoreAlignment(n *Node, sc *Score, flag bool) {
 		score = scoreWinDetection - nbr + depthOutEvalToFourSpots
 	} else if flag == true && a.Size == 3 && a.IsThree {
 		score = scoreWinDetection - nbr + depthOutEvalToFreeThree
+		tree = true
 	}
 	if score != 0 && sc.alignment > score {
 		sc.alignment = score
 		sc.nbAlignements = nbr
+		sc.isTree = tree
 		return
 	}
 
@@ -177,56 +182,90 @@ func (s *State) evalCapture(n *Node, current, opponent *Score) {
 
 // analyzeScore return the final weight
 func (s *State) analyzeScore(current, opponent *Score, lastNode *Node) int16 {
-	var score int16
+	var ret int16
 
 	// win condition
 	if current.alignment < 0 {
-		score = current.alignment
-		score -= current.capture
-		score += opponent.alignment
-		score += opponent.capture
-		// check deap blue
-		if current.alignment < scoreWinDetection && s.maxDepth < 10 {
-			newState := New(s.board, rdef.GetOtherPlayer(current.idPlayer))
-			newState.addTotalCapture(current.idPlayer, s.getTotalCapture(current.idPlayer))
-			newState.addTotalCapture(opponent.idPlayer, s.getTotalCapture(opponent.idPlayer))
-			newState.maxDepth = s.maxDepth + 2
-			save := lastNode.prev
-			lastNode.prev = nil
-			ret := newState.alphabetaNegaScout(score, math.MaxInt16, 2, lastNode)
-			lastNode.prev = save
-			return ret
+		ret = current.alignment
+		ret -= current.capture
+		ret += opponent.alignment
+		ret += opponent.capture
+
+		if current.isTree && opponent.capturable && s.maxDepth < 10 {
+			s.maxDepth += 2
+			ret2 := s.alphabetaNegaScout(ret, math.MaxInt16, 2, nil)
+			fmt.Println("call with maxDepth: ", s.maxDepth, " - oldeRet: ", ret, " - newRet: ", ret2)
+			s.maxDepth -= 2
+			ret = ret2
 		}
 
-		return score
-	} else if opponent.alignment < 0 {
-		score = opponent.alignment
-		score -= opponent.capture
-		score += current.alignment
-		score += current.capture
-		score *= -1
-		// check deap blue
-		if opponent.alignment < scoreWinDetection && s.maxDepth < 10 {
-			newState := New(s.board, rdef.GetOtherPlayer(current.idPlayer))
-			newState.addTotalCapture(current.idPlayer, s.getTotalCapture(current.idPlayer))
-			newState.addTotalCapture(opponent.idPlayer, s.getTotalCapture(opponent.idPlayer))
-			newState.maxDepth = s.maxDepth + 2
-			save := lastNode.prev
-			lastNode.prev = nil
-			ret := newState.alphabetaNegaScout(score, math.MaxInt16, 2, lastNode)
-			lastNode.prev = save
-			return ret
-		}
-
-		return score
+		return ret
 	}
 
-	// no win
-	score = scoreNeutral
-	score -= current.alignment - opponent.alignment
-	score -= current.capture - opponent.capture
+	/*else if opponent.alignment < 0 {
+		ret = opponent.alignment
+		ret -= opponent.capture
+		ret += current.alignment
+		ret += current.capture
+		ret *= -1
 
-	return score
+		if current.capturable && s.maxDepth < 10 {
+			newState := New(s.board, rdef.GetOtherPlayer(current.idPlayer))
+			newState.addTotalCapture(current.idPlayer, s.getTotalCapture(current.idPlayer))
+			newState.addTotalCapture(opponent.idPlayer, s.getTotalCapture(opponent.idPlayer))
+			newState.maxDepth = s.maxDepth + 2
+			save := lastNode.prev
+			lastNode.prev = nil
+			ret = newState.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, 2, lastNode)
+			lastNode.prev = save
+			fmt.Println("depth: ", newState.maxDepth)
+			return ret
+		}
+
+		return ret
+	}*/
+	/*score = opponent.alignment
+	score -= opponent.capture
+	score += current.alignment
+	score += current.capture
+	score *= -1
+	// check deap blue
+	if opponent.alignment < scoreWinDetection && s.maxDepth < 10 {
+		newState := New(s.board, rdef.GetOtherPlayer(current.idPlayer))
+		newState.addTotalCapture(current.idPlayer, s.getTotalCapture(current.idPlayer))
+		newState.addTotalCapture(opponent.idPlayer, s.getTotalCapture(opponent.idPlayer))
+		newState.maxDepth = s.maxDepth + 2
+		save := lastNode.prev
+		lastNode.prev = nil
+		ret := newState.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, 2, nil)
+		lastNode.prev = save
+		return ret
+	}*/
+
+	//	return score
+	//}
+
+	// no win
+
+	ret = scoreNeutral
+	ret -= current.alignment - opponent.alignment
+	ret -= current.capture - opponent.capture
+
+	// check deap blue
+	/*	if s.maxDepth < 10 {
+			newState := New(s.board, rdef.GetOtherPlayer(current.idPlayer))
+			newState.addTotalCapture(current.idPlayer, s.getTotalCapture(current.idPlayer))
+			newState.addTotalCapture(opponent.idPlayer, s.getTotalCapture(opponent.idPlayer))
+			newState.maxDepth = s.maxDepth + 2
+			save := lastNode.prev
+			lastNode.prev = nil
+			ret = newState.alphabetaNegaScout(ret, math.MaxInt16, 2, lastNode)
+			lastNode.prev = save
+			fmt.Println("depth: ", newState.maxDepth)
+			return ret
+		}
+	*/
+	return ret
 }
 
 // eval function define the weight to the evaluation

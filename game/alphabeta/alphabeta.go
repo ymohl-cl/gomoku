@@ -1,6 +1,7 @@
 package alphabeta
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/ymohl-cl/gomoku/database"
@@ -183,15 +184,18 @@ func Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 	state.addTotalCapture(rdef.Player2, uint8(s.NbCaptureP2))
 
 	//ret := state.alphabetaNegaScout(math.MinInt8+1, math.MaxInt8, state.maxDepth, nil)
-	state.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, state.maxDepth, nil)
-	//fmt.Println("ret: ", ret)
+	ret := state.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, state.maxDepth, nil)
+	fmt.Println("ret: ", ret)
 
+	if state.save == nil {
+		fmt.Println("BOUuuuuuuuuuuu !!!!!!!!!!")
+	}
 	//	tmp := int16(math.MinInt16)
 
 	//	yi, xi := state.save.rule.GetPosition()
-	/*
-		fmt.Println("save weight: ", state.save.weight, " y et x: ", yi, " - ", xi)
 
+	//	fmt.Println("save weight: ", state.save.weight, " y et x: ", yi, " - ", xi)
+	/*
 		for n := state.lst; n != nil; n = n.next {
 			y, x := n.rule.GetPosition()
 			fmt.Println("Node weight: ", n.weight, " y et x: ", y, " - ", x)
