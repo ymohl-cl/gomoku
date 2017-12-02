@@ -199,7 +199,28 @@ func (s *State) analyzeScore(current, opponent *Score, lastNode *Node) int16 {
 		}
 
 		return score
+	} else if opponent.alignment < 0 {
+		score = opponent.alignment
+		score -= opponent.capture
+		score += current.alignment
+		score += current.capture
+		score *= -1
+		// check deap blue
+		if opponent.alignment < scoreWinDetection && s.maxDepth < 10 {
+			newState := New(s.board, rdef.GetOtherPlayer(current.idPlayer))
+			newState.addTotalCapture(current.idPlayer, s.getTotalCapture(current.idPlayer))
+			newState.addTotalCapture(opponent.idPlayer, s.getTotalCapture(opponent.idPlayer))
+			newState.maxDepth = s.maxDepth + 2
+			save := lastNode.prev
+			lastNode.prev = nil
+			ret := newState.alphabetaNegaScout(score, math.MaxInt16, 2, lastNode)
+			lastNode.prev = save
+			return ret
+		}
+
+		return score
 	}
+
 	// no win
 	score = scoreNeutral
 	score -= current.alignment - opponent.alignment
