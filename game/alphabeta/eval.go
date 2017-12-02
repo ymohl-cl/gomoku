@@ -176,23 +176,31 @@ func (s *State) evalCapture(n *Node, current, opponent *Score) {
 }
 
 // analyzeScore return the final weight
-func (s *State) analyzeScore(current, opponent *Score) int16 {
+func (s *State) analyzeScore(current, opponent *Score, lastNode *Node) int16 {
 	var score int16
 
+	// win condition
 	if current.alignment < 0 {
-		// nerf capture to lock a free three on the alignment and not by capture
-		//	if current.alignment == scoreWinDetection-current.nbAlignements+depthOutEvalToFreeThree {
-		//		opponent.capture *= -1
-		//	}
-
-		// win condition for current
 		score = current.alignment
 		score -= current.capture
 		score += opponent.alignment
 		score += opponent.capture
+		// check deap blue
+		if current.alignment < scoreWinDetection && s.maxDepth < 10 {
+			newState := New(s.board, rdef.GetOtherPlayer(current.idPlayer))
+			newState.addTotalCapture(current.idPlayer, s.getTotalCapture(current.idPlayer))
+			newState.addTotalCapture(opponent.idPlayer, s.getTotalCapture(opponent.idPlayer))
+			newState.maxDepth = s.maxDepth + 2
+			save := lastNode.prev
+			lastNode.prev = nil
+			ret := newState.alphabetaNegaScout(score, math.MaxInt16, 2, lastNode)
+			lastNode.prev = save
+			return ret
+		}
+
 		return score
 	}
-	// else no win
+	// no win
 	score = scoreNeutral
 	score -= current.alignment - opponent.alignment
 	score -= current.capture - opponent.capture
@@ -219,5 +227,5 @@ func (s *State) eval(n *Node, depth uint8) int16 {
 
 	//	fmt.Println("current: ", current)
 	//	fmt.Println("opponent: ", opponent)
-	return s.analyzeScore(&current, &opponent)
+	return s.analyzeScore(&current, &opponent, n)
 }
