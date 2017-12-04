@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	Bot = "AI"
+	Bot = "Deep blue ;)"
 )
 
 func Get() (*Data, error) {

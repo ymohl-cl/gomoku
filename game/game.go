@@ -29,6 +29,8 @@ type Game struct {
 	rules     *ruler.Rules
 	Bot       *alphabeta.IA
 	data      *database.Data
+	End       bool
+	Start     bool
 }
 
 // playersInfo struct contain db and stats about the 2 players actual players
@@ -43,7 +45,6 @@ type playersInfo struct {
 
 // New : Return a new instance and set default values of Game struct
 func New(d *database.Data) (*Game, error) {
-	var err error
 	g := Game{}
 
 	// set Player
@@ -54,9 +55,8 @@ func New(d *database.Data) (*Game, error) {
 		return nil, errors.New(errorPlayer)
 	}
 	if d.Current.P2 == nil {
-		if d.Current.P2, err = d.GetPlayerByName(database.Bot); err != nil {
-			return nil, err
-		}
+		d.Current.P2 = new(database.Player)
+		d.Current.P2.Name = database.Bot
 		g.Bot = alphabeta.NewIA()
 	}
 
@@ -73,6 +73,14 @@ func New(d *database.Data) (*Game, error) {
 
 	g.data = d
 	return &g, nil
+}
+
+// IsBot define is the player it's a bot
+func (g Game) IsBot(p *database.Player) bool {
+	if p == g.players.p2 && g.Bot != nil {
+		return true
+	}
+	return false
 }
 
 // GetCurrentPlayer : return the reference of the actual player
@@ -118,18 +126,25 @@ func (g *Game) Move(x, y uint8) (bool, string) {
 		nbCaps = &g.data.Current.NbCaptureP2
 	}
 
-	if ok, message := ruler.IsAvailablePosition(&g.board, int8(y), int8(x)); !ok {
-		return ok, message
-	}
+	if g.Start == true {
+		g.Start = false
+		// init first move
+		g.rules = ruler.New(valueToken, int8(y), int8(x))
+		g.rules.Movable = true
+	} else {
+		if ok, message := ruler.IsAvailablePosition(&g.board, int8(y), int8(x)); !ok {
+			return ok, message
+		}
 
-	// Create the ruler
-	g.rules = ruler.New(valueToken, int8(y), int8(x))
-	g.rules.Movable = true
+		// Create the ruler
+		g.rules = ruler.New(valueToken, int8(y), int8(x))
+		g.rules.Movable = true
 
-	//CheckAllRules
-	g.rules.CheckRules(&g.board, uint8(*nbCaps))
-	if !g.rules.Movable {
-		return false, g.rules.Info
+		//CheckAllRules
+		g.rules.CheckRules(&g.board, uint8(*nbCaps))
+		if !g.rules.Movable {
+			return false, g.rules.Info
+		}
 	}
 
 	//add Capture nb

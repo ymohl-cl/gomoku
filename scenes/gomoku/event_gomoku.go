@@ -9,27 +9,10 @@ import (
 )
 
 func (g *Gomoku) initMove() {
-	var x, y uint8 = 9, 9
-	var err error
+	var y, x uint8 = 9, 9
 
-	player := g.game.GetCurrentPlayer()
-	g.game.AppliesMove(x, y)
-	g.game.SwitchPlayer()
-	durationToPlay := g.game.GetTimeToPlay()
-
-	go func() {
-		if err = g.ChangeToken(x, y, player); err != nil {
-			panic(err)
-		}
-	}()
-
-	go func() {
-		if err = g.addHistory(x, y, durationToPlay, player); err != nil {
-			panic(err)
-		}
-	}()
-
-	g.game.Playing()
+	g.game.Start = true
+	go g.selectToken(y, x)
 }
 
 func (g *Gomoku) selectToken(values ...interface{}) {
@@ -85,16 +68,23 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 	}()
 
 	if ok, message := g.game.IsWin(); ok {
+		g.game.End = true
 		g.setNotice("WINNER YEAH BRAVO ! " + message)
+		// save the game
+		//time.Sleep(15 * time.Second)
 
-		time.Sleep(15 * time.Second)
-		g.switcher(conf.SMenu, true)
+		go func() {
+			if err := g.switcher(conf.SMenu, true); err != nil {
+				panic(err)
+			}
+			g.data.SaveSession()
+		}()
 		return
 	}
 
 	g.game.Playing()
 
-	if g.game.GetCurrentPlayer().Name == "AI" {
+	if g.game.IsBot(g.game.GetCurrentPlayer()) {
 		go g.DrawFilter()
 		go func() {
 			g.game.Bot.PlayOpponnent(int8(y), int8(x))
@@ -110,12 +100,14 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 }
 
 func (g *Gomoku) quit(values ...interface{}) {
-	g.data.SaveSession()
-	go func() {
-		if err := g.switcher(conf.SMenu, true); err != nil {
-			panic(err)
-		}
-	}()
+	if !g.game.End {
+		go func() {
+			if err := g.switcher(conf.SMenu, true); err != nil {
+				panic(err)
+			}
+			g.data.SaveSession()
+		}()
+	}
 }
 
 // setNotice allow draw informations to the player
@@ -128,7 +120,7 @@ func (g *Gomoku) setNotice(str string) {
 	if err := g.notice.Init(g.renderer); err != nil {
 		panic(errors.New(objects.ErrorRenderer))
 	}
-	time.Sleep(3 * time.Second)
+	time.Sleep(5 * time.Second)
 	if g.notice.GetIDSDL() == idSDL {
 		g.notice.Close()
 	}
