@@ -10,13 +10,14 @@ func CreatePlayer(name string) *Player {
 	p := new(Player)
 
 	p.Name = name
+	p.Saves = -1
 	return p
 }
 
 func (P *Player) DeleteSave() string {
-	if len(P.Saves) == 0 {
+	if P.Saves == -1 {
 		return "No session saved"
 	}
-	P.Saves = make([]int32, 0)
+	P.Saves = -1
 	return ""
 }

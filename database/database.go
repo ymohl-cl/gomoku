@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	Bot = "Deep blue ;)"
+	Bot = "BOT BLUE TADAAM ;)"
 )
 
 func Get() (*Data, error) {
@@ -40,11 +40,6 @@ func Get() (*Data, error) {
 }
 
 func (D *Data) initSave() error {
-	if len(D.Players) == 0 {
-		AI := CreatePlayer(Bot)
-		D.Players = append(D.Players, AI)
-	}
-
 	D.Current = new(Session)
 	return nil
 }
@@ -76,19 +71,19 @@ func (d *Data) DeletePlayer(p *Player) (int, error) {
 	for id, pt := range d.Players {
 		if pt.Name == p.Name {
 			d.Players = append(d.Players[:id], d.Players[id+1:]...)
-			//d.Current = nil
 			if d.Current.P1 == p {
 				d.Current.P1 = nil
 			} else if d.Current.P2 == p {
 				d.Current.P2 = nil
 			}
 
-			for _, i := range p.Saves {
-				d.Sessions = append(d.Sessions[:i], d.Sessions[i+1:]...)
+			for index, _ := range d.Sessions {
+				if int32(index) == p.Saves {
+					d.Sessions = append(d.Sessions[:index], d.Sessions[index+1:]...)
+				}
 			}
 
 			d.Write()
-			//			d.Current = new(Session)
 			return id, nil
 		}
 	}
@@ -110,7 +105,8 @@ func (d *Data) SaveSession() {
 
 	for index, s := range d.Sessions {
 		if s == d.Current {
-			d.Current.P1.Saves = append(d.Current.P1.Saves, int32(index))
+			d.Current.P1.Saves = int32(index)
+			break
 		}
 	}
 

@@ -70,8 +70,6 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 	if ok, message := g.game.IsWin(); ok {
 		g.game.End = true
 		g.setNotice("WINNER YEAH BRAVO ! " + message)
-		// save the game
-		//time.Sleep(15 * time.Second)
 
 		go func() {
 			if err := g.switcher(conf.SMenu, true); err != nil {

@@ -63,7 +63,7 @@ func (m *Menu) Init() error {
 	if m.data == nil {
 		return errors.New(objects.ErrorData)
 	}
-	if len(m.layers) != 8 {
+	if len(m.layers) == 0 {
 		return errors.New(scenes.ErrorLayers)
 	}
 	if m.input == nil {

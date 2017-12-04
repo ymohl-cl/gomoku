@@ -16,7 +16,7 @@ import (
 
 // LoadGame : start a new party
 func (m *Menu) LoadGame(values ...interface{}) {
-	fmt.Println("Load Game")
+	fmt.Println("load game")
 }
 
 // DeletePlayer : _
@@ -35,8 +35,6 @@ func (m *Menu) DeletePlayer(values ...interface{}) {
 		panic(errorValuesEmpty)
 	}
 
-	m.m.Lock()
-	defer m.m.Unlock()
 	if id, err = m.data.DeletePlayer(p); err != nil {
 		go m.setNotice(err.Error())
 		return
@@ -46,7 +44,7 @@ func (m *Menu) DeletePlayer(values ...interface{}) {
 		if err = m.removeUIPlayer(id); err != nil {
 			panic(err)
 		}
-		//m.updateVS()
+		m.updateVS()
 	}()
 }
 
