@@ -1,7 +1,6 @@
 package alphabeta
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
@@ -21,8 +20,8 @@ const (
 	// scoreFirst is a bonus to the first player which play to differ the equal score
 	scoreFirst = int16(1)
 	// scoreWinDetection is set when win situation is detected on out simulation
-	scoreWinDetection = scoreWin + 1000
-	scoreByCapture    = int16(6)
+	scoreWinDetection = scoreWin + 5000
+	scoreByCapture    = int16(4)
 	// scoreAlign is a bonus to the additional alignments
 	scoreByAlign = int16(1)
 	// scoreFree / half and flanked are the multiplier to the alignment type
@@ -59,7 +58,6 @@ func (s *State) scoreAlignment(n *Node, sc *Score, flag bool) {
 	var a *alignment.Alignment
 	var nbr int16
 	var score int16
-	var tree bool
 
 	// get number align to the spot
 	if nbr = n.rule.GetNumberAlignment(); nbr == 0 {
@@ -69,25 +67,6 @@ func (s *State) scoreAlignment(n *Node, sc *Score, flag bool) {
 	// remove from counter the better alignment
 	nbr--
 	a = n.rule.GetBetterAlignment()
-
-	// check wins situations
-	if flag == true && a.Size == 4 {
-		score = scoreWinDetection - nbr + depthOutEvalToFourSpots
-	} else if flag == true && a.Size == 3 && a.IsThree {
-		score = scoreWinDetection - nbr + depthOutEvalToFreeThree
-		tree = true
-	}
-	if score != 0 && sc.alignment > score {
-		sc.alignment = score
-		sc.nbAlignements = nbr
-		sc.isTree = tree
-		return
-	}
-
-	// don't continue, because the next step can't be better if the score has already win detected
-	if sc.alignment < 0 {
-		return
-	}
 
 	// define multiplier from alignment type
 	if a.IsStyle(rdef.AlignHalf) {
@@ -112,15 +91,31 @@ func (s *State) scoreAlignment(n *Node, sc *Score, flag bool) {
 
 // evalAlignment return score to alignment parameter on this evaluation
 func (s *State) evalAlignment(n *Node, current, opponent *Score) {
-	spots := new([5]*Node)
+	spots := new([10]*Node)
 	index := 0
 
-	// get score current
-	n.rule.UpdateAlignments(s.board)
-	s.scoreAlignment(n, current, true)
+	flag := false
+	// get score current - flag define current player
+	for node := n; node != nil; node = node.prev {
+		if flag == false && node.rule.IsMyPosition(s.board) {
+			// remove previous spots from the board.
+			s.updateTokenPlayer(spots)
+			// get alignments
+			node.rule.UpdateAlignments(s.board)
+			// score
+			s.scoreAlignment(node, current, true)
+			spots[index] = node
+			index++
+		}
+		flag = !flag
+	}
+	// restore spots deleted
+	s.restoreTokenPlayer(spots)
 
+	spots = new([10]*Node)
+	index = 0
 	// get score opponent - flag define the opponent turn
-	flag := true
+	flag = true
 	for node := n.prev; node != nil; node = node.prev {
 		if flag == true && node.rule.IsMyPosition(s.board) {
 			// remove previous spots from the board.
@@ -128,7 +123,7 @@ func (s *State) evalAlignment(n *Node, current, opponent *Score) {
 			// get alignments
 			node.rule.UpdateAlignments(s.board)
 			// score
-			s.scoreAlignment(node, opponent, false)
+			s.scoreAlignment(node, opponent, true)
 			spots[index] = node
 			index++
 		}
@@ -184,108 +179,56 @@ func (s *State) evalCapture(n *Node, current, opponent *Score) {
 func (s *State) analyzeScore(current, opponent *Score, lastNode *Node) int16 {
 	var ret int16
 
-	// win condition
-	if current.alignment < 0 {
-		ret = current.alignment
-		ret -= current.capture
-		ret += opponent.alignment
-		ret += opponent.capture
+	var scoreCurrent int16
+	var scoreCurrentBis int16
+	var scoreOpponent int16
+	var scoreOpponentBis int16
 
-		if current.isTree && opponent.capturable && s.maxDepth < 10 {
-			s.maxDepth += 2
-			ret2 := s.alphabetaNegaScout(ret, math.MaxInt16, 2, nil)
-			fmt.Println("call with maxDepth: ", s.maxDepth, " - oldeRet: ", ret, " - newRet: ", ret2)
-			s.maxDepth -= 2
-			ret = ret2
-		}
-
-		return ret
+	if current.alignment > current.capture {
+		scoreCurrent = current.alignment
+		scoreCurrentBis = current.capture
+	} else {
+		scoreCurrent = current.capture
+		scoreCurrentBis = current.alignment
 	}
 
-	/*else if opponent.alignment < 0 {
-		ret = opponent.alignment
-		ret -= opponent.capture
-		ret += current.alignment
-		ret += current.capture
-		ret *= -1
-
-		if current.capturable && s.maxDepth < 10 {
-			newState := New(s.board, rdef.GetOtherPlayer(current.idPlayer))
-			newState.addTotalCapture(current.idPlayer, s.getTotalCapture(current.idPlayer))
-			newState.addTotalCapture(opponent.idPlayer, s.getTotalCapture(opponent.idPlayer))
-			newState.maxDepth = s.maxDepth + 2
-			save := lastNode.prev
-			lastNode.prev = nil
-			ret = newState.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, 2, lastNode)
-			lastNode.prev = save
-			fmt.Println("depth: ", newState.maxDepth)
-			return ret
-		}
-
-		return ret
-	}*/
-	/*score = opponent.alignment
-	score -= opponent.capture
-	score += current.alignment
-	score += current.capture
-	score *= -1
-	// check deap blue
-	if opponent.alignment < scoreWinDetection && s.maxDepth < 10 {
-		newState := New(s.board, rdef.GetOtherPlayer(current.idPlayer))
-		newState.addTotalCapture(current.idPlayer, s.getTotalCapture(current.idPlayer))
-		newState.addTotalCapture(opponent.idPlayer, s.getTotalCapture(opponent.idPlayer))
-		newState.maxDepth = s.maxDepth + 2
-		save := lastNode.prev
-		lastNode.prev = nil
-		ret := newState.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, 2, nil)
-		lastNode.prev = save
-		return ret
-	}*/
-
-	//	return score
-	//}
-
-	// no win
+	if opponent.alignment > opponent.capture {
+		scoreOpponent = opponent.alignment
+		scoreOpponentBis = opponent.capture
+	} else {
+		scoreOpponent = opponent.capture
+		scoreOpponentBis = opponent.alignment
+	}
 
 	ret = scoreNeutral
-	ret -= current.alignment - opponent.alignment
-	ret -= current.capture - opponent.capture
+	ret -= (scoreCurrent - scoreOpponent)
 
-	// check deap blue
-	/*	if s.maxDepth < 10 {
-			newState := New(s.board, rdef.GetOtherPlayer(current.idPlayer))
-			newState.addTotalCapture(current.idPlayer, s.getTotalCapture(current.idPlayer))
-			newState.addTotalCapture(opponent.idPlayer, s.getTotalCapture(opponent.idPlayer))
-			newState.maxDepth = s.maxDepth + 2
-			save := lastNode.prev
-			lastNode.prev = nil
-			ret = newState.alphabetaNegaScout(ret, math.MaxInt16, 2, lastNode)
-			lastNode.prev = save
-			fmt.Println("depth: ", newState.maxDepth)
-			return ret
-		}
-	*/
+	if scoreCurrent > scoreOpponent && scoreCurrentBis > scoreOpponentBis {
+		ret -= (scoreCurrent - scoreOpponent + scoreCurrentBis)
+	} else if scoreOpponent > scoreCurrent && scoreOpponentBis > scoreCurrentBis {
+		ret += (scoreOpponent - scoreCurrent + scoreOpponentBis)
+	} else {
+		ret -= (scoreCurrent - scoreOpponent)
+	}
+
 	return ret
 }
 
 // eval function define the weight to the evaluation
 // see constantes to check the score parameters
-func (s *State) eval(n *Node, depth uint8) int16 {
+func (s *State) eval(n *Node, depth uint16) int16 {
 	var current Score
 	var opponent Score
 
 	current.idPlayer = n.rule.GetPlayer()
 	opponent.idPlayer = rdef.GetOtherPlayer(current.idPlayer)
 
+	s.evalCapture(n, &current, &opponent)
+	s.evalAlignment(n, &current, &opponent)
+
 	// wins situations
 	if n.rule.Win {
 		return scoreWin + int16(s.maxDepth-depth)
 	}
-
-	s.evalCapture(n, &current, &opponent)
-	s.evalAlignment(n, &current, &opponent)
-
-	//	fmt.Println("current: ", current)
-	//	fmt.Println("opponent: ", opponent)
 	return s.analyzeScore(&current, &opponent, n)
 }

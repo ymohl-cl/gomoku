@@ -9,6 +9,21 @@ import (
 	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
 )
 
+const (
+	levelLow    = 1
+	levelMedium = 2
+	levelHard   = 3
+)
+
+type IA struct {
+	level uint8
+	moves *Node
+}
+
+func NewIA() *IA {
+	return &IA{}
+}
+
 // InfoPlayer of previous evaluation
 type InfoPlayer struct {
 	totalCapture uint8
@@ -16,7 +31,8 @@ type InfoPlayer struct {
 
 // State of evaluation
 type State struct {
-	maxDepth      uint8
+	maxDepth      uint16
+	limitDepth    uint16
 	board         *[19][19]uint8
 	currentPlayer uint8
 	infoP1        InfoPlayer
@@ -74,28 +90,22 @@ func (s *State) newNode(y, x int8) *Node {
 	return n
 }
 
-func (s *State) updateTokenPlayer(nodes *[5]*Node) {
+func (s *State) updateTokenPlayer(nodes *[10]*Node) {
 	var n *Node
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 10; i++ {
 		if n = (*nodes)[i]; n == nil {
 			break
 		}
 		y, x := n.rule.GetPosition()
 		(*s.board)[y][x] = rdef.Empty
 	}
-	/*
-		for _, n := range *nodes {
-			y, x := n.rule.GetPosition()
-			(*s.board)[y][x] = rdef.Empty
-		}
-	*/
 }
 
-func (s *State) restoreTokenPlayer(nodes *[5]*Node) {
+func (s *State) restoreTokenPlayer(nodes *[10]*Node) {
 	var n *Node
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 10; i++ {
 		if n = (*nodes)[i]; n == nil {
 			break
 		}
@@ -131,7 +141,7 @@ func (s *State) addNode(n *Node) {
 	s.lst = n
 }
 
-func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint8, n *Node) int16 {
+func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint16, n *Node) int16 {
 	if (n != nil && n.rule.Win) || depth == 0 {
 		return s.eval(n, depth)
 	}
@@ -156,15 +166,22 @@ func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint8, n *Node) int1
 				}
 			}
 
+			if alpha < node.weight && depth == 1 && s.maxDepth < s.limitDepth && !node.rule.Win {
+				s.maxDepth += 2
+				node.weight = -s.alphabetaNegaScout(-beta, -node.weight, depth+2, node)
+				s.maxDepth -= 2
+			}
+
 			// restore move and restore data
 			s.restoreData(node, n)
 
-			if depth == s.maxDepth {
+			// save best moves for the player
+			if depth == s.maxDepth-1 && alpha < node.weight {
 				s.addNode(node)
-
-				if alpha < node.weight {
-					s.save = node
-				}
+			}
+			// save best moves for the IA
+			if depth == s.maxDepth && alpha < node.weight {
+				s.save = node
 			}
 
 			alpha = maxWeight(alpha, node.weight)
@@ -178,34 +195,53 @@ func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint8, n *Node) int1
 }
 
 // Play start the alphabeta algorythm
-func Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
+func (i *IA) Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 	state := New(b, rdef.Player2)
 	state.addTotalCapture(rdef.Player1, uint8(s.NbCaptureP1))
 	state.addTotalCapture(rdef.Player2, uint8(s.NbCaptureP2))
 
-	//ret := state.alphabetaNegaScout(math.MinInt8+1, math.MaxInt8, state.maxDepth, nil)
-	ret := state.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, state.maxDepth, nil)
-	fmt.Println("ret: ", ret)
-
-	if state.save == nil {
-		fmt.Println("BOUuuuuuuuuuuu !!!!!!!!!!")
+	switch i.level {
+	case levelLow:
+		state.limitDepth = 6
+	case levelMedium:
+		state.limitDepth = 8
+	case levelHard:
+		state.limitDepth = 10
+	default:
+		state.limitDepth = 4
 	}
-	//	tmp := int16(math.MinInt16)
 
-	//	yi, xi := state.save.rule.GetPosition()
+	fmt.Println("limit: ", state.limitDepth)
+	_ = state.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, state.maxDepth, nil)
 
-	//	fmt.Println("save weight: ", state.save.weight, " y et x: ", yi, " - ", xi)
-	/*
-		for n := state.lst; n != nil; n = n.next {
-			y, x := n.rule.GetPosition()
-			fmt.Println("Node weight: ", n.weight, " y et x: ", y, " - ", x)
-			if tmp <= n.weight {
-				tmp = n.weight
-				state.save = n
-			}
-		}
-	*/
+	i.moves = state.lst
 	y, x := state.save.rule.GetPosition()
 	c <- uint8(y)
 	c <- uint8(x)
+}
+
+func (i *IA) PlayOpponnent(y, x int8) {
+	var weightMove int16
+	var bestScore int16
+
+	bestScore = math.MinInt16 + 1
+	for n := i.moves; n != nil; n = n.next {
+		fmt.Println("node weight: ", n.weight)
+		if n.weight > bestScore {
+			bestScore = n.weight
+		}
+		posY, posX := n.rule.GetPosition()
+		if posY == y && posX == x {
+			weightMove = n.weight
+		}
+	}
+
+	fmt.Println("move player: ", weightMove, " - y: ", y, " - x: ", x)
+
+	if weightMove == bestScore && i.level < levelHard {
+		fmt.Println("GG")
+		i.level++
+	} else {
+		fmt.Println("Bou")
+	}
 }

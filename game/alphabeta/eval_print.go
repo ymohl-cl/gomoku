@@ -2,7 +2,7 @@ package alphabeta
 
 import "fmt"
 
-func (s *State) printEval(n *Node, depth uint8, score int16) {
+func (s *State) printEval(n *Node, depth uint16, score int16) {
 	fmt.Println("Score eval: ", score, " - depth: ", depth)
 
 	depthNode := s.maxDepth - depth

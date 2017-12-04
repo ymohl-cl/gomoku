@@ -6,7 +6,6 @@ import (
 
 	"github.com/ymohl-cl/game-builder/objects"
 	"github.com/ymohl-cl/gomoku/conf"
-	"github.com/ymohl-cl/gomoku/game/alphabeta"
 )
 
 func (g *Gomoku) initMove() {
@@ -98,8 +97,9 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 	if g.game.GetCurrentPlayer().Name == "AI" {
 		go g.DrawFilter()
 		go func() {
+			g.game.Bot.PlayOpponnent(int8(y), int8(x))
 			c := make(chan uint8)
-			go alphabeta.Play(g.game.GetBoard(), g.data.Current, c)
+			go g.game.Bot.Play(g.game.GetBoard(), g.data.Current, c)
 			yi, xi := <-c, <-c
 			go g.selectToken(yi, xi)
 		}()
