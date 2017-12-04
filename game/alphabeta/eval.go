@@ -201,7 +201,6 @@ func (s *State) analyzeScore(current, opponent *Score, lastNode *Node) int16 {
 	}
 
 	ret = scoreNeutral
-	ret -= (scoreCurrent - scoreOpponent)
 
 	if scoreCurrent > scoreOpponent && scoreCurrentBis > scoreOpponentBis {
 		ret -= (scoreCurrent - scoreOpponent + scoreCurrentBis)
