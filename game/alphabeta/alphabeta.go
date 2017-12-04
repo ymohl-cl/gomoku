@@ -1,7 +1,6 @@
 package alphabeta
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/ymohl-cl/gomoku/database"
@@ -211,7 +210,6 @@ func (i *IA) Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 		state.limitDepth = 4
 	}
 
-	fmt.Println("limit: ", state.limitDepth)
 	_ = state.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, state.maxDepth, nil)
 
 	i.moves = state.lst
@@ -226,7 +224,6 @@ func (i *IA) PlayOpponnent(y, x int8) {
 
 	bestScore = math.MinInt16 + 1
 	for n := i.moves; n != nil; n = n.next {
-		fmt.Println("node weight: ", n.weight)
 		if n.weight > bestScore {
 			bestScore = n.weight
 		}
@@ -236,12 +233,7 @@ func (i *IA) PlayOpponnent(y, x int8) {
 		}
 	}
 
-	fmt.Println("move player: ", weightMove, " - y: ", y, " - x: ", x)
-
 	if weightMove == bestScore && i.level < levelHard {
-		fmt.Println("GG")
 		i.level++
-	} else {
-		fmt.Println("Bou")
 	}
 }
