@@ -318,3 +318,20 @@ func (g *Gomoku) addNotice() error {
 	g.layers[layerNotice] = append(g.layers[layerNotice], g.notice)
 	return nil
 }
+
+func (g *Gomoku) addModal() error {
+	var b *block.Block
+	var err error
+
+	// create blockheader
+	if b, err = block.New(block.Filled); err != nil {
+		return err
+	}
+	b.SetVariantStyle(conf.ColorBlockRed, conf.ColorBlockGreen, conf.ColorBlockBlue, conf.ColorBlockOpacity, objects.SBasic, objects.SClick, objects.SOver)
+	b.UpdatePosition(conf.OriginX, conf.OriginY)
+	b.UpdateSize(conf.WindowWidth, conf.WindowHeight-conf.MenuHeaderHeight)
+	b.SetAction(g.ModalFunction)
+	g.modal = b
+	g.layers[layerModal] = append(g.layers[layerModal], b)
+	return nil
+}

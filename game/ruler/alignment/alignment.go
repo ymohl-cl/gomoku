@@ -256,3 +256,60 @@ func (a Alignment) IsConsecutive(mask *[11]uint8) bool {
 	}
 	return false
 }
+
+// positionIsCapturable : Check if spot defined by posY and posX is capturable
+func positionIsCapturable(b *[19][19]uint8, posY, posX int8, player uint8) bool {
+	opponent := rdef.GetOtherPlayer(player)
+
+	for dirY := int8(-1); dirY <= 1; dirY++ {
+		for dirX := int8(-1); dirX <= 1; dirX++ {
+			if dirY == 0 && dirX == 0 {
+				continue
+			}
+
+			if !rdef.IsOnTheBoard(posY+dirY, posX+dirX) || !rdef.IsOnTheBoard(posY+dirY*2, posX+dirX*2) || !rdef.IsOnTheBoard(posY+dirY*-1, posX+dirX*-1) {
+				continue
+			}
+
+			if (*b)[posY+dirY][posX+dirX] == player {
+				if ((*b)[posY+dirY*2][posX+dirX*2] == opponent && (*b)[posY+dirY*-1][posX+dirX*-1] == rdef.Empty) ||
+					((*b)[posY+dirY*2][posX+dirX*2] == rdef.Empty && (*b)[posY+dirY*-1][posX+dirX*-1] == opponent) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// alignIsCapturable : browse all point of alignment and check if the spot is capturable
+func (a *Alignment) IsCapturable(b *[19][19]uint8, player uint8, posY, posX int8) {
+	i := a.iWin
+	if i == nil {
+		return
+	}
+
+	for index := 5; index >= 0 && i.mask[index] == player; index-- {
+		y := posY + i.dirY*int8(5-index)
+		x := posX + i.dirX*int8(5-index)
+		if positionIsCapturable(b, y, x, player) {
+			i.capturable = true
+		}
+	}
+
+	for index := 6; index < 11 && i.mask[index] == player; index++ {
+		y := posY + i.dirY*int8(5-index)
+		x := posX + i.dirX*int8(5-index)
+		if positionIsCapturable(b, y, x, player) {
+			i.capturable = true
+		}
+	}
+	return
+}
+
+func (a *Alignment) GetCaptureStatus() bool {
+	if a.iWin == nil {
+		return false
+	}
+	return a.iWin.capturable
+}

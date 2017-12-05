@@ -141,6 +141,8 @@ func (m *Menu) Play(values ...interface{}) {
 	} else if status == 0 && m.data.Current.P2 == nil {
 		go m.setNotice("You need choice player two")
 		return
+	} else if status == 1 {
+		m.data.Current.P2 = nil
 	}
 
 	go func() {

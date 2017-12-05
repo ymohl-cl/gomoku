@@ -143,7 +143,10 @@ func (s *State) addNode(n *Node) {
 
 func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint16, n *Node) int16 {
 	if (n != nil && n.rule.Win) || depth == 0 {
-		return s.eval(n, depth)
+		a := n.rule.GetBetterAlignment()
+		if depth == 0 || (a != nil && !a.GetCaptureStatus()) {
+			return s.eval(n, depth)
+		}
 	}
 
 	first := true

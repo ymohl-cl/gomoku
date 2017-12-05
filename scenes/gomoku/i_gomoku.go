@@ -45,11 +45,10 @@ func (g *Gomoku) Build() error {
 	if err = g.addNotice(); err != nil {
 		return err
 	}
-	/*
-		if err = g.addModal(); err != nil {
-			return err
-		}
-	*/
+	if err = g.addModal(); err != nil {
+		return err
+	}
+
 	g.layers[layerHistoryBlock] = nil
 	g.layers[layerHistoryText] = nil
 	return nil
@@ -142,6 +141,9 @@ func (g *Gomoku) SetSwitcher(f func(uint8, bool) error) {
 func (g *Gomoku) Update() {
 	var err error
 
+	if g.game.End {
+		return
+	}
 	duration := g.game.GetTimeGame()
 	str := controller.TimeToString(duration)
 	// check if need to change

@@ -7,6 +7,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/ymohl-cl/game-builder/audio"
 	"github.com/ymohl-cl/game-builder/objects"
+	"github.com/ymohl-cl/game-builder/objects/block"
 	"github.com/ymohl-cl/game-builder/objects/text"
 	"github.com/ymohl-cl/gomoku/database"
 	"github.com/ymohl-cl/gomoku/game"
@@ -39,6 +40,7 @@ type Gomoku struct {
 	music  *audio.Audio
 	notice *text.Text
 	timer  *text.Text
+	modal  *block.Block
 	// input
 
 	/* specific objects */

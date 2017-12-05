@@ -21,7 +21,7 @@ const (
 	scoreFirst = int16(1)
 	// scoreWinDetection is set when win situation is detected on out simulation
 	scoreWinDetection = scoreWin + 5000
-	scoreByCapture    = int16(4)
+	scoreByCapture    = int16(15)
 	// scoreAlign is a bonus to the additional alignments
 	scoreByAlign = int16(1)
 	// scoreFree / half and flanked are the multiplier to the alignment type
@@ -82,10 +82,10 @@ func (s *State) scoreAlignment(n *Node, sc *Score, flag bool) {
 	score += nbr * scoreByAlign
 
 	// check better score
-	if sc.alignment < score {
-		sc.alignment = score
-		sc.nbAlignements = nbr
-	}
+	//	if sc.alignment < score {
+	sc.alignment += score
+	//	sc.nbAlignements = nbr
+	//}
 	return
 }
 
@@ -179,37 +179,41 @@ func (s *State) evalCapture(n *Node, current, opponent *Score) {
 func (s *State) analyzeScore(current, opponent *Score, lastNode *Node) int16 {
 	var ret int16
 
-	var scoreCurrent int16
-	var scoreCurrentBis int16
-	var scoreOpponent int16
-	var scoreOpponentBis int16
-
-	if current.alignment > current.capture {
-		scoreCurrent = current.alignment
-		scoreCurrentBis = current.capture
-	} else {
-		scoreCurrent = current.capture
-		scoreCurrentBis = current.alignment
-	}
-
-	if opponent.alignment > opponent.capture {
-		scoreOpponent = opponent.alignment
-		scoreOpponentBis = opponent.capture
-	} else {
-		scoreOpponent = opponent.capture
-		scoreOpponentBis = opponent.alignment
-	}
-
+	/*
+		var scoreCurrent int16
+		var scoreCurrentBis int16
+		var scoreOpponent int16
+		var scoreOpponentBis int16
+	*/
 	ret = scoreNeutral
+	ret -= (current.alignment + current.capture)
+	ret += (opponent.alignment + opponent.capture)
+	/*	if current.alignment > current.capture {
+			scoreCurrent = current.alignment
+			scoreCurrentBis = current.capture
+		} else {
+			scoreCurrent = current.capture
+			scoreCurrentBis = current.alignment
+		}
 
-	if scoreCurrent > scoreOpponent && scoreOpponentBis == 0 {
-		ret -= (scoreCurrent - scoreOpponent + scoreCurrentBis)
-	} else if scoreOpponent > scoreCurrent && scoreCurrentBis == 0 {
-		ret += (scoreOpponent - scoreCurrent + scoreOpponentBis)
-	} else {
-		ret -= (scoreCurrent - scoreOpponent)
-	}
+		if opponent.alignment > opponent.capture {
+			scoreOpponent = opponent.alignment
+			scoreOpponentBis = opponent.capture
+		} else {
+			scoreOpponent = opponent.capture
+			scoreOpponentBis = opponent.alignment
+		}
 
+		ret = scoreNeutral
+
+		if scoreCurrent > scoreOpponent && scoreOpponentBis == 0 {
+			ret -= (scoreCurrent - scoreOpponent + scoreCurrentBis)
+		} else if scoreOpponent > scoreCurrent && scoreCurrentBis == 0 {
+			ret += (scoreOpponent - scoreCurrent + scoreOpponentBis)
+		} else {
+			ret -= (scoreCurrent - scoreOpponent)
+		}
+	*/
 	return ret
 }
 
@@ -227,7 +231,10 @@ func (s *State) eval(n *Node, depth uint16) int16 {
 
 	// wins situations
 	if n.rule.Win {
-		return scoreWin + int16(s.maxDepth-depth)
+		a := n.rule.GetBetterAlignment()
+		if a != nil && !a.GetCaptureStatus() {
+			return scoreWin + int16(s.maxDepth-depth)
+		}
 	}
 	return s.analyzeScore(&current, &opponent, n)
 }

@@ -31,6 +31,7 @@ type Game struct {
 	data      *database.Data
 	End       bool
 	Start     bool
+	RulerWin  *ruler.Rules
 }
 
 // playersInfo struct contain db and stats about the 2 players actual players
@@ -195,4 +196,13 @@ func (g Game) GetTimeGame() time.Duration {
 // GetBoard : _
 func (g Game) GetBoard() *[19][19]uint8 {
 	return &g.board
+}
+
+func (g Game) GetRules() *ruler.Rules {
+	return g.rules
+}
+
+func (g Game) IsCapturable() bool {
+	a := g.rules.GetBetterAlignment()
+	return a.GetCaptureStatus()
 }

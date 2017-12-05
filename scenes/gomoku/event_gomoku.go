@@ -19,6 +19,10 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 	var x, y uint8
 	var err error
 
+	if g.game.End {
+		return
+	}
+
 	if len(values) != 2 {
 		panic(errors.New("More two values specified on select token"))
 	}
@@ -45,7 +49,10 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 
 	durationToPlay := g.game.GetTimeToPlay()
 
+	// nb is saved to GetWinCapturabled
+	nb := 0
 	for _, cap := range g.game.GetCaptures() {
+		nb++
 		xt := cap.X
 		yt := cap.Y
 		go func() {
@@ -67,17 +74,28 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 		}
 	}()
 
-	if ok, message := g.game.IsWin(); ok {
-		g.game.End = true
-		g.setNotice("WINNER YEAH BRAVO ! " + message)
-
-		go func() {
-			if err := g.switcher(conf.SMenu, true); err != nil {
-				panic(err)
+	if g.game.RulerWin != nil {
+		g.game.RulerWin.UpdateAlignments(g.game.GetBoard())
+		a := g.game.RulerWin.GetBetterAlignment()
+		if a.Size >= 5 {
+			g.game.End = true
+			if g.data.Current.P1 == player {
+				g.setNotice("WINNER " + g.data.Current.P2.Name + " by alignment ;)")
+			} else {
+				g.setNotice("WINNER " + g.data.Current.P1.Name + " by alignment ;)")
 			}
-			g.data.SaveSession()
-		}()
-		return
+			return
+		}
+		g.game.RulerWin = nil
+	}
+
+	if ok, message := g.game.IsWin(); ok {
+		if !g.game.IsCapturable() {
+			g.game.End = true
+			g.setNotice("WINNER " + player.Name + " " + message)
+		} else {
+			g.game.RulerWin = g.game.GetRules()
+		}
 	}
 
 	g.game.Playing()
@@ -91,21 +109,19 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 			yi, xi := <-c, <-c
 			go g.selectToken(yi, xi)
 		}()
-	} else {
+	} else if g.game.Bot != nil {
 		go g.HideFilter()
 	}
 
 }
 
 func (g *Gomoku) quit(values ...interface{}) {
-	if !g.game.End {
-		go func() {
-			if err := g.switcher(conf.SMenu, true); err != nil {
-				panic(err)
-			}
-			g.data.SaveSession()
-		}()
-	}
+	go func() {
+		if err := g.switcher(conf.SMenu, true); err != nil {
+			panic(err)
+		}
+		g.data.SaveSession()
+	}()
 }
 
 // setNotice allow draw informations to the player
@@ -122,4 +138,9 @@ func (g *Gomoku) setNotice(str string) {
 	if g.notice.GetIDSDL() == idSDL {
 		g.notice.Close()
 	}
+}
+
+// ModalFunction mock action
+func (g *Gomoku) ModalFunction(values ...interface{}) {
+	return
 }

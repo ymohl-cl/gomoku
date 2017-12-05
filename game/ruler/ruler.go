@@ -156,10 +156,10 @@ func (r *Rules) analyzeWinCondition(b *[19][19]uint8, nbCaptured uint8) {
 
 	for _, align := range r.aligns {
 		if i := align.GetInfosWin(); i != nil {
-			if !i.IsCapturable() {
-				r.Win = true
-				r.Info = winByAlignmentMessage
-			}
+			r.Win = true
+			r.Info = winByAlignmentMessage
+			y, x := r.GetPosition()
+			align.IsCapturable(b, r.GetPlayer(), y, x)
 			// no win because capture is possible
 			// r.ApplyMove(b)
 			// bool := align.isCapturable(b, r.player, r.y, r.x)
@@ -328,57 +328,3 @@ func (r *Rules) UpdateAlignments(board *[19][19]uint8) {
 		}
 	}
 }
-
-/*
-// positionIsCapturable : Check if spot defined by posY and posX is capturable
-func positionIsCapturable(b *[19][19]uint8, posY, posX int8, player uint8) bool {
-	opponent := GetOtherPlayer(player)
-
-	for dirY := int8(-1); dirY <= 1; dirY++ {
-		for dirX := int8(-1); dirX <= 1; dirX++ {
-			if dirY == 0 && dirX == 0 {
-				continue
-			}
-
-			if !isOnTheBoard(posY+dirY, posX+dirX) || !isOnTheBoard(posY+dirY*2, posX+dirX*2) || !isOnTheBoard(posY+dirY*-1, posX+dirX*-1) {
-				continue
-			}
-
-			if (*b)[posY+dirY][posX+dirX] == player {
-				if ((*b)[posY+dirY*2][posX+dirX*2] == opponent && (*b)[posY+dirY*-1][posX+dirX*-1] == Empty) ||
-					((*b)[posY+dirY*2][posX+dirX*2] == Empty && (*b)[posY+dirY*-1][posX+dirX*-1] == opponent) {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-// alignIsCapturable : browse all point of alignment and check if the spot is capturable
-func (a *Align) isCapturable(b *[19][19]uint8, player uint8, posY, posX int8) bool {
-	i := a.iWin
-	if i == nil {
-		return false
-	}
-
-	for index := 5; index >= 0 && i.mask[index] == player; index-- {
-		y := posY + i.dirY*int8(5-index)
-		x := posX + i.dirX*int8(5-index)
-		if positionIsCapturable(b, y, x, player) {
-			return true
-		}
-	}
-
-	for index := 6; index < 11 && i.mask[index] == player; index++ {
-		y := posY + i.dirY*int8(5-index)
-		x := posX + i.dirX*int8(5-index)
-		if positionIsCapturable(b, y, x, player) {
-			return true
-		}
-	}
-
-	return false
-}
-
-*/
