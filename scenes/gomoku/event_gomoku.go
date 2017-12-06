@@ -2,6 +2,7 @@ package gomoku
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ymohl-cl/game-builder/objects"
@@ -39,6 +40,21 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 		}
 	}
 
+	PrevWin := true
+	if g.game.RulerWin != nil {
+		fmt.Println("Situation win. Opponent play on ", y, " - ", x)
+		for _, s := range g.game.RulerWin.CapturableWin {
+			fmt.Println("Spot captures: ", s.Y, " - ", s.X)
+			if y == uint8(s.Y) && x == uint8(s.X) {
+				PrevWin = false
+				g.game.RulerWin = nil
+				break
+			}
+		}
+	} else {
+		PrevWin = false
+	}
+
 	player := g.game.GetCurrentPlayer()
 
 	if ok, message := g.game.Move(x, y); !ok {
@@ -74,30 +90,48 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 		}
 	}()
 
-	if g.game.RulerWin != nil {
-		g.game.RulerWin.UpdateAlignments(g.game.GetBoard())
-		a := g.game.RulerWin.GetBetterAlignment()
-		if a.Size >= 5 {
-			g.game.End = true
-			if g.data.Current.P1 == player {
-				g.setNotice("WINNER " + g.data.Current.P2.Name + " by alignment ;)")
-			} else {
-				g.setNotice("WINNER " + g.data.Current.P1.Name + " by alignment ;)")
+	/*
+		if g.game.RulerWin != nil {
+			g.game.RulerWin.UpdateAlignments(g.game.GetBoard())
+			a := g.game.RulerWin.GetBetterAlignment()
+			if a.Size >= 5 {
+				g.game.End = true
+				if g.data.Current.P1 == player {
+					g.setNotice("WINNER " + g.data.Current.P2.Name + " by alignment ;)")
+				} else {
+					g.setNotice("WINNER " + g.data.Current.P1.Name + " by alignment ;)")
+				}
+				return
 			}
-			return
+			g.game.RulerWin = nil
 		}
-		g.game.RulerWin = nil
+	*/
+	if r := g.game.GetRules(); r != nil && len(r.CapturableWin) != 0 {
+		g.game.RulerWin = r
 	}
 
-	if ok, message := g.game.IsWin(); ok {
-		if !g.game.IsCapturable() {
-			g.game.End = true
-			g.setNotice("WINNER " + player.Name + " " + message)
-		} else {
-			g.game.RulerWin = g.game.GetRules()
-		}
+	if PrevWin == true {
+		fmt.Println("Plop")
+		g.game.End = true
+		g.setNotice("PREV WINNER " + g.game.GetOtherName() + " " + g.game.RulerWin.Info)
+		return
+	} else if ok, message := g.game.IsWin(); ok {
+		fmt.Println("Plip")
+		g.game.End = true
+		g.setNotice("CURRENT WINNER " + player.Name + " " + message)
+		return
 	}
 
+	/*
+		if ok, message := g.game.IsWin(); ok {
+			if !g.game.IsCapturable() {
+				g.game.End = true
+				g.setNotice("WINNER " + player.Name + " " + message)
+			} else {
+				g.game.RulerWin = g.game.GetRules()
+			}
+		}
+	*/
 	g.game.Playing()
 
 	if g.game.IsBot(g.game.GetCurrentPlayer()) {
@@ -105,7 +139,11 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 		go func() {
 			g.game.Bot.PlayOpponnent(int8(y), int8(x))
 			c := make(chan uint8)
-			go g.game.Bot.Play(g.game.GetBoard(), g.data.Current, c)
+			if g.game.RulerWin != nil {
+				go g.game.Bot.Play(g.game.GetBoard(), g.data.Current, c, g.game.RulerWin.CapturableWin)
+			} else {
+				go g.game.Bot.Play(g.game.GetBoard(), g.data.Current, c, nil)
+			}
 			yi, xi := <-c, <-c
 			go g.selectToken(yi, xi)
 		}()

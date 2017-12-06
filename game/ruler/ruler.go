@@ -16,19 +16,13 @@ const (
 	winByAlignmentMessage  = "congratulation, winner by alignment"
 )
 
-// Spot on the board define by Y and X
-type Spot struct {
-	Y int8
-	X int8
-}
-
 // Rules struct contain all Rules checks informations
 type Rules struct {
 	/* Private attribute */
 	player   uint8
 	y        int8
 	x        int8
-	captures []*Spot
+	captures []*alignment.Spot
 	aligns   []*alignment.Alignment
 
 	/* Public attribute */
@@ -37,6 +31,7 @@ type Rules struct {
 	NumberCapture uint8
 	Movable       bool
 	Win           bool
+	CapturableWin []*alignment.Spot
 }
 
 // New return a new instance with one player and one position (y, x)
@@ -75,7 +70,7 @@ func (r *Rules) RestoreMove(b *[19][19]uint8) {
 }
 
 // GetCaptures : return the slice of captured points
-func (r *Rules) GetCaptures() []*Spot {
+func (r *Rules) GetCaptures() []*alignment.Spot {
 	return r.captures
 }
 
@@ -104,6 +99,10 @@ func (r Rules) GetBetterAlignment() *alignment.Alignment {
 		}
 	}
 	return save
+}
+
+func (r Rules) GetAlignment() []*alignment.Alignment {
+	return r.aligns
 }
 
 // IsMyPosition check the position on the board is equal at player on the rule
@@ -156,10 +155,12 @@ func (r *Rules) analyzeWinCondition(b *[19][19]uint8, nbCaptured uint8) {
 
 	for _, align := range r.aligns {
 		if i := align.GetInfosWin(); i != nil {
-			r.Win = true
-			r.Info = winByAlignmentMessage
 			y, x := r.GetPosition()
-			align.IsCapturable(b, r.GetPlayer(), y, x)
+			r.CapturableWin = align.IsCapturable(b, r.GetPlayer(), y, x)
+			r.Info = winByAlignmentMessage
+			if len(r.CapturableWin) == 0 {
+				r.Win = true
+			}
 			// no win because capture is possible
 			// r.ApplyMove(b)
 			// bool := align.isCapturable(b, r.player, r.y, r.x)
@@ -195,7 +196,7 @@ func (r *Rules) analyzeAlignments(mask *[11]uint8, dirY, dirX int8) {
 
 // addCapture : _
 func (r *Rules) addCapture(y, x int8) {
-	r.captures = append(r.captures, &Spot{Y: y, X: x})
+	r.captures = append(r.captures, &alignment.Spot{Y: y, X: x})
 }
 
 // analyzeCapture : Check and records captured spot

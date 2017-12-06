@@ -8,6 +8,7 @@ import (
 	"github.com/ymohl-cl/gomoku/database"
 	"github.com/ymohl-cl/gomoku/game/alphabeta"
 	"github.com/ymohl-cl/gomoku/game/ruler"
+	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
 	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
 	"github.com/ymohl-cl/gomoku/game/stats"
 )
@@ -74,6 +75,13 @@ func New(d *database.Data) (*Game, error) {
 
 	g.data = d
 	return &g, nil
+}
+
+func (g Game) GetOtherName() string {
+	if g.players.currentPlayer == g.players.p1 {
+		return g.players.p2.Name
+	}
+	return g.players.p1.Name
 }
 
 // IsBot define is the player it's a bot
@@ -167,7 +175,7 @@ func (g *Game) IsWin() (bool, string) {
 }
 
 // GetCaptures : return a reference of slice of actual player captures
-func (g Game) GetCaptures() []*ruler.Spot {
+func (g Game) GetCaptures() []*alignment.Spot {
 	return g.rules.GetCaptures()
 }
 

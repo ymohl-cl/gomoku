@@ -2,6 +2,12 @@ package alignment
 
 import rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
 
+// Spot on the board define by Y and X
+type Spot struct {
+	Y int8
+	X int8
+}
+
 // InfoWin keep info of raw when a align size == 5.
 // Need to check if the win align is capturable or not
 type InfoWin struct {
@@ -258,7 +264,7 @@ func (a Alignment) IsConsecutive(mask *[11]uint8) bool {
 }
 
 // positionIsCapturable : Check if spot defined by posY and posX is capturable
-func positionIsCapturable(b *[19][19]uint8, posY, posX int8, player uint8) bool {
+func positionIsCapturable(b *[19][19]uint8, posY, posX int8, player uint8) (bool, int8, int8) {
 	opponent := rdef.GetOtherPlayer(player)
 
 	for dirY := int8(-1); dirY <= 1; dirY++ {
@@ -274,37 +280,43 @@ func positionIsCapturable(b *[19][19]uint8, posY, posX int8, player uint8) bool 
 			if (*b)[posY+dirY][posX+dirX] == player {
 				if ((*b)[posY+dirY*2][posX+dirX*2] == opponent && (*b)[posY+dirY*-1][posX+dirX*-1] == rdef.Empty) ||
 					((*b)[posY+dirY*2][posX+dirX*2] == rdef.Empty && (*b)[posY+dirY*-1][posX+dirX*-1] == opponent) {
-					return true
+					if (*b)[posY+dirY*-1][posX+dirX*-1] == rdef.Empty {
+						return true, posY + dirY*-1, posX + dirX*-1
+					}
+					return true, posY + dirY*2, posX + dirX*2
 				}
 			}
 		}
 	}
-	return false
+	return false, 0, 0
 }
 
 // alignIsCapturable : browse all point of alignment and check if the spot is capturable
-func (a *Alignment) IsCapturable(b *[19][19]uint8, player uint8, posY, posX int8) {
+func (a *Alignment) IsCapturable(b *[19][19]uint8, player uint8, posY, posX int8) []*Spot {
+	var spots []*Spot
 	i := a.iWin
 	if i == nil {
-		return
+		return nil
 	}
 
 	for index := 5; index >= 0 && i.mask[index] == player; index-- {
 		y := posY + i.dirY*int8(5-index)
 		x := posX + i.dirX*int8(5-index)
-		if positionIsCapturable(b, y, x, player) {
+		if ok, py, px := positionIsCapturable(b, y, x, player); ok {
 			i.capturable = true
+			spots = append(spots, &Spot{py, px})
 		}
 	}
 
 	for index := 6; index < 11 && i.mask[index] == player; index++ {
 		y := posY + i.dirY*int8(5-index)
 		x := posX + i.dirX*int8(5-index)
-		if positionIsCapturable(b, y, x, player) {
+		if ok, py, px := positionIsCapturable(b, y, x, player); ok {
 			i.capturable = true
+			spots = append(spots, &Spot{py, px})
 		}
 	}
-	return
+	return spots
 }
 
 func (a *Alignment) GetCaptureStatus() bool {

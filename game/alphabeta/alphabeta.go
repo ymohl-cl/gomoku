@@ -6,6 +6,7 @@ import (
 
 	"github.com/ymohl-cl/gomoku/database"
 	"github.com/ymohl-cl/gomoku/game/ruler"
+	"github.com/ymohl-cl/gomoku/game/ruler/alignment"
 	rdef "github.com/ymohl-cl/gomoku/game/ruler/defines"
 )
 
@@ -143,10 +144,7 @@ func (s *State) addNode(n *Node) {
 
 func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint16, n *Node) int16 {
 	if (n != nil && n.rule.Win) || depth == 0 {
-		a := n.rule.GetBetterAlignment()
-		if depth == 0 || (a != nil && !a.GetCaptureStatus()) {
-			return s.eval(n, depth)
-		}
+		return s.eval(n, depth)
 	}
 
 	first := true
@@ -168,13 +166,13 @@ func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint16, n *Node) int
 					node.weight = -s.alphabetaNegaScout(-beta, -node.weight, depth-1, node)
 				}
 			}
-
-			if alpha < node.weight && depth == 1 && s.maxDepth < s.limitDepth && !node.rule.Win {
-				s.maxDepth += 2
-				node.weight = -s.alphabetaNegaScout(-beta, -node.weight, depth+2, node)
-				s.maxDepth -= 2
-			}
-
+			/*
+				if alpha < node.weight && depth == 1 && s.maxDepth < s.limitDepth && !node.rule.Win {
+					s.maxDepth += 2
+					node.weight = -s.alphabetaNegaScout(-beta, -node.weight, depth+1, node)
+					s.maxDepth -= 2
+				}
+			*/
 			// restore move and restore data
 			s.restoreData(node, n)
 
@@ -198,7 +196,7 @@ func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint16, n *Node) int
 }
 
 // Play start the alphabeta algorythm
-func (i *IA) Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
+func (i *IA) Play(b *[19][19]uint8, s *database.Session, c chan uint8, forceSpot []*alignment.Spot) {
 	state := New(b, rdef.Player2)
 	state.addTotalCapture(rdef.Player1, uint8(s.NbCaptureP1))
 	state.addTotalCapture(rdef.Player2, uint8(s.NbCaptureP2))
@@ -212,6 +210,12 @@ func (i *IA) Play(b *[19][19]uint8, s *database.Session, c chan uint8) {
 		state.limitDepth = 10
 	default:
 		state.limitDepth = 4
+	}
+
+	if len(forceSpot) > 0 {
+		c <- uint8(forceSpot[0].Y)
+		c <- uint8(forceSpot[0].X)
+		return
 	}
 
 	fmt.Println("limit: ", state.limitDepth)
