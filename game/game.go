@@ -65,6 +65,7 @@ func New(d *database.Data) (*Game, error) {
 	g.players = playersInfo{p1: d.Current.P1, p2: d.Current.P2}
 
 	// define first player randomly
+
 	source := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(source)
 	if r.Int31()%2 == 0 {
@@ -80,8 +81,10 @@ func New(d *database.Data) (*Game, error) {
 func (g Game) GetOtherName() string {
 	if g.players.currentPlayer == g.players.p1 {
 		return g.players.p2.Name
+	} else if g.players.currentPlayer == g.players.p2 {
+		return g.players.p1.Name
 	}
-	return g.players.p1.Name
+	return "Moutchatcho :D"
 }
 
 // IsBot define is the player it's a bot

@@ -80,8 +80,8 @@ func TestApplyMove(t *testing.T) {
 	r = New(rdef.Player2, 9, 9)
 	(*b)[9][10] = rdef.GetOtherPlayer(rdef.Player2)
 	(*b)[9][11] = rdef.GetOtherPlayer(rdef.Player2)
-	r.captures = append(r.captures, &Spot{Y: 9, X: 10})
-	r.captures = append(r.captures, &Spot{Y: 9, X: 11})
+	r.captures = append(r.captures, &alignment.Spot{Y: 9, X: 10})
+	r.captures = append(r.captures, &alignment.Spot{Y: 9, X: 11})
 	r.ApplyMove(b)
 	if (*b)[9][10] != rdef.Empty && (*b)[9][11] != rdef.Empty {
 		t.Error(t.Name() + " > test: 2")
@@ -108,8 +108,8 @@ func TestRestoreMove(t *testing.T) {
 	(*b)[9][9] = rdef.Player2
 	(*b)[9][10] = rdef.Empty
 	(*b)[9][11] = rdef.Empty
-	r.captures = append(r.captures, &Spot{Y: 9, X: 10})
-	r.captures = append(r.captures, &Spot{Y: 9, X: 11})
+	r.captures = append(r.captures, &alignment.Spot{Y: 9, X: 10})
+	r.captures = append(r.captures, &alignment.Spot{Y: 9, X: 11})
 	r.RestoreMove(b)
 	if (*b)[9][9] != rdef.Empty && (*b)[9][10] != rdef.Player1 || (*b)[9][11] != rdef.Player1 {
 		t.Error(t.Name() + " > test: 1")
@@ -126,8 +126,8 @@ func TestGetCapture(t *testing.T) {
 	}
 
 	// test: 1
-	r.captures = append(r.captures, &Spot{Y: 9, X: 10})
-	r.captures = append(r.captures, &Spot{Y: 9, X: 11})
+	r.captures = append(r.captures, &alignment.Spot{Y: 9, X: 10})
+	r.captures = append(r.captures, &alignment.Spot{Y: 9, X: 11})
 	captures = r.GetCaptures()
 	if len(captures) != 2 {
 		t.Error(t.Name() + " > test: 2")
@@ -196,43 +196,36 @@ func TestIsMyPosition(t *testing.T) {
 
 func TestIsAvailablePosition(t *testing.T) {
 	var b *[19][19]uint8
-	var r *Rules
 
-	b = boards.GetEmpty()
-	r = New(rdef.Player2, 9, 8)
+	b = boards.GetStartP1_1()
 	// test: 0 > already used 1/2
-	if r.isAvailablePosition(b) {
+	if ok, _ := IsAvailablePosition(b, 10, 10); !ok {
 		t.Error(t.Name() + " > test: 0")
 	}
 
 	b = boards.GetSimpleP2()
-	r = New(rdef.Player1, 9, 6)
 	// test: 1 > allowed position
-	if !r.isAvailablePosition(b) {
+	if ok, _ := IsAvailablePosition(b, 11, 12); ok {
 		t.Error(t.Name() + " > test: 1")
 	}
 
-	r = New(rdef.Player1, 9, 5)
 	// test: 2 > no neighbour 1/2
-	if r.isAvailablePosition(b) {
+	if ok, _ := IsAvailablePosition(b, 9, 10); !ok {
 		t.Error(t.Name() + " > test: 2")
 	}
 
-	r = New(rdef.Player1, 9, 0)
 	// test: 3 > neighbour 2/2
-	if r.isAvailablePosition(b) {
+	if ok, _ := IsAvailablePosition(b, 8, 9); !ok {
 		t.Error(t.Name() + " > test: 3")
 	}
 
-	r = New(rdef.Player1, 9, 9)
 	// test: 4 > already used 2/2
-	if r.isAvailablePosition(b) {
+	if ok, _ := IsAvailablePosition(b, 8, 8); !ok {
 		t.Error(t.Name() + " > test: 4")
 	}
 
-	r = New(rdef.Player1, -1, 6)
 	// test: 5 > out of board
-	if r.isAvailablePosition(b) {
+	if ok, _ := IsAvailablePosition(b, -1, 6); ok {
 		t.Error(t.Name() + " > test: 5")
 	}
 }
@@ -499,7 +492,7 @@ func TestCheckRules(t *testing.T) {
 	b = boards.GetCaptureP1_1()
 	r = New(rdef.Player2, 0, 18)
 	r.CheckRules(b, 4)
-	if r.Movable == false || r.Win == false {
+	if r.Win == false {
 		t.Error(t.Name() + " > test: 2")
 	}
 
@@ -517,7 +510,7 @@ func TestCheckRules(t *testing.T) {
 	b = boards.GetWinNoCapturableP2()
 	r = New(rdef.Player1, 9, 11)
 	r.CheckRules(b, 3)
-	if r.Movable == false || r.Win == false {
+	if r.Win == true {
 		t.Error(t.Name() + " > test: 4")
 	}
 
@@ -525,7 +518,7 @@ func TestCheckRules(t *testing.T) {
 	b = boards.GetWinSituationP2()
 	r = New(rdef.Player1, 9, 14)
 	r.CheckRules(b, 3)
-	if r.Movable == false || r.Win == true {
+	if r.Win == true {
 		t.Error(t.Name() + " > test: 5")
 	}
 
@@ -541,7 +534,7 @@ func TestCheckRules(t *testing.T) {
 	b = boards.GetTreeP1_3()
 	r = New(rdef.Player1, 9, 10)
 	r.CheckRules(b, 0)
-	if r.Movable == false {
+	if r.Movable == true {
 		t.Error(t.Name() + " > test: 7 ")
 	}
 }
@@ -573,7 +566,7 @@ func TestUpdateAlignments(t *testing.T) {
 	r = New(rdef.Player2, 0, 18)
 	r.CheckRules(b, 4)
 	r.UpdateAlignments(b)
-	if r.Movable == false || r.Win == false {
+	if r.Win == false {
 		t.Error(t.Name() + " > test: 2")
 	}
 
@@ -593,7 +586,7 @@ func TestUpdateAlignments(t *testing.T) {
 	r = New(rdef.Player1, 9, 11)
 	r.CheckRules(b, 3)
 	r.UpdateAlignments(b)
-	if r.Movable == false || r.Win == false {
+	if r.Win == true {
 		t.Error(t.Name() + " > test: 4")
 	}
 
@@ -602,7 +595,7 @@ func TestUpdateAlignments(t *testing.T) {
 	r = New(rdef.Player1, 9, 14)
 	r.CheckRules(b, 3)
 	r.UpdateAlignments(b)
-	if r.Movable == false || r.Win == true {
+	if r.Win == true {
 		t.Error(t.Name() + " > test: 5")
 	}
 
@@ -620,7 +613,7 @@ func TestUpdateAlignments(t *testing.T) {
 	r = New(rdef.Player1, 9, 10)
 	r.CheckRules(b, 0)
 	r.UpdateAlignments(b)
-	if r.Movable == false {
+	if r.Movable == true {
 		t.Error(t.Name() + " > test: 7 ")
 	}
 }

@@ -21,7 +21,7 @@ const (
 	scoreFirst = int16(1)
 	// scoreWinDetection is set when win situation is detected on out simulation
 	scoreWinDetection = scoreWin + 2000
-	scoreByCapture    = int16(1500)
+	scoreByCapture    = int16(2000)
 	// scoreAlign is a bonus to the additional alignments
 	scoreByAlign = int16(1)
 	// scoreFree / half and flanked are the multiplier to the alignment type
@@ -74,7 +74,9 @@ func scoreAlignment(a *alignment.Alignment, depth int16) int16 {
 	score = int16(a.Size) * coef
 
 	if a.Size >= 5 {
-		score = -depth
+		score = -2
+	} else if a.Size == 4 && a.Style&rdef.AlignFree != 0 {
+		score = -1
 	}
 	return score
 }
@@ -83,10 +85,13 @@ func scoreAlignment(a *alignment.Alignment, depth int16) int16 {
 func (s *State) scoreAlignments(n *Node, sc *Score, player bool, depth int16) {
 	for _, a := range n.rule.GetAlignment() {
 		ret := scoreAlignment(a, depth)
-		if ret < 0 {
+		if ret == -2 {
 			sc.win = true
 			sc.depthWin = depth
 			return
+		} else if ret == -1 {
+			sc.isTree = true
+			sc.depthWin = depth
 		}
 		sc.alignment += ret
 	}
@@ -233,13 +238,24 @@ func (s *State) analyzeScore(current, opponent *Score, lastNode *Node, depth uin
 	*/
 	if current.win && opponent.win {
 		if current.depthWin < opponent.depthWin {
-			return scoreWin + current.depthWin
+			return scoreWin + current.depthWin + opponent.capture
 		}
-		return -(scoreWin + opponent.depthWin)
+		return -(scoreWin + opponent.depthWin + current.capture)
 	} else if current.win {
-		return scoreWin + current.depthWin
+		return scoreWin + current.depthWin + opponent.capture
 	} else if opponent.win {
-		return -(scoreWin + opponent.depthWin)
+		return -(scoreWin + opponent.depthWin + current.capture)
+	}
+
+	if current.isTree && opponent.isTree {
+		if current.depthWin < opponent.depthWin {
+			return scoreWin + current.depthWin + depthOutEvalToFourSpots
+		}
+		return -(scoreWin + opponent.depthWin + depthOutEvalToFourSpots)
+	} else if current.isTree {
+		return scoreWin + current.depthWin + depthOutEvalToFourSpots
+	} else if opponent.isTree {
+		return -(scoreWin + opponent.depthWin + depthOutEvalToFourSpots)
 	}
 	ret = scoreNeutral
 	ret -= (current.alignment + current.capture)
@@ -280,7 +296,8 @@ func (s *State) eval(n *Node, depth uint16) int16 {
 	var opponent Score
 
 	// wins situations
-	if n.rule.Win || len(n.rule.CapturableWin) > 0 {
+	//	if n.rule.Win || len(n.rule.CapturableWin) > 0 {
+	if n.rule.Win {
 		return scoreWin + int16(s.maxDepth-depth)
 	}
 

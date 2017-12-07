@@ -37,7 +37,7 @@ func BenchmarkScoreAlignment_noAlignment(b *testing.B) {
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		state.scoreAlignment(node, current, true)
+		state.scoreAlignments(node, current, true, 4)
 	}
 	b.StopTimer()
 	b.ReportAllocs()
@@ -54,7 +54,7 @@ func BenchmarkScoreAlignment_freeThree(b *testing.B) {
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		state.scoreAlignment(node, current, true)
+		state.scoreAlignments(node, current, true, 4)
 	}
 	b.StopTimer()
 	b.ReportAllocs()
@@ -133,12 +133,13 @@ func BenchmarkAnalyseScore_winByCapture(b *testing.B) {
 	board := boards.GetStartP1_1()
 	state := New(board, rdef.Player2)
 
+	node := createNodesB(b, state, []int8{9, 10, 9, 7, 8, 8, 8, 9, 8, 10, 9, 11, 9, 9, 9, 12, 9, 6, 9, 5, 9, 13, 9, 4})
 	current = &Score{capturable: true, capture: 6, alignment: 17}
 	opponent = &Score{capturable: false, capture: 0, alignment: 14}
 	//StartBenchmark analyzeScore
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		state.analyzeScore(current, opponent)
+		state.analyzeScore(current, opponent, node, 4)
 	}
 	b.StopTimer()
 	b.ReportAllocs()
@@ -150,11 +151,12 @@ func BenchmarkAnalyseScore_winByAlignment(b *testing.B) {
 	board := boards.GetStartP1_1()
 	state := New(board, rdef.Player2)
 
+	node := createNodesB(b, state, []int8{9, 10, 9, 7, 8, 8, 8, 9, 8, 10, 9, 11, 9, 9, 9, 12, 9, 6, 9, 5, 9, 13, 9, 4})
 	current = &Score{capturable: true, capture: 10, alignment: -31765}
 	opponent = &Score{capturable: true, capture: 11, alignment: 19}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		state.analyzeScore(current, opponent)
+		state.analyzeScore(current, opponent, node, 8)
 	}
 	b.StopTimer()
 	b.ReportAllocs()

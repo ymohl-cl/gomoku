@@ -2,7 +2,6 @@ package gomoku
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/ymohl-cl/game-builder/objects"
@@ -42,9 +41,7 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 
 	PrevWin := true
 	if g.game.RulerWin != nil {
-		fmt.Println("Situation win. Opponent play on ", y, " - ", x)
 		for _, s := range g.game.RulerWin.CapturableWin {
-			fmt.Println("Spot captures: ", s.Y, " - ", s.X)
 			if y == uint8(s.Y) && x == uint8(s.X) {
 				PrevWin = false
 				g.game.RulerWin = nil
@@ -90,48 +87,23 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 		}
 	}()
 
-	/*
-		if g.game.RulerWin != nil {
-			g.game.RulerWin.UpdateAlignments(g.game.GetBoard())
-			a := g.game.RulerWin.GetBetterAlignment()
-			if a.Size >= 5 {
-				g.game.End = true
-				if g.data.Current.P1 == player {
-					g.setNotice("WINNER " + g.data.Current.P2.Name + " by alignment ;)")
-				} else {
-					g.setNotice("WINNER " + g.data.Current.P1.Name + " by alignment ;)")
-				}
-				return
-			}
-			g.game.RulerWin = nil
-		}
-	*/
 	if r := g.game.GetRules(); r != nil && len(r.CapturableWin) != 0 {
-		g.game.RulerWin = r
+		if g.game.RulerWin == nil {
+			g.game.RulerWin = r
+		}
 	}
 
 	if PrevWin == true {
-		fmt.Println("Plop")
 		g.game.End = true
-		g.setNotice("PREV WINNER " + g.game.GetOtherName() + " " + g.game.RulerWin.Info)
+		g.setNotice("PREV WINNER " + g.game.GetCurrentPlayer().Name + " " + g.game.RulerWin.Info)
+		g.game.RulerWin = nil
 		return
 	} else if ok, message := g.game.IsWin(); ok {
-		fmt.Println("Plip")
 		g.game.End = true
 		g.setNotice("CURRENT WINNER " + player.Name + " " + message)
 		return
 	}
 
-	/*
-		if ok, message := g.game.IsWin(); ok {
-			if !g.game.IsCapturable() {
-				g.game.End = true
-				g.setNotice("WINNER " + player.Name + " " + message)
-			} else {
-				g.game.RulerWin = g.game.GetRules()
-			}
-		}
-	*/
 	g.game.Playing()
 
 	if g.game.IsBot(g.game.GetCurrentPlayer()) {
@@ -172,7 +144,7 @@ func (g *Gomoku) setNotice(str string) {
 	if err := g.notice.Init(g.renderer); err != nil {
 		panic(errors.New(objects.ErrorRenderer))
 	}
-	time.Sleep(5 * time.Second)
+	time.Sleep(8 * time.Second)
 	if g.notice.GetIDSDL() == idSDL {
 		g.notice.Close()
 	}

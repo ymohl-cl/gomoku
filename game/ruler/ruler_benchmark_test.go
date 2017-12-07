@@ -10,11 +10,11 @@ import (
 
 func BenchmarkIsAvailablePosition_true(b *testing.B) {
 	board := boards.GetSimpleP2()
-	r := New(rdef.Player1, 8, 9)
+	//	r := New(rdef.Player1, 8, 9)
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		r.isAvailablePosition(board)
+		_, _ = IsAvailablePosition(board, 8, 9)
 	}
 	b.StopTimer()
 	b.ReportAllocs()
@@ -22,11 +22,11 @@ func BenchmarkIsAvailablePosition_true(b *testing.B) {
 
 func BenchmarkIsAvailablePosition_false(b *testing.B) {
 	board := boards.GetSimpleP2()
-	r := New(rdef.Player1, 11, 11)
+	//	r := New(rdef.Player1, 11, 11)
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		r.isAvailablePosition(board)
+		_, _ = IsAvailablePosition(board, 11, 11)
 	}
 	b.StopTimer()
 	b.ReportAllocs()

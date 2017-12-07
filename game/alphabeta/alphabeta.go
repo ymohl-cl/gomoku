@@ -1,7 +1,6 @@
 package alphabeta
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/ymohl-cl/gomoku/database"
@@ -18,13 +17,18 @@ const (
 
 type IA struct {
 	level uint8
+	nbOk  uint8
 	moves *Node
 	y     int8
 	x     int8
+	minY  int8
+	minX  int8
+	maxY  int8
+	maxX  int8
 }
 
 func NewIA() *IA {
-	return &IA{y: 9, x: 9}
+	return &IA{y: 9, x: 9, minX: 9, minY: 9, maxX: 9, maxY: 9}
 }
 
 // InfoPlayer of previous evaluation
@@ -44,6 +48,10 @@ type State struct {
 	lst           *Node
 	y             int8
 	x             int8
+	minY          int8
+	minX          int8
+	maxY          int8
+	maxX          int8
 }
 
 // Node represent one move
@@ -57,6 +65,36 @@ type Node struct {
 // New provide a State
 func New(b *[19][19]uint8, player uint8) *State {
 	return &State{maxDepth: 4, board: b, currentPlayer: player}
+}
+
+func (i *IA) updatewindow(y, x int8) {
+	if y < i.minY {
+		i.minY = y
+	}
+	if x < i.minX {
+		i.minX = x
+	}
+	if x > i.maxX {
+		i.maxX = x
+	}
+	if y > i.maxY {
+		i.maxY = y
+	}
+}
+
+func (s *State) updatewindow(y, x int8) {
+	if y < s.minY {
+		s.minY = y
+	}
+	if x < s.minX {
+		s.minX = x
+	}
+	if x > s.maxX {
+		s.maxX = x
+	}
+	if y > s.maxY {
+		s.maxY = y
+	}
 }
 
 func (s *State) getTotalCapture(player uint8) uint8 {
@@ -147,26 +185,46 @@ func (s *State) addNode(n *Node) {
 }
 
 func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint16, n *Node) int16 {
-	if n != nil && (n.rule.Win || len(n.rule.CapturableWin) > 0) || depth == 0 {
+	var saveMinY int8
+	var saveMinX int8
+	var saveMaxY int8
+	var saveMaxX int8
+	//if n != nil && (n.rule.Win || len(n.rule.CapturableWin) > 0) || depth == 0 {
+	if n != nil && (n.rule.Win || depth == 0) {
 		return s.eval(n, depth)
 	}
 
-	first := true
-	for coef := int8(0); coef < 19; coef++ {
-		for dirY := int8(-1); dirY <= 1; dirY++ {
-			for dirX := int8(0); dirX <= 1; dirX++ {
-				y := s.y + dirY*coef
-				x := s.x + dirX*coef
+	var first bool
+
+	lenY := int8(math.Ceil(float64(s.maxY-s.minY)/2.0)) + 2
+	lenX := int8(math.Ceil(float64(s.maxX-s.minX)/2.0)) + 2
+	posX := (s.maxX + s.minX) / 2
+	posY := (s.maxY + s.minY) / 2
+	for tmpCordY, tmpCordX := int8(0), int8(0); true; {
+		for yi := -tmpCordY; yi <= tmpCordY; yi++ {
+			for xi := -tmpCordX; xi <= tmpCordX; xi++ {
+				x := posX + xi
+				y := posY + yi
+
+				if yi != tmpCordY && yi != -tmpCordY && xi == -tmpCordX {
+					xi = tmpCordX - 1
+				}
+
 				node := s.newNode(y, x)
 				if node == nil {
 					continue
 				}
 				// apply move and update data
+				saveMaxY = s.maxY
+				saveMinY = s.minY
+				saveMaxX = s.maxX
+				saveMinX = s.minX
 				s.updateData(node, n)
-				saveY := s.y
-				saveX := s.x
-				s.y = y
-				s.x = x
+				s.updatewindow(y, x)
+				//				saveY = s.y
+				//				saveX = s.x
+				//				s.y = y
+				//				s.x = x
 
 				if first == true {
 					first = false
@@ -184,10 +242,16 @@ func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint16, n *Node) int
 					s.maxDepth -= 2
 				}
 
-				s.y = saveY
-				s.x = saveX
+				//				s.y = saveY
+				//				s.x = saveX
+
 				// restore move and restore data
 				s.restoreData(node, n)
+
+				s.maxY = saveMaxY
+				s.minY = saveMinY
+				s.maxX = saveMaxX
+				s.minX = saveMinX
 
 				// save best moves for the player
 				if depth == s.maxDepth-1 && alpha < node.weight {
@@ -199,55 +263,22 @@ func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint16, n *Node) int
 				}
 
 				alpha = maxWeight(alpha, node.weight)
-
 				if alpha >= beta {
 					return alpha
 				}
 			}
 		}
-	}
-	for y := int8(0); y < 19; y++ {
-		for x := int8(0); x < 19; x++ {
-			node := s.newNode(y, x)
-			if node == nil {
-				continue
-			}
-			// apply move and update data
-			s.updateData(node, n)
-
-			if first == true {
-				first = false
-				node.weight = -s.alphabetaNegaScout(-beta, -alpha, depth-1, node)
-			} else {
-				node.weight = -s.alphabetaNegaScout(-alpha-1, -alpha, depth-1, node)
-				if alpha < node.weight && node.weight < beta {
-					node.weight = -s.alphabetaNegaScout(-beta, -node.weight, depth-1, node)
-				}
-			}
-			if alpha < node.weight && depth == 1 && s.maxDepth < s.limitDepth && !node.rule.Win {
-				s.maxDepth += 2
-				node.weight = -s.alphabetaNegaScout(-beta, -node.weight, depth+1, node)
-				s.maxDepth -= 2
-			}
-			// restore move and restore data
-			s.restoreData(node, n)
-
-			// save best moves for the player
-			if depth == s.maxDepth-1 && alpha < node.weight {
-				s.addNode(node)
-			}
-			// save best moves for the IA
-			if depth == s.maxDepth && alpha < node.weight {
-				s.save = node
-			}
-
-			alpha = maxWeight(alpha, node.weight)
-
-			if alpha >= beta {
-				return alpha
-			}
+		if tmpCordX == lenX && tmpCordY == lenY {
+			break
+		}
+		if tmpCordX < lenX {
+			tmpCordX++
+		}
+		if tmpCordY < lenY {
+			tmpCordY++
 		}
 	}
+
 	return alpha
 }
 
@@ -256,8 +287,12 @@ func (i *IA) Play(b *[19][19]uint8, s *database.Session, c chan uint8, forceSpot
 	state := New(b, rdef.Player2)
 	state.addTotalCapture(rdef.Player1, uint8(s.NbCaptureP1))
 	state.addTotalCapture(rdef.Player2, uint8(s.NbCaptureP2))
-	state.y = i.y
-	state.x = i.x
+	state.minY = i.minY
+	state.minX = i.minX
+	state.maxX = i.maxX
+	state.maxY = i.maxY
+	//state.y = 9
+	//state.x = 9
 
 	switch i.level {
 	case levelLow:
@@ -276,13 +311,13 @@ func (i *IA) Play(b *[19][19]uint8, s *database.Session, c chan uint8, forceSpot
 		return
 	}
 
-	fmt.Println("limit: ", state.limitDepth)
 	_ = state.alphabetaNegaScout(math.MinInt16+1, math.MaxInt16, state.maxDepth, nil)
 
 	i.moves = state.lst
 	y, x := state.save.rule.GetPosition()
 	i.y = y
 	i.x = x
+	i.updatewindow(y, x)
 	c <- uint8(y)
 	c <- uint8(x)
 }
@@ -291,6 +326,7 @@ func (i *IA) PlayOpponnent(y, x int8) {
 	var weightMove int16
 	var bestScore int16
 
+	i.updatewindow(y, x)
 	bestScore = math.MinInt16 + 1
 	for n := i.moves; n != nil; n = n.next {
 		if n.weight > bestScore {
@@ -303,6 +339,11 @@ func (i *IA) PlayOpponnent(y, x int8) {
 	}
 
 	if weightMove == bestScore && i.level < levelHard {
-		i.level++
+		if i.nbOk >= 1 {
+			i.level++
+			i.nbOk = 0
+		} else {
+			i.nbOk++
+		}
 	}
 }
