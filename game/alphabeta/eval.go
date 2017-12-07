@@ -21,7 +21,7 @@ const (
 	scoreFirst = int16(1)
 	// scoreWinDetection is set when win situation is detected on out simulation
 	scoreWinDetection = scoreWin + 2000
-	scoreByCapture    = int16(1000)
+	scoreByCapture    = int16(1500)
 	// scoreAlign is a bonus to the additional alignments
 	scoreByAlign = int16(1)
 	// scoreFree / half and flanked are the multiplier to the alignment type
@@ -279,16 +279,17 @@ func (s *State) eval(n *Node, depth uint16) int16 {
 	var current Score
 	var opponent Score
 
+	// wins situations
+	if n.rule.Win || len(n.rule.CapturableWin) > 0 {
+		return scoreWin + int16(s.maxDepth-depth)
+	}
+
 	current.idPlayer = n.rule.GetPlayer()
 	opponent.idPlayer = rdef.GetOtherPlayer(current.idPlayer)
 
 	s.evalCapture(n, &current, &opponent)
 	s.evalAlignment(n, &current, &opponent)
 
-	// wins situations
-	if n.rule.Win {
-		return scoreWin + int16(s.maxDepth-depth)
-	}
 	//	fmt.Println("c align: ", current.alignment, " - capture: ", current.capture)
 	//	fmt.Println("c opponent: ", opponent.alignment, " - capture: ", opponent.capture)
 	return s.analyzeScore(&current, &opponent, n, depth)

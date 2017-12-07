@@ -19,10 +19,12 @@ const (
 type IA struct {
 	level uint8
 	moves *Node
+	y     int8
+	x     int8
 }
 
 func NewIA() *IA {
-	return &IA{}
+	return &IA{y: 9, x: 9}
 }
 
 // InfoPlayer of previous evaluation
@@ -40,6 +42,8 @@ type State struct {
 	infoP2        InfoPlayer
 	save          *Node
 	lst           *Node
+	y             int8
+	x             int8
 }
 
 // Node represent one move
@@ -143,11 +147,65 @@ func (s *State) addNode(n *Node) {
 }
 
 func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint16, n *Node) int16 {
-	if (n != nil && n.rule.Win) || depth == 0 {
+	if n != nil && (n.rule.Win || len(n.rule.CapturableWin) > 0) || depth == 0 {
 		return s.eval(n, depth)
 	}
 
 	first := true
+	for coef := int8(0); coef < 19; coef++ {
+		for dirY := int8(-1); dirY <= 1; dirY++ {
+			for dirX := int8(0); dirX <= 1; dirX++ {
+				y := s.y + dirY*coef
+				x := s.x + dirX*coef
+				node := s.newNode(y, x)
+				if node == nil {
+					continue
+				}
+				// apply move and update data
+				s.updateData(node, n)
+				saveY := s.y
+				saveX := s.x
+				s.y = y
+				s.x = x
+
+				if first == true {
+					first = false
+					node.weight = -s.alphabetaNegaScout(-beta, -alpha, depth-1, node)
+				} else {
+					node.weight = -s.alphabetaNegaScout(-alpha-1, -alpha, depth-1, node)
+					if alpha < node.weight && node.weight < beta {
+						node.weight = -s.alphabetaNegaScout(-beta, -node.weight, depth-1, node)
+					}
+				}
+
+				if alpha < node.weight && depth == 1 && s.maxDepth < s.limitDepth && !node.rule.Win {
+					s.maxDepth += 2
+					node.weight = -s.alphabetaNegaScout(-beta, -node.weight, depth+1, node)
+					s.maxDepth -= 2
+				}
+
+				s.y = saveY
+				s.x = saveX
+				// restore move and restore data
+				s.restoreData(node, n)
+
+				// save best moves for the player
+				if depth == s.maxDepth-1 && alpha < node.weight {
+					s.addNode(node)
+				}
+				// save best moves for the IA
+				if depth == s.maxDepth && alpha < node.weight {
+					s.save = node
+				}
+
+				alpha = maxWeight(alpha, node.weight)
+
+				if alpha >= beta {
+					return alpha
+				}
+			}
+		}
+	}
 	for y := int8(0); y < 19; y++ {
 		for x := int8(0); x < 19; x++ {
 			node := s.newNode(y, x)
@@ -166,13 +224,11 @@ func (s *State) alphabetaNegaScout(alpha, beta int16, depth uint16, n *Node) int
 					node.weight = -s.alphabetaNegaScout(-beta, -node.weight, depth-1, node)
 				}
 			}
-			/*
-				if alpha < node.weight && depth == 1 && s.maxDepth < s.limitDepth && !node.rule.Win {
-					s.maxDepth += 2
-					node.weight = -s.alphabetaNegaScout(-beta, -node.weight, depth+1, node)
-					s.maxDepth -= 2
-				}
-			*/
+			if alpha < node.weight && depth == 1 && s.maxDepth < s.limitDepth && !node.rule.Win {
+				s.maxDepth += 2
+				node.weight = -s.alphabetaNegaScout(-beta, -node.weight, depth+1, node)
+				s.maxDepth -= 2
+			}
 			// restore move and restore data
 			s.restoreData(node, n)
 
@@ -200,6 +256,8 @@ func (i *IA) Play(b *[19][19]uint8, s *database.Session, c chan uint8, forceSpot
 	state := New(b, rdef.Player2)
 	state.addTotalCapture(rdef.Player1, uint8(s.NbCaptureP1))
 	state.addTotalCapture(rdef.Player2, uint8(s.NbCaptureP2))
+	state.y = i.y
+	state.x = i.x
 
 	switch i.level {
 	case levelLow:
@@ -223,6 +281,8 @@ func (i *IA) Play(b *[19][19]uint8, s *database.Session, c chan uint8, forceSpot
 
 	i.moves = state.lst
 	y, x := state.save.rule.GetPosition()
+	i.y = y
+	i.x = x
 	c <- uint8(y)
 	c <- uint8(x)
 }
