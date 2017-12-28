@@ -2,7 +2,6 @@ package gomoku
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/ymohl-cl/game-builder/objects"
@@ -10,34 +9,19 @@ import (
 )
 
 func (g *Gomoku) initMove() {
-	var x, y uint8 = 9, 9
-	var err error
+	var y, x uint8 = 9, 9
 
-	player := g.game.GetCurrentPlayer()
-	g.game.AppliesMove(x, y)
-	g.game.SwitchPlayer()
-	durationToPlay := g.game.GetTimeToPlay()
-
-	go func() {
-		if err = g.ChangeToken(x, y, player); err != nil {
-			panic(err)
-		}
-	}()
-
-	go func() {
-		if err = g.addHistory(x, y, durationToPlay, player); err != nil {
-			panic(err)
-		}
-	}()
-
-	g.game.Playing()
+	g.game.Start = true
+	go g.selectToken(y, x)
 }
 
 func (g *Gomoku) selectToken(values ...interface{}) {
 	var x, y uint8
 	var err error
-	var end bool
-	var mess string
+
+	if g.game.End {
+		return
+	}
 
 	if len(values) != 2 {
 		panic(errors.New("More two values specified on select token"))
@@ -55,18 +39,33 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 		}
 	}
 
+	PrevWin := true
+	if g.game.RulerWin != nil {
+		for _, s := range g.game.RulerWin.CapturableWin {
+			if y == uint8(s.Y) && x == uint8(s.X) {
+				PrevWin = false
+				g.game.RulerWin = nil
+				break
+			}
+		}
+	} else {
+		PrevWin = false
+	}
+
 	player := g.game.GetCurrentPlayer()
 
-	if end, mess, err = g.game.Move(x, y); err != nil {
+	if ok, message := g.game.Move(x, y); !ok {
 		// setNotice
-		fmt.Println("mess: ", mess, " - err: ", err)
-		g.setNotice("You can't make this move: " + mess)
+		g.setNotice("You can't make this move: " + message)
 		return
 	}
 
 	durationToPlay := g.game.GetTimeToPlay()
 
+	// nb is saved to GetWinCapturabled
+	nb := 0
 	for _, cap := range g.game.GetCaptures() {
+		nb++
 		xt := cap.X
 		yt := cap.Y
 		go func() {
@@ -88,37 +87,50 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 		}
 	}()
 
-	if end == true {
-		g.setNotice("WINNER YEAH BRAVO ! VOILA | " + mess)
+	if r := g.game.GetRules(); r != nil && len(r.CapturableWin) != 0 {
+		if g.game.RulerWin == nil {
+			g.game.RulerWin = r
+		}
+	}
 
-		time.Sleep(5 * time.Second)
-		g.switcher(conf.SMenu, true)
+	if PrevWin == true {
+		g.game.End = true
+		g.setNotice("PREV WINNER " + g.game.GetCurrentPlayer().Name + " " + g.game.RulerWin.Info)
+		g.game.RulerWin = nil
+		return
+	} else if ok, message := g.game.IsWin(); ok {
+		g.game.End = true
+		g.setNotice("CURRENT WINNER " + player.Name + " " + message)
 		return
 	}
 
 	g.game.Playing()
 
-	if g.game.GetCurrentPlayer().Name == "AI" {
+	if g.game.IsBot(g.game.GetCurrentPlayer()) {
 		go g.DrawFilter()
 		go func() {
+			g.game.Bot.PlayOpponnent(int8(y), int8(x))
 			c := make(chan uint8)
-			go g.game.Bot.Play(g.game.GetBoard(), g.data.Current, c)
+			if g.game.RulerWin != nil {
+				go g.game.Bot.Play(g.game.GetBoard(), g.data.Current, c, g.game.RulerWin.CapturableWin)
+			} else {
+				go g.game.Bot.Play(g.game.GetBoard(), g.data.Current, c, nil)
+			}
 			yi, xi := <-c, <-c
-			fmt.Println("AI play on x ", xi, " - y: ", yi)
 			go g.selectToken(yi, xi)
 		}()
-	} else {
+	} else if g.game.Bot != nil {
 		go g.HideFilter()
 	}
 
 }
 
 func (g *Gomoku) quit(values ...interface{}) {
-	g.data.SaveSession()
 	go func() {
 		if err := g.switcher(conf.SMenu, true); err != nil {
 			panic(err)
 		}
+		g.data.SaveSession()
 	}()
 }
 
@@ -132,8 +144,13 @@ func (g *Gomoku) setNotice(str string) {
 	if err := g.notice.Init(g.renderer); err != nil {
 		panic(errors.New(objects.ErrorRenderer))
 	}
-	time.Sleep(3 * time.Second)
+	time.Sleep(8 * time.Second)
 	if g.notice.GetIDSDL() == idSDL {
 		g.notice.Close()
 	}
+}
+
+// ModalFunction mock action
+func (g *Gomoku) ModalFunction(values ...interface{}) {
+	return
 }

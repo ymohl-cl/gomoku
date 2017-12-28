@@ -2,7 +2,6 @@ package menu
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/ymohl-cl/game-builder/objects/button"
 	"github.com/ymohl-cl/gomoku/conf"
@@ -24,7 +23,9 @@ func (m *Menu) addUIPlayer(nb int, p *database.Player) error {
 	if err = b1.Init(m.renderer); err != nil {
 		return err
 	}
+	m.m.Lock()
 	m.layers[layerPlayers] = append(m.layers[layerPlayers], b1)
+	m.m.Unlock()
 
 	if err = m.addButtonChoicePlayer(x, y, p); err != nil {
 		return err
@@ -36,7 +37,9 @@ func (m *Menu) addUIPlayer(nb int, p *database.Player) error {
 	if err = b2.Init(m.renderer); err != nil {
 		return err
 	}
+	m.m.Lock()
 	m.layers[layerPlayers] = append(m.layers[layerPlayers], b2)
+	m.m.Unlock()
 
 	if b3, err = m.addButtonStat(x, y, p); err != nil {
 		return err
@@ -44,7 +47,9 @@ func (m *Menu) addUIPlayer(nb int, p *database.Player) error {
 	if err = b3.Init(m.renderer); err != nil {
 		return err
 	}
+	m.m.Lock()
 	m.layers[layerPlayers] = append(m.layers[layerPlayers], b3)
+	m.m.Unlock()
 
 	if b4, err = m.addLoadGame(x, y, p); err != nil {
 		return err
@@ -52,7 +57,9 @@ func (m *Menu) addUIPlayer(nb int, p *database.Player) error {
 	if err = b4.Init(m.renderer); err != nil {
 		return err
 	}
+	m.m.Lock()
 	m.layers[layerPlayers] = append(m.layers[layerPlayers], b4)
+	m.m.Unlock()
 
 	return nil
 }
@@ -76,10 +83,7 @@ func (m *Menu) removeUIPlayer(idData int) error {
 	var err error
 	var id int
 
-	fmt.Println("IdData: ", idData)
 	id = idData * buttonByPlayer
-	fmt.Println("id: ", id)
-	fmt.Println("len uiPlayer: ", len(m.layers[layerPlayers]))
 	if err = m.closeUIPlayer(id); err != nil {
 		return err
 	}
@@ -99,14 +103,15 @@ func (m *Menu) removeUIPlayer(idData int) error {
 		return err
 	}
 	// Update position next elements
-	fmt.Println("update psoition")
 	for _, b := range m.layers[layerPlayers][id+buttonByPlayer:] {
 		x, y := b.GetPosition()
 		y -= (conf.MenuElementPlayerHeight + conf.MenuElementPadding)
 		b.UpdatePosition(x, y)
 	}
 
+	m.m.Lock()
 	m.layers[layerPlayers] = append(m.layers[layerPlayers][:id], m.layers[layerPlayers][id+buttonByPlayer:]...)
+	m.m.Unlock()
 	return nil
 }
 

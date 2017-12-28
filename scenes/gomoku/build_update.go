@@ -136,10 +136,16 @@ func (g *Gomoku) moveHistory() {
 	}
 }
 
+// DrawFilter : _
 func (g *Gomoku) DrawFilter() {
-
+	if err := g.modal.Init(g.renderer); err != nil {
+		panic(err)
+	}
 }
 
+// HideFilter : _
 func (g *Gomoku) HideFilter() {
-
+	if err := g.modal.Close(); err != nil {
+		panic(err)
+	}
 }

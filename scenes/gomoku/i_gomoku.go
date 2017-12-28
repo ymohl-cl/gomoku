@@ -45,11 +45,10 @@ func (g *Gomoku) Build() error {
 	if err = g.addNotice(); err != nil {
 		return err
 	}
-	/*
-		if err = g.addModal(); err != nil {
-			return err
-		}
-	*/
+	if err = g.addModal(); err != nil {
+		return err
+	}
+
 	g.layers[layerHistoryBlock] = nil
 	g.layers[layerHistoryText] = nil
 	return nil
@@ -57,8 +56,6 @@ func (g *Gomoku) Build() error {
 
 // Init the scene
 func (g *Gomoku) Init() error {
-	//	var err error
-
 	if g.renderer == nil {
 		return errors.New(objects.ErrorRenderer)
 	}
@@ -84,12 +81,16 @@ func (g *Gomoku) IsInit() bool {
 // Run the scene
 func (g *Gomoku) Run() error {
 	var err error
-	//var wg sync.WaitGroup
+	var wg sync.WaitGroup
+
+	if g.game, err = game.New(g.data); err != nil {
+		return err
+	}
 
 	if ok := g.music.IsInit(); ok {
-		//wg.Add(1)
-		//go g.music.Play(&wg, g.renderer)
-		//wg.Wait()
+		wg.Add(1)
+		go g.music.Play(&wg, g.renderer)
+		wg.Wait()
 	}
 	if g.game, err = game.New(g.data); err != nil {
 		return err
@@ -119,6 +120,7 @@ func (g *Gomoku) Close() error {
 	}
 
 	g.layers = nil
+	g.game = nil
 	return nil
 }
 
@@ -141,6 +143,9 @@ func (g *Gomoku) SetSwitcher(f func(uint8, bool) error) {
 func (g *Gomoku) Update() {
 	var err error
 
+	if g.game.End {
+		return
+	}
 	duration := g.game.GetTimeGame()
 	str := controller.TimeToString(duration)
 	// check if need to change
