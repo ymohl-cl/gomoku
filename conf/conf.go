@@ -18,8 +18,8 @@ const (
 // Global
 const (
 	Title        = "Gomoku"
-	WindowWidth  = 1280
-	WindowHeight = 800
+	WindowWidth  = int32(1280)
+	WindowHeight = int32(800)
 	ressources   = "Ressources/"
 	ProtoBufFile = ressources + "saveGomoku.patouch"
 	OriginX      = 0

@@ -2,6 +2,7 @@ package game
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -88,8 +89,9 @@ func (g Game) GetOtherName() string {
 }
 
 // IsBot define is the player it's a bot
-func (g Game) IsBot(p *database.Player) bool {
+func (g *Game) IsBot(p *database.Player) bool {
 	if p == g.players.p2 && g.Bot != nil {
+		fmt.Println("is bot")
 		return true
 	}
 	return false

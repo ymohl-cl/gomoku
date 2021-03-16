@@ -83,9 +83,9 @@ func (g *Gomoku) Run() error {
 	var err error
 	var wg sync.WaitGroup
 
-	if g.game, err = game.New(g.data); err != nil {
-		return err
-	}
+	//	if g.game, err = game.New(g.data); err != nil {
+	//		return err
+	//	}
 
 	if ok := g.music.IsInit(); ok {
 		wg.Add(1)
@@ -129,8 +129,8 @@ func (g *Gomoku) GetLayers() (map[uint8][]objects.Object, *sync.Mutex) {
 	return g.layers, g.m
 }
 
-// KeyDownEvent provide key down to the scene
-func (g *Gomoku) KeyDownEvent(keyDown *sdl.KeyDownEvent) {
+// KeyboardEvent provide key down to the scene
+func (g *Gomoku) KeyboardEvent(keyboard *sdl.KeyboardEvent) {
 	return
 }
 

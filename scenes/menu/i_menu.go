@@ -136,12 +136,14 @@ func (m Menu) GetLayers() (map[uint8][]objects.Object, *sync.Mutex) {
 	return m.layers, m.m
 }
 
-// KeyDownEvent provide key down to the scene
-func (m *Menu) KeyDownEvent(keyDown *sdl.KeyDownEvent) {
+// KeyboardEvent provide key down to the scene
+func (m *Menu) KeyboardEvent(keyboard *sdl.KeyboardEvent) {
 	var err error
 
-	if err = m.input.SetNewRune(keyDown.Keysym, m.renderer); err != nil {
-		go m.setNotice(err.Error())
+	if keyboard.Type == sdl.KEYDOWN {
+		if err = m.input.SetNewRune(keyboard.Keysym, m.renderer); err != nil {
+			go m.setNotice(err.Error())
+		}
 	}
 }
 
