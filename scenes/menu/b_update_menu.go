@@ -3,7 +3,7 @@ package menu
 import (
 	"errors"
 
-	"github.com/ymohl-cl/game-builder/objects/button"
+	"github.com/ymohl-cl/go-ui/objects/button"
 	"github.com/ymohl-cl/gomoku/conf"
 	"github.com/ymohl-cl/gomoku/database"
 )

@@ -11,7 +11,7 @@ install:
 
 .PHONY: build
 build:
-	@CGO_ENABLED=1 CC=gcc GOOS=darwin GOARCH=amd64 go build -tags static -ldflags "-s -w" .
+	@CGO_ENABLED=1 CC=gcc GOOS=darwin GOARCH=amd64 go build -buildmode=pie -tags static -ldflags "-s -w" .
 
 test:
 	@go test -count=1 ./...

@@ -4,8 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ymohl-cl/game-builder/objects"
-	"github.com/ymohl-cl/gomoku/conf"
+	"github.com/ymohl-cl/go-ui/objects"
 )
 
 func (g *Gomoku) initMove() {
@@ -127,10 +126,13 @@ func (g *Gomoku) selectToken(values ...interface{}) {
 
 func (g *Gomoku) quit(values ...interface{}) {
 	go func() {
-		if err := g.switcher(conf.SMenu, true); err != nil {
+		if err := g.switcher("menu"); err != nil {
 			panic(err)
 		}
 		g.data.SaveSession()
+		if err := g.closeScene("game"); err != nil {
+			panic(err)
+		}
 	}()
 }
 

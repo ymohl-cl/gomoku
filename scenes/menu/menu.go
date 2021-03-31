@@ -5,10 +5,10 @@ import (
 	"sync"
 
 	"github.com/veandco/go-sdl2/sdl"
-	"github.com/ymohl-cl/game-builder/audio"
-	"github.com/ymohl-cl/game-builder/objects"
-	"github.com/ymohl-cl/game-builder/objects/input"
-	"github.com/ymohl-cl/game-builder/objects/text"
+	"github.com/ymohl-cl/go-ui/audio"
+	"github.com/ymohl-cl/go-ui/objects"
+	"github.com/ymohl-cl/go-ui/objects/input"
+	"github.com/ymohl-cl/go-ui/objects/text"
 	"github.com/ymohl-cl/gomoku/database"
 )
 
@@ -46,8 +46,8 @@ type Menu struct {
 	/* infos scene */
 	initialized bool
 	closer      chan (uint8)
-	switcher    func(uint8, bool) error
-	quit        func()
+	switcher    func(indexScene string) error
+	closeScene  func(indexScene string) error
 
 	/* objects by layers */
 	m      *sync.Mutex

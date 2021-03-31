@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/veandco/go-sdl2/sdl"
-	"github.com/ymohl-cl/game-builder/objects"
+	"github.com/ymohl-cl/go-ui/objects"
 	"github.com/ymohl-cl/gomoku/scenes"
 )
 
@@ -148,7 +148,7 @@ func (m *Menu) KeyboardEvent(keyboard *sdl.KeyboardEvent) {
 }
 
 // SetSwitcher can be call to change scene with index scene and flag closer
-func (m *Menu) SetSwitcher(f func(uint8, bool) error) {
+func (m *Menu) SetSwitcher(f func(indexScene string) error) {
 	m.switcher = f
 }
 
@@ -157,7 +157,7 @@ func (m *Menu) Update() {
 	return
 }
 
-// SetCloser : allow quit the application
-func (m *Menu) SetCloser(f func()) {
-	m.quit = f
+// SetCloser : allow quit the scene
+func (m *Menu) SetCloser(f func(indexScne string) error) {
+	m.closeScene = f
 }

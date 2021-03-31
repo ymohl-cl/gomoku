@@ -3,12 +3,12 @@ package gomoku
 import (
 	"errors"
 
-	"github.com/ymohl-cl/game-builder/audio"
-	"github.com/ymohl-cl/game-builder/objects"
-	"github.com/ymohl-cl/game-builder/objects/block"
-	"github.com/ymohl-cl/game-builder/objects/button"
-	"github.com/ymohl-cl/game-builder/objects/image"
-	"github.com/ymohl-cl/game-builder/objects/text"
+	"github.com/ymohl-cl/go-ui/audio"
+	"github.com/ymohl-cl/go-ui/objects"
+	"github.com/ymohl-cl/go-ui/objects/block"
+	"github.com/ymohl-cl/go-ui/objects/button"
+	"github.com/ymohl-cl/go-ui/objects/image"
+	"github.com/ymohl-cl/go-ui/objects/text"
 	"github.com/ymohl-cl/gomoku/conf"
 	"github.com/ymohl-cl/gomoku/database"
 	"github.com/ymohl-cl/gomoku/scenes/builder"

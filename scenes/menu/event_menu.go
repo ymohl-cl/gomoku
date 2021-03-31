@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ymohl-cl/game-builder/objects"
-	"github.com/ymohl-cl/gomoku/conf"
+	"github.com/veandco/go-sdl2/sdl"
+	"github.com/ymohl-cl/go-ui/objects"
 	"github.com/ymohl-cl/gomoku/database"
 )
 
@@ -146,7 +146,10 @@ func (m *Menu) Play(values ...interface{}) {
 	}
 
 	go func() {
-		if err = m.switcher(conf.SGame, true); err != nil {
+		if err = m.switcher("game"); err != nil {
+			panic(err)
+		}
+		if err = m.closeScene("menu"); err != nil {
 			panic(err)
 		}
 	}()
@@ -175,5 +178,11 @@ func (m *Menu) setNotice(str string) {
 
 // Quit game
 func (m *Menu) QuitGame(values ...interface{}) {
-	m.quit()
+	sdl.PushEvent(&sdl.QuitEvent{
+		Type:      sdl.QUIT,
+		Timestamp: uint32(time.Now().Unix()),
+	})
+	if err := m.closeScene("menu"); err != nil {
+		panic(err)
+	}
 }

@@ -1,8 +1,7 @@
 package main
 
 import (
-	"github.com/ymohl-cl/game-builder/drivers"
-	"github.com/ymohl-cl/game-builder/scripter"
+	goui "github.com/ymohl-cl/go-ui"
 	"github.com/ymohl-cl/gomoku/conf"
 	"github.com/ymohl-cl/gomoku/database"
 	"github.com/ymohl-cl/gomoku/scenes/gomoku"
@@ -12,52 +11,63 @@ import (
 
 func main() {
 	var err error
-	var d drivers.VSDL
+	var gb goui.GameBuilder
 	var data *database.Data
 
-	// init drivers sdl from game-builder
-	if d, err = drivers.Init(conf.WindowWidth, conf.WindowHeight, conf.Title); err != nil {
+	// init drivers sdl from go-ui
+	if gb, err = goui.New(goui.ConfigUI{
+		Window: goui.Window{
+			Title:  conf.Title,
+			Width:  conf.WindowWidth,
+			Height: conf.WindowHeight,
+		},
+	}); err != nil {
 		panic(err)
 	}
-	defer d.Destroy()
+	defer func() {
+		if err := gb.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	// get data game
 	if data, err = database.Get(); err != nil {
 		panic(err)
 	}
 
-	// get new scripter application
-	s := scripter.New()
+	s := gb.Script()
+	r := gb.Renderer().Driver()
 
 	// get and add loader scene
 	var loaderScene *loader.Load
-	if loaderScene, err = loader.New(nil, d.GetRenderer()); err != nil {
+	if loaderScene, err = loader.New(nil, r); err != nil {
 		panic(err)
 	}
-	if err = s.AddLoader(loaderScene); err != nil {
+	if err = s.SetLoader(loaderScene); err != nil {
 		panic(err)
 	}
 
 	// get and add menu scene
 	var menuScene *menu.Menu
-	if menuScene, err = menu.New(data, d.GetRenderer()); err != nil {
+	if menuScene, err = menu.New(data, r); err != nil {
 		panic(err)
 	}
-	if err = s.AddScene(menuScene, conf.SMenu, true); err != nil {
+	if err = s.AddScene("menu", menuScene); err != nil {
 		panic(err)
 	}
-
-	// get and add stat scene
 
 	// get and add gomoku scene
 	var gameScene *gomoku.Gomoku
-	if gameScene, err = gomoku.New(data, d.GetRenderer()); err != nil {
+	if gameScene, err = gomoku.New(data, r); err != nil {
 		panic(err)
 	}
-	if err = s.AddScene(gameScene, conf.SGame, false); err != nil {
+	if err = s.AddScene("game", gameScene); err != nil {
 		panic(err)
 	}
 
 	// run application
-	s.Run(d)
+	if err = gb.Run("menu"); err != nil {
+		panic(err)
+	}
+	return
 }

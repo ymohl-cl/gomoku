@@ -1,9 +1,9 @@
 package builder
 
 import (
-	"github.com/ymohl-cl/game-builder/objects"
-	"github.com/ymohl-cl/game-builder/objects/block"
-	"github.com/ymohl-cl/game-builder/objects/text"
+	"github.com/ymohl-cl/go-ui/objects"
+	"github.com/ymohl-cl/go-ui/objects/block"
+	"github.com/ymohl-cl/go-ui/objects/text"
 	"github.com/ymohl-cl/gomoku/conf"
 )
 

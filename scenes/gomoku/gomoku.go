@@ -5,10 +5,10 @@ import (
 	"sync"
 
 	"github.com/veandco/go-sdl2/sdl"
-	"github.com/ymohl-cl/game-builder/audio"
-	"github.com/ymohl-cl/game-builder/objects"
-	"github.com/ymohl-cl/game-builder/objects/block"
-	"github.com/ymohl-cl/game-builder/objects/text"
+	"github.com/ymohl-cl/go-ui/audio"
+	"github.com/ymohl-cl/go-ui/objects"
+	"github.com/ymohl-cl/go-ui/objects/block"
+	"github.com/ymohl-cl/go-ui/objects/text"
 	"github.com/ymohl-cl/gomoku/database"
 	"github.com/ymohl-cl/gomoku/game"
 )
@@ -31,7 +31,8 @@ const (
 type Gomoku struct {
 	/* infos scene */
 	initialized bool
-	switcher    func(uint8, bool) error
+	switcher    func(indexScene string) error
+	closeScene  func(indexScene string) error
 	game        *game.Game
 
 	/* objects by layers */
